@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { cookies } from 'next/headers'
+import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +37,27 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const cookieStore = await cookies()
+    // Generate verification token
+    const token = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await db.verificationToken.create({
+      data: {
+        email,
+        token,
+        expiresAt,
+      },
+    })
+
+    // Simulated verification link
+    const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/verify?token=${token}`
+
+    // Simulate email sending
+    console.log(`[EMAIL SIMULATION] Registration verification email for ${email}`)
+    console.log(`[EMAIL SIMULATION] Link: ${verificationLink}`)
+
+    // Set cookie so user can access verification page
+    const cookieStore = await (await import('next/headers')).cookies()
     cookieStore.set('pc_user_id', user.id, {
       httpOnly: true,
       secure: false,
@@ -47,7 +67,14 @@ export async function POST(request: NextRequest) {
     })
 
     const { password: _, ...safeUser } = user
-    return NextResponse.json({ success: true, data: safeUser })
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...safeUser,
+        verificationLink,
+        verificationToken: token,
+      },
+    })
   } catch (error) {
     console.error('Register error:', error)
     return NextResponse.json({ success: false, error: 'Error al registrar usuario' }, { status: 500 })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { VerifyEmail } from "@/components/auth/verify-email"
 
 export function LoginForm() {
   const { navigate } = useAppStore()
@@ -19,6 +19,12 @@ export function LoginForm() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
+
+  // Show verification view if login detected unverified email
+  if (unverifiedEmail) {
+    return <VerifyEmail email={unverifiedEmail} />
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +44,10 @@ export function LoginForm() {
         setUser(data.data)
         toast.success("¡Bienvenido de vuelta!")
         navigate("home")
+      } else if (data.requiresVerification) {
+        // User needs to verify email first
+        toast.error(data.error)
+        setUnverifiedEmail(email)
       } else {
         toast.error(data.error || "Error al iniciar sesión")
       }
@@ -69,8 +79,13 @@ export function LoginForm() {
       const data = await res.json()
       if (data.success) {
         setUser(data.data)
-        toast.success("¡Registro con Google exitoso! Tu correo ha sido verificado.")
-        navigate("home")
+        if (data.data.requiresVerification) {
+          toast.success("¡Registro con Google exitoso! Verifica tu correo electrónico.")
+          setUnverifiedEmail(googleEmail)
+        } else {
+          toast.success("¡Bienvenido de vuelta!")
+          navigate("home")
+        }
       } else {
         toast.error(data.error)
       }

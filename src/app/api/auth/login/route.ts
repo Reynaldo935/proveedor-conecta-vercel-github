@@ -26,6 +26,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Credenciales inválidas' }, { status: 401 })
     }
 
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return NextResponse.json({
+        success: false,
+        error: 'Debes verificar tu correo electrónico antes de iniciar sesión',
+        requiresVerification: true,
+        data: { email: user.email },
+      }, { status: 403 })
+    }
+
     const cookieStore = await cookies()
     cookieStore.set('pc_user_id', user.id, {
       httpOnly: true,

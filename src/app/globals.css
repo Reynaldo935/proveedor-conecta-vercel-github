@@ -170,6 +170,9 @@
   transform: translateY(-4px);
   box-shadow: 0 12px 24px rgba(0,0,0,0.12);
 }
+.dark .product-card:hover {
+  box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+}
 
 /* Discount badge animation */
 @keyframes pulse-discount {
@@ -188,7 +191,11 @@
   border-radius: 16px 16px 16px 4px;
 }
 
-/* CRITICAL: Input fields MUST always have white background and black text in BOTH themes */
+/* ============================================
+   CRITICAL: Input fields white background rule
+   ALL form inputs MUST have white bg + black text
+   in BOTH light and dark modes. This is non-negotiable.
+   ============================================ */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -197,9 +204,11 @@ input[type="tel"],
 input[type="url"],
 input[type="search"],
 input[type="date"],
+input[type="time"],
 input:not([type]),
 textarea,
 select,
+/* Target shadcn/ui components specifically */
 .dark input[type="text"],
 .dark input[type="email"],
 .dark input[type="password"],
@@ -208,6 +217,7 @@ select,
 .dark input[type="url"],
 .dark input[type="search"],
 .dark input[type="date"],
+.dark input[type="time"],
 .dark input:not([type]),
 .dark textarea,
 .dark select {
@@ -216,7 +226,7 @@ select,
   border: 1px solid #CCCCCC !important;
 }
 
-/* Placeholder styling for inputs in both themes */
+/* Placeholder styling */
 input::placeholder,
 textarea::placeholder,
 .dark input::placeholder,
@@ -231,9 +241,50 @@ select option,
   color: #000000 !important;
 }
 
+/* shadcn/ui Select component content */
+.dark [data-radix-select-content],
+.dark [role="listbox"] {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+.dark [role="option"],
+.dark [data-radix-select-item] {
+  color: #000000 !important;
+}
+
+.dark [role="option"]:hover,
+.dark [data-radix-select-item]:hover,
+.dark [role="option"][data-highlighted],
+.dark [data-radix-select-item][data-highlighted] {
+  background-color: #F0F0F0 !important;
+  color: #000000 !important;
+}
+
 /* Leaflet map fix */
 .leaflet-container {
   width: 100%;
   height: 100%;
   z-index: 1;
+}
+
+/* Chatbot typing animation */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+.typing-dot {
+  animation: typing-bounce 1.4s infinite;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Hero pattern animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }

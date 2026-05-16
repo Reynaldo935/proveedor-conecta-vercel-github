@@ -4,6 +4,7 @@ export type AppView =
   | 'home'
   | 'login'
   | 'register'
+  | 'verify-email'
   | 'product-detail'
   | 'sell-product'
   | 'edit-product'

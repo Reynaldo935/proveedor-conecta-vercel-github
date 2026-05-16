@@ -9,6 +9,7 @@ import { Footer } from "@/components/layout/footer"
 import { HomeFeed } from "@/components/marketplace/home-feed"
 import { LoginForm } from "@/components/auth/login-form"
 import { RegisterForm } from "@/components/auth/register-form"
+import { VerifyEmail } from "@/components/auth/verify-email"
 import { ProductDetail } from "@/components/marketplace/product-detail"
 import { SellProductForm } from "@/components/marketplace/sell-product-form"
 import { MyProducts } from "@/components/vendor/my-products"
@@ -53,6 +54,7 @@ export default function ProveedorConecta() {
     switch (currentView) {
       case "login": return <LoginForm />
       case "register": return <RegisterForm />
+      case "verify-email": return <VerifyEmail />
       case "product-detail": return <ProductDetail />
       case "sell-product": return isAuthenticated ? <SellProductForm /> : <LoginForm />
       case "edit-product": return isAuthenticated ? <SellProductForm editMode /> : <LoginForm />

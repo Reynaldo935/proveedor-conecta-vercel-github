@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Mail, Lock, User, Eye, EyeOff, Phone, MapPin, Store, ShoppingBag } from "lucide-react"
 import { validateEmail } from "@/lib/validators"
+import { VerifyEmail } from "@/components/auth/verify-email"
 
 export function RegisterForm() {
   const { navigate } = useAppStore()
@@ -28,6 +29,14 @@ export function RegisterForm() {
     role: "BUYER" as "BUYER" | "SELLER",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Verification state
+  const [verificationState, setVerificationState] = useState<{
+    show: boolean
+    email: string
+    token?: string
+    link?: string
+  }>({ show: false, email: "" })
 
   const validate = () => {
     const errs: Record<string, string> = {}
@@ -54,8 +63,14 @@ export function RegisterForm() {
       const data = await res.json()
       if (data.success) {
         setUser(data.data)
-        toast.success("¡Cuenta creada exitosamente! Revisa tu correo para verificar tu cuenta.")
-        navigate("home")
+        toast.success("¡Cuenta creada! Verifica tu correo electrónico.")
+        // Show verification step instead of navigating home
+        setVerificationState({
+          show: true,
+          email: form.email,
+          token: data.data.verificationToken,
+          link: data.data.verificationLink,
+        })
       } else {
         toast.error(data.error || "Error al registrarse")
       }
@@ -86,8 +101,18 @@ export function RegisterForm() {
       const data = await res.json()
       if (data.success) {
         setUser(data.data)
-        toast.success("¡Registro con Google exitoso! Correo verificado automáticamente.")
-        navigate("home")
+        if (data.data.requiresVerification) {
+          toast.success("¡Registro con Google exitoso! Verifica tu correo electrónico.")
+          setVerificationState({
+            show: true,
+            email: googleEmail,
+            token: data.data.verificationToken,
+            link: data.data.verificationLink,
+          })
+        } else {
+          toast.success("¡Registro con Google exitoso!")
+          navigate("home")
+        }
       } else {
         toast.error(data.error)
       }
@@ -96,6 +121,17 @@ export function RegisterForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show verification step if registration succeeded
+  if (verificationState.show) {
+    return (
+      <VerifyEmail
+        email={verificationState.email}
+        verificationToken={verificationState.token}
+        verificationLink={verificationState.link}
+      />
+    )
   }
 
   return (
