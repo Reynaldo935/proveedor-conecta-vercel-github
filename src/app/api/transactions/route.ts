@@ -13,16 +13,19 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const role = searchParams.get('role') || ''
+    const status = searchParams.get('status') || ''
 
     const where: Record<string, unknown> = {}
     if (role === 'buyer') where.buyerId = userId
     else if (role === 'seller') where.sellerId = userId
     else where.OR = [{ buyerId: userId }, { sellerId: userId }]
 
+    if (status) where.status = status
+
     const transactions = await db.transaction.findMany({
       where,
       include: {
-        product: { select: { id: true, title: true, images: true, price: true } },
+        product: { select: { id: true, title: true, images: true, price: true, discountPrice: true } },
         buyer: { select: { id: true, name: true, avatar: true } },
         seller: { select: { id: true, name: true, avatar: true, businessProfile: { select: { businessName: true } } } },
       },
@@ -58,9 +61,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Producto y método de pago son requeridos' }, { status: 400 })
     }
 
+    const validPaymentMethods = ['PAYPAL', 'BANPRO', 'BAC', 'LAFISE', 'BILLETERA']
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      return NextResponse.json({ success: false, error: 'Método de pago no válido' }, { status: 400 })
+    }
+
     const product = await db.product.findUnique({ where: { id: productId } })
-    if (!product) {
+    if (!product || product.status === 'DELETED') {
       return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 })
+    }
+
+    if (product.sellerId === userId) {
+      return NextResponse.json({ success: false, error: 'No puedes comprar tu propio producto' }, { status: 400 })
+    }
+
+    if (product.quantity <= 0) {
+      return NextResponse.json({ success: false, error: 'Producto agotado' }, { status: 400 })
     }
 
     const finalAmount = amount || (product.discountPrice || product.price)
@@ -76,6 +92,11 @@ export async function POST(request: NextRequest) {
         cedula: cedula || '',
         cardLast4: cardLast4 || '',
         paymentDetails: paymentDetails || '',
+      },
+      include: {
+        product: { select: { id: true, title: true, images: true, price: true } },
+        buyer: { select: { id: true, name: true, avatar: true } },
+        seller: { select: { id: true, name: true, avatar: true } },
       },
     })
 
@@ -110,7 +131,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, data: transaction })
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...transaction,
+        product: { ...transaction.product, images: transaction.product.images ? JSON.parse(transaction.product.images) : [] },
+      },
+    })
   } catch (error) {
     console.error('Create transaction error:', error)
     return NextResponse.json({ success: false, error: 'Error al crear transacción' }, { status: 500 })

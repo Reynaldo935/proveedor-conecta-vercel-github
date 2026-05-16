@@ -7,10 +7,11 @@ import { useAuthStore } from "@/store/auth-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
-import { Send, ChevronLeft, ImagePlus } from "lucide-react"
+import { Send, ChevronLeft, ImagePlus, Package, Wifi, WifiOff } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface ChatMessage {
   id: string
@@ -23,15 +24,33 @@ interface ChatMessage {
   sender?: { id: string; name: string; avatar: string }
 }
 
+interface ChatRoomData {
+  id: string
+  buyerId: string
+  sellerId: string
+  productId: string | null
+  lastMessage: string
+  lastMessageAt: string
+  buyer: { id: string; name: string; avatar: string; businessProfile?: { businessName: string; logo: string } }
+  seller: {
+    id: string
+    name: string
+    avatar: string
+    businessProfile?: { businessName: string; logo: string }
+  }
+  product?: { id: string; title: string; images: string[]; price: number } | null
+}
+
 export function ChatView() {
   const { navigate } = useAppStore()
   const { user } = useAuthStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMsg, setNewMsg] = useState("")
-  const [chatRoom, setChatRoom] = useState<any>(null)
+  const [chatRoom, setChatRoom] = useState<ChatRoomData | null>(null)
   const [isOtherOnline, setIsOtherOnline] = useState(false)
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [isConnected, setIsConnected] = useState(false)
+  const [loading, setLoading] = useState(true)
   const socketRef = useRef<Socket | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -51,18 +70,15 @@ export function ChatView() {
 
     socket.on("connect", () => {
       setIsConnected(true)
-      console.log("[ChatView] Socket connected")
     })
 
     socket.on("disconnect", () => {
       setIsConnected(false)
-      console.log("[ChatView] Socket disconnected")
     })
 
     // Listen for new messages
     socket.on("new-message", (message: ChatMessage) => {
       setMessages((prev) => {
-        // Avoid duplicates
         if (prev.some((m) => m.id === message.id)) return prev
         return [...prev, message]
       })
@@ -71,7 +87,6 @@ export function ChatView() {
     // Listen for typing indicators
     socket.on("typing", (data: { roomId: string; users: string[] }) => {
       if (data.roomId === chatRoom?.id) {
-        // Filter out current user from typing list
         const otherTyping = data.users.filter((u) => u !== user?.id)
         setTypingUsers(otherTyping)
       }
@@ -93,7 +108,6 @@ export function ChatView() {
     // Listen for read receipts
     socket.on("messages-read", (data: { roomId: string; userId: string }) => {
       if (data.roomId === chatRoom?.id) {
-        // Mark messages as read locally
         setMessages((prev) =>
           prev.map((m) =>
             m.senderId === user?.id ? { ...m, isRead: true } : m
@@ -106,7 +120,7 @@ export function ChatView() {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [])
+  }, [chatRoom?.id, user?.id])
 
   // Load initial chat room and messages via REST API
   useEffect(() => {
@@ -129,7 +143,14 @@ export function ChatView() {
             .then((md) => {
               if (md.success) setMessages(md.data)
             })
+            .finally(() => setLoading(false))
+        } else {
+          setLoading(false)
         }
+      })
+      .catch(() => {
+        toast.error("Error al cargar chat")
+        setLoading(false)
       })
   }, [user])
 
@@ -146,19 +167,16 @@ export function ChatView() {
       setNewMsg(value)
       if (!socketRef.current || !chatRoom || !user) return
 
-      // Emit typing start
       socketRef.current.emit("typing", {
         roomId: chatRoom.id,
         userId: user.id,
         isTyping: value.length > 0,
       })
 
-      // Clear previous timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
       }
 
-      // Stop typing after 3 seconds of inactivity
       typingTimeoutRef.current = setTimeout(() => {
         socketRef.current?.emit("typing", {
           roomId: chatRoom?.id,
@@ -191,14 +209,12 @@ export function ChatView() {
     }
 
     if (isConnected && socketRef.current) {
-      // Send via Socket.IO for real-time delivery
       socketRef.current.emit("send-message", {
         roomId: chatRoom.id,
         senderId: user.id,
         content,
       })
     } else {
-      // Fallback to REST API
       try {
         const res = await fetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
           method: "POST",
@@ -216,19 +232,94 @@ export function ChatView() {
   }
 
   const otherUser =
-    chatRoom?.seller?.id === user?.id ? chatRoom.buyer : chatRoom?.seller
+    chatRoom?.seller?.id === user?.id ? chatRoom?.buyer : chatRoom?.seller
   const otherName =
     otherUser?.businessProfile?.businessName || otherUser?.name || "Chat"
+
+  // Format time
+  const formatTime = (dateStr: string) =>
+    new Date(dateStr).toLocaleTimeString("es-NI", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+
+  // Group messages by date
+  const getMessageDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffDays = Math.floor(
+      (now.getTime() - date.getTime()) / 86400000
+    )
+    if (diffDays === 0) return "Hoy"
+    if (diffDays === 1) return "Ayer"
+    return date.toLocaleDateString("es-NI", {
+      day: "numeric",
+      month: "short",
+    })
+  }
+
+  // Grouped messages
+  const groupedMessages: { date: string; messages: ChatMessage[] }[] = []
+  messages.forEach((m) => {
+    const date = getMessageDate(m.createdAt)
+    const lastGroup = groupedMessages[groupedMessages.length - 1]
+    if (lastGroup && lastGroup.date === date) {
+      lastGroup.messages.push(m)
+    } else {
+      groupedMessages.push({ date, messages: [m] })
+    }
+  })
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
+        <div className="flex items-center gap-3 mb-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("chat-list")}>
+            <ChevronLeft />
+          </Button>
+          <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            <div className="h-3 w-20 bg-muted animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="flex-1 rounded-lg border p-4 bg-muted/30 space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
+            >
+              <div className="h-10 w-48 bg-muted animate-pulse rounded-2xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!chatRoom) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-16">
+        <Button variant="ghost" onClick={() => navigate("chat-list")}>
+          <ChevronLeft className="h-4 w-4 mr-1" /> Volver a chats
+        </Button>
+        <p className="mt-8 text-muted-foreground">Selecciona una conversación</p>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-2xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-3 mb-3"
+      >
         <Button
           variant="ghost"
           size="icon"
           onClick={() => {
-            // Leave the room when navigating back
             if (socketRef.current && chatRoom && user) {
               socketRef.current.emit("leave-room", {
                 roomId: chatRoom.id,
@@ -240,14 +331,21 @@ export function ChatView() {
         >
           <ChevronLeft />
         </Button>
-        <Avatar>
-          <AvatarImage src={otherUser?.avatar || undefined} />
-          <AvatarFallback>
-            {otherUser?.name?.charAt(0) || "?"}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <p className="font-medium">{otherName}</p>
+
+        <div className="relative">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={otherUser?.avatar || undefined} />
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {otherName.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          {isOtherOnline && (
+            <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{otherName}</p>
           <div className="flex items-center gap-1.5">
             <span
               className={`h-2 w-2 rounded-full ${
@@ -263,83 +361,203 @@ export function ChatView() {
             </p>
           </div>
         </div>
+
         <Badge
           variant={isConnected ? "default" : "secondary"}
-          className="text-[10px]"
+          className="text-[10px] gap-1"
         >
+          {isConnected ? (
+            <Wifi className="h-3 w-3" />
+          ) : (
+            <WifiOff className="h-3 w-3" />
+          )}
           {isConnected ? "En vivo" : "Sin conexión"}
         </Badge>
-      </div>
+      </motion.div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 rounded-lg border p-4 bg-muted/30">
-        <div ref={scrollRef} className="space-y-3">
-          {messages.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Inicia la conversación
-            </p>
-          ) : (
-            messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex ${m.senderId === user?.id ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${
-                    m.senderId === user?.id
-                      ? "bg-primary text-primary-foreground chat-bubble-sent"
-                      : "bg-card border chat-bubble-received"
-                  }`}
-                >
-                  {m.imageUrl && (
+      {/* Product context banner */}
+      <AnimatePresence>
+        {chatRoom.product && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-3 overflow-hidden"
+          >
+            <Card
+              className="bg-primary/5 border-primary/20 cursor-pointer hover:bg-primary/10 transition-colors"
+              onClick={() =>
+                navigate("product-detail", {
+                  productId: chatRoom.product!.id,
+                })
+              }
+            >
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                  {chatRoom.product.images?.[0] ? (
                     <img
-                      src={m.imageUrl}
+                      src={chatRoom.product.images[0]}
                       alt=""
-                      className="rounded-lg mb-2 max-h-48"
+                      className="w-full h-full object-cover"
                     />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    </div>
                   )}
-                  {m.content && <p>{m.content}</p>}
-                  <div className="flex items-center gap-1 justify-end">
-                    <p
-                      className={`text-[10px] mt-1 ${
-                        m.senderId === user?.id
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {chatRoom.product.title}
+                  </p>
+                  <p className="text-xs text-primary font-semibold">
+                    C${chatRoom.product.price.toLocaleString("es-NI")}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[10px] flex-shrink-0">
+                  Ver producto
+                </Badge>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Messages area */}
+      <div className="flex-1 rounded-xl border bg-muted/20 overflow-hidden flex flex-col">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-4 space-y-1"
+        >
+          {messages.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12"
+            >
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <Send className="h-6 w-6 text-primary" />
+              </div>
+              <p className="text-muted-foreground">
+                Inicia la conversación con {otherName}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Envía un mensaje para comenzar
+              </p>
+            </motion.div>
+          ) : (
+            groupedMessages.map((group) => (
+              <div key={group.date}>
+                {/* Date separator */}
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[10px] text-muted-foreground font-medium bg-background px-2 py-0.5 rounded-full">
+                    {group.date}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Messages */}
+                {group.messages.map((m, idx) => {
+                  const isMine = m.senderId === user?.id
+                  const prevMsg = idx > 0 ? group.messages[idx - 1] : null
+                  const sameSender = prevMsg?.senderId === m.senderId
+
+                  return (
+                    <motion.div
+                      key={m.id}
+                      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className={`flex ${isMine ? "justify-end" : "justify-start"} ${
+                        sameSender ? "mt-0.5" : "mt-3"
                       }`}
                     >
-                      {new Date(m.createdAt).toLocaleTimeString("es-NI", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                    {m.senderId === user?.id && (
-                      <span className="text-[10px] text-primary-foreground/70">
-                        {m.isRead ? "✓✓" : "✓"}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                      <div
+                        className={`max-w-[75%] px-4 py-2.5 ${
+                          isMine
+                            ? "bg-primary text-primary-foreground chat-bubble-sent"
+                            : "bg-card border chat-bubble-received shadow-sm"
+                        } ${sameSender ? (isMine ? "rounded-br-sm" : "rounded-bl-sm") : ""}`}
+                      >
+                        {m.imageUrl && (
+                          <img
+                            src={m.imageUrl}
+                            alt=""
+                            className="rounded-lg mb-2 max-h-48 max-w-full"
+                          />
+                        )}
+                        {m.content && (
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                            {m.content}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-1 justify-end mt-1">
+                          <p
+                            className={`text-[10px] ${
+                              isMine
+                                ? "text-primary-foreground/60"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {formatTime(m.createdAt)}
+                          </p>
+                          {isMine && (
+                            <span
+                              className={`text-[10px] ${
+                                m.isRead
+                                  ? "text-primary-foreground/80"
+                                  : "text-primary-foreground/40"
+                              }`}
+                            >
+                              {m.isRead ? "✓✓" : "✓"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </div>
             ))
           )}
-          {/* Typing indicator */}
-          {typingUsers.length > 0 && (
-            <div className="flex justify-start">
-              <div className="bg-card border rounded-2xl px-4 py-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <span className="inline-block w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:0ms]" />
-                  <span className="inline-block w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="inline-block w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:300ms]" />
-                  <span className="ml-1 text-xs">Escribiendo</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
 
-      {/* Input */}
-      <div className="mt-3 flex gap-2">
+          {/* Typing indicator */}
+          <AnimatePresence>
+            {typingUsers.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                className="flex justify-start mt-3"
+              >
+                <div className="bg-card border rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 bg-primary rounded-full typing-dot" />
+                    <span className="inline-block w-2 h-2 bg-primary rounded-full typing-dot" />
+                    <span className="inline-block w-2 h-2 bg-primary rounded-full typing-dot" />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Input area */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-3 flex gap-2"
+      >
+        <Button
+          variant="outline"
+          size="icon"
+          className="flex-shrink-0"
+          onClick={() => toast.info("Subir imagen próximamente")}
+        >
+          <ImagePlus className="h-4 w-4" />
+        </Button>
         <Input
           placeholder="Escribe un mensaje..."
           value={newMsg}
@@ -356,10 +574,11 @@ export function ChatView() {
           size="icon"
           onClick={sendMessage}
           disabled={!newMsg.trim()}
+          className="bg-primary hover:bg-primary/90 flex-shrink-0"
         >
           <Send className="h-4 w-4" />
         </Button>
-      </div>
+      </motion.div>
     </div>
   )
 }

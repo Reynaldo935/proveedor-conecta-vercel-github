@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
@@ -10,6 +11,10 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password || !name) {
       return NextResponse.json({ success: false, error: 'Email, contraseña y nombre son requeridos' }, { status: 400 })
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
     }
 
     const existing = await db.user.findUnique({ where: { email } })
@@ -57,7 +62,7 @@ export async function POST(request: NextRequest) {
     console.log(`[EMAIL SIMULATION] Link: ${verificationLink}`)
 
     // Set cookie so user can access verification page
-    const cookieStore = await (await import('next/headers')).cookies()
+    const cookieStore = await cookies()
     cookieStore.set('pc_user_id', user.id, {
       httpOnly: true,
       secure: false,

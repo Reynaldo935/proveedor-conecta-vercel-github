@@ -2,14 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { cookies } from 'next/headers'
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('pc_user_id')?.value
+
     const product = await db.product.findUnique({
       where: { id },
       include: {
         seller: {
-          select: { id: true, name: true, avatar: true, phone: true, address: true, businessProfile: true },
+          select: {
+            id: true, name: true, avatar: true, phone: true, address: true,
+            businessProfile: { select: { businessName: true, logo: true, category: true } },
+            followers: { select: { followerId: true } },
+          },
         },
         likes: { select: { userId: true } },
       },
@@ -19,14 +26,37 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 })
     }
 
+    // Check if user saved this product
+    let isSaved = false
+    let savedCount = 0
+    if (userId) {
+      const saved = await db.savedProduct.findUnique({
+        where: { userId_productId: { userId, productId: id } },
+      })
+      isSaved = !!saved
+    }
+    savedCount = await db.savedProduct.count({ where: { productId: id } })
+
+    const isLiked = userId ? product.likes.some(l => l.userId === userId) : false
+    const isFollowingSeller = userId ? product.seller.followers.some(f => f.followerId === userId) : false
+
     return NextResponse.json({
       success: true,
       data: {
         ...product,
         images: product.images ? JSON.parse(product.images) : [],
         likeCount: product.likes.length,
-        isLiked: false,
+        savedCount,
+        isLiked,
+        isSaved,
+        isFollowingSeller,
         likes: undefined,
+        seller: {
+          ...product.seller,
+          followerCount: product.seller.followers.length,
+          isFollowing: isFollowingSeller,
+          followers: undefined,
+        },
       },
     })
   } catch (error) {
@@ -54,19 +84,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const updated = await db.product.update({
       where: { id },
       data: {
-        title: body.title,
-        description: body.description,
-        price: body.price ? parseFloat(body.price) : undefined,
-        discountPrice: body.discountPrice !== undefined ? (body.discountPrice ? parseFloat(body.discountPrice) : null) : undefined,
-        discountPercent: body.discountPercent !== undefined ? (body.discountPercent ? parseFloat(body.discountPercent) : null) : undefined,
-        category: body.category,
-        tags: body.tags,
-        images: body.images ? JSON.stringify(body.images) : undefined,
-        videoUrl: body.videoUrl,
-        quantity: body.quantity ? parseInt(body.quantity) : undefined,
-        status: body.status,
-        discountStart: body.discountStart ? new Date(body.discountStart) : null,
-        discountEnd: body.discountEnd ? new Date(body.discountEnd) : null,
+        ...(body.title !== undefined && { title: body.title }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.price !== undefined && { price: parseFloat(body.price) }),
+        ...(body.discountPrice !== undefined && { discountPrice: body.discountPrice ? parseFloat(body.discountPrice) : null }),
+        ...(body.discountPercent !== undefined && { discountPercent: body.discountPercent ? parseFloat(body.discountPercent) : null }),
+        ...(body.category !== undefined && { category: body.category }),
+        ...(body.tags !== undefined && { tags: body.tags }),
+        ...(body.images !== undefined && { images: JSON.stringify(body.images) }),
+        ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
+        ...(body.quantity !== undefined && { quantity: parseInt(body.quantity) }),
+        ...(body.status !== undefined && { status: body.status }),
+        ...(body.isFeatured !== undefined && { isFeatured: body.isFeatured }),
+        ...(body.discountStart !== undefined && { discountStart: body.discountStart ? new Date(body.discountStart) : null }),
+        ...(body.discountEnd !== undefined && { discountEnd: body.discountEnd ? new Date(body.discountEnd) : null }),
       },
     })
 

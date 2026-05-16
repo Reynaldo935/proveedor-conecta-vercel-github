@@ -5,17 +5,41 @@ import { cookies } from 'next/headers'
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    const cookieStore = await cookies()
+    const currentUserId = cookieStore.get('pc_user_id')?.value
+
     const profile = await db.businessProfile.findUnique({
       where: { userId: id },
       include: {
         wallPosts: { orderBy: { createdAt: 'desc' }, take: 20 },
-        user: { select: { id: true, name: true, avatar: true, followers: true } },
+        user: {
+          select: {
+            id: true, name: true, avatar: true,
+            followers: { select: { followerId: true } },
+            _count: { select: { products: { where: { status: 'ACTIVE' } } } },
+          },
+        },
       },
     })
 
     if (!profile) return NextResponse.json({ success: false, error: 'Perfil no encontrado' }, { status: 404 })
 
-    return NextResponse.json({ success: true, data: profile })
+    const isFollowing = currentUserId ? profile.user.followers.some(f => f.followerId === currentUserId) : false
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...profile,
+        user: {
+          ...profile.user,
+          isFollowing,
+          followerCount: profile.user.followers.length,
+          productCount: profile.user._count.products,
+          followers: undefined,
+          _count: undefined,
+        },
+      },
+    })
   } catch (error) {
     console.error('Get business profile error:', error)
     return NextResponse.json({ success: false, error: 'Error al obtener perfil de negocio' }, { status: 500 })
@@ -37,19 +61,42 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const profile = await db.businessProfile.upsert({
       where: { userId: id },
-      create: { userId: id, businessName: businessName || '', description: description || '', category: category || '', address: address || '', latitude, longitude, phone: phone || '', coverImage: coverImage || '', logo: logo || '', hours: hours || '', paymentMethods: paymentMethods ? JSON.stringify(paymentMethods) : '' },
+      create: {
+        userId: id,
+        businessName: businessName || '',
+        description: description || '',
+        category: category || '',
+        address: address || '',
+        latitude,
+        longitude,
+        phone: phone || '',
+        coverImage: coverImage || '',
+        logo: logo || '',
+        hours: hours || '',
+        paymentMethods: paymentMethods ? JSON.stringify(paymentMethods) : '',
+      },
       update: {
-        businessName: businessName !== undefined ? businessName : undefined,
-        description: description !== undefined ? description : undefined,
-        category: category !== undefined ? category : undefined,
-        address: address !== undefined ? address : undefined,
-        latitude: latitude !== undefined ? latitude : undefined,
-        longitude: longitude !== undefined ? longitude : undefined,
-        phone: phone !== undefined ? phone : undefined,
-        coverImage: coverImage !== undefined ? coverImage : undefined,
-        logo: logo !== undefined ? logo : undefined,
-        hours: hours !== undefined ? hours : undefined,
-        paymentMethods: paymentMethods !== undefined ? JSON.stringify(paymentMethods) : undefined,
+        ...(businessName !== undefined && { businessName }),
+        ...(description !== undefined && { description }),
+        ...(category !== undefined && { category }),
+        ...(address !== undefined && { address }),
+        ...(latitude !== undefined && { latitude }),
+        ...(longitude !== undefined && { longitude }),
+        ...(phone !== undefined && { phone }),
+        ...(coverImage !== undefined && { coverImage }),
+        ...(logo !== undefined && { logo }),
+        ...(hours !== undefined && { hours }),
+        ...(paymentMethods !== undefined && { paymentMethods: JSON.stringify(paymentMethods) }),
+      },
+    })
+
+    await db.auditLog.create({
+      data: {
+        userId,
+        action: 'UPDATE_BUSINESS_PROFILE',
+        entity: 'BusinessProfile',
+        entityId: profile.id,
+        details: `Perfil de negocio actualizado: ${businessName || profile.businessName}`,
       },
     })
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
       console.log(`[EMAIL SIMULATION] Link: ${verificationLink}`)
     }
 
-    const cookieStore = await (await import('next/headers')).cookies()
+    const cookieStore = await cookies()
     cookieStore.set('pc_user_id', user!.id, {
       httpOnly: true,
       secure: false,

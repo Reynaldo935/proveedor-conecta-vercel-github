@@ -6,6 +6,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const userId = cookieStore.get('pc_user_id')?.value
 
+    // AI chat is available to all users (even guests), but personalize if logged in
     const body = await request.json()
     const { message, context } = body
 
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     try {
       const { LLM } = await import('z-ai-web-dev-sdk')
       const llm = new LLM()
-      
+
       const systemPrompt = `Eres el asistente virtual de ProveedorConecta Nicaragua, una plataforma B2B/B2C que conecta emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en Nicaragua.
 
 Tu rol es:
@@ -27,6 +28,7 @@ Tu rol es:
 - Brindar información sobre métodos de pago disponibles (PayPal, Banpro, BAC, Lafise, Billetera Móvil)
 - Recomendar estrategias para emprendedores nicaragüenses
 - Responder siempre en español
+${userId ? `- El usuario está autenticado en la plataforma` : '- El usuario no ha iniciado sesión'}
 
 Contexto adicional del usuario: ${context || 'Sin contexto adicional'}`
 
@@ -46,7 +48,7 @@ Contexto adicional del usuario: ${context || 'Sin contexto adicional'}`
       })
     } catch (llmError) {
       console.error('LLM error, using fallback:', llmError)
-      
+
       // Fallback: rule-based responses
       const lowerMsg = message.toLowerCase()
       let response = ''

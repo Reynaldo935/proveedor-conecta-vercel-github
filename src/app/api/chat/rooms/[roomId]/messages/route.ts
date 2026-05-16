@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { cookies } from 'next/headers'
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ roomId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ roomId: string }> }) {
   try {
     const { roomId } = await params
     const cookieStore = await cookies()
@@ -12,17 +12,47 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
 
+    // Verify user is part of the room
+    const room = await db.chatRoom.findUnique({ where: { id: roomId } })
+    if (!room) {
+      return NextResponse.json({ success: false, error: 'Sala de chat no encontrada' }, { status: 404 })
+    }
+
+    if (room.buyerId !== userId && room.sellerId !== userId) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const cursor = searchParams.get('cursor') || ''
+    const limit = parseInt(searchParams.get('limit') || '50')
+
+    const where: Record<string, unknown> = { chatRoomId: roomId }
+    if (cursor) where.createdAt = { lt: new Date(cursor) }
+
     const messages = await db.message.findMany({
-      where: { chatRoomId: roomId },
-      orderBy: { createdAt: 'asc' },
+      where,
+      include: {
+        sender: { select: { id: true, name: true, avatar: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
     })
 
+    const hasMore = messages.length > limit
+    const items = hasMore ? messages.slice(0, limit) : messages
+    const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].createdAt.toISOString() : null
+
+    // Mark unread messages as read
     await db.message.updateMany({
       where: { chatRoomId: roomId, isRead: false, senderId: { not: userId } },
       data: { isRead: true },
     })
 
-    return NextResponse.json({ success: true, data: messages })
+    return NextResponse.json({
+      success: true,
+      data: items.reverse(),
+      nextCursor,
+    })
   } catch (error) {
     console.error('Get messages error:', error)
     return NextResponse.json({ success: false, error: 'Error al obtener mensajes' }, { status: 500 })
@@ -39,6 +69,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
 
+    // Verify user is part of the room
+    const room = await db.chatRoom.findUnique({
+      where: { id: roomId },
+      include: {
+        buyer: { select: { id: true, name: true } },
+        seller: { select: { id: true, name: true } },
+      },
+    })
+    if (!room) {
+      return NextResponse.json({ success: false, error: 'Sala de chat no encontrada' }, { status: 404 })
+    }
+
+    if (room.buyerId !== userId && room.sellerId !== userId) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { content, imageUrl } = body
 
@@ -48,11 +94,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const message = await db.message.create({
       data: { chatRoomId: roomId, senderId: userId, content: content || '', imageUrl: imageUrl || '' },
+      include: {
+        sender: { select: { id: true, name: true, avatar: true } },
+      },
     })
 
     await db.chatRoom.update({
       where: { id: roomId },
       data: { lastMessage: content || '📷 Imagen', lastMessageAt: new Date() },
+    })
+
+    // Notify the other user
+    const otherUserId = room.buyerId === userId ? room.sellerId : room.buyerId
+    await db.notification.create({
+      data: {
+        userId: otherUserId,
+        type: 'MESSAGE',
+        title: 'Nuevo mensaje',
+        message: `Tienes un nuevo mensaje de ${room.buyerId === userId ? room.buyer.name : room.seller.name}`,
+        link: `/chat/${roomId}`,
+      },
     })
 
     return NextResponse.json({ success: true, data: message })

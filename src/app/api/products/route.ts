@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { cookies } from 'next/headers'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const sellerId = searchParams.get('sellerId') || ''
 
-    const where: Record<string, unknown> = {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('pc_user_id')?.value
+
+    const where: Prisma.ProductWhereInput = {
       status: 'ACTIVE',
     }
 
@@ -49,6 +53,16 @@ export async function GET(request: NextRequest) {
       take: limit + 1,
     })
 
+    // Get saved status for logged-in users
+    let savedProductIds: string[] = []
+    if (userId) {
+      const saved = await db.savedProduct.findMany({
+        where: { userId },
+        select: { productId: true },
+      })
+      savedProductIds = saved.map(s => s.productId)
+    }
+
     const hasMore = products.length > limit
     const items = hasMore ? products.slice(0, limit) : products
     const nextCursor = hasMore ? items[items.length - 1].id : null
@@ -59,6 +73,8 @@ export async function GET(request: NextRequest) {
         ...p,
         images: p.images ? JSON.parse(p.images) : [],
         likeCount: p.likes.length,
+        isLiked: userId ? p.likes.some(l => l.userId === userId) : false,
+        isSaved: savedProductIds.includes(p.id),
         likes: undefined,
       })),
       nextCursor,
@@ -78,11 +94,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
 
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user || user.role !== 'SELLER') {
+      return NextResponse.json({ success: false, error: 'Solo vendedores pueden publicar productos' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { title, description, price, discountPrice, discountPercent, category, tags, images, videoUrl, quantity, discountStart, discountEnd } = body
 
     if (!title || !price) {
       return NextResponse.json({ success: false, error: 'Título y precio son requeridos' }, { status: 400 })
+    }
+
+    if (parseFloat(price) <= 0) {
+      return NextResponse.json({ success: false, error: 'El precio debe ser mayor que 0' }, { status: 400 })
     }
 
     const product = await db.product.create({
@@ -119,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { ...product, images: JSON.parse(product.images), likeCount: 0 },
+      data: { ...product, images: JSON.parse(product.images), likeCount: 0, isLiked: false, isSaved: false },
     })
   } catch (error) {
     console.error('Create product error:', error)
