@@ -488,7 +488,7 @@ export function HomeFeed() {
         style={{ y: heroY }}
       >
         {/* Background gradient - Nicaragua colors */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#00695C] via-[#00897B] to-[#004D40]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1A5276] via-[#2E86C1] to-[#154360]" />
 
         {/* Nicaragua flag stripe accents */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#0067B8] via-white to-[#0067B8]" />
@@ -512,12 +512,12 @@ export function HomeFeed() {
 
         {/* Gold accent orbs */}
         <motion.div
-          className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#D4A017]/10 blur-3xl"
+          className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#F4D03F]/10 blur-3xl"
           animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-[#D4A017]/8 blur-2xl"
+          className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-[#F4D03F]/8 blur-2xl"
           animate={{ scale: [1.1, 0.9, 1.1], opacity: [0.2, 0.5, 0.2] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -539,7 +539,7 @@ export function HomeFeed() {
                 animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
-                <Sparkles className="h-3.5 w-3.5 text-[#D4A017]" />
+                <Sparkles className="h-3.5 w-3.5 text-[#F4D03F]" />
               </motion.span>
             </motion.div>
 
@@ -552,7 +552,7 @@ export function HomeFeed() {
               Proveedor
               <span className="text-white">Conecta</span>
               <br />
-              <span className="text-[#D4A017] drop-shadow-lg">Nicaragua</span>
+              <span className="text-[#F4D03F] drop-shadow-lg">Nicaragua</span>
             </motion.h1>
 
             {/* Subtitle */}
@@ -584,7 +584,7 @@ export function HomeFeed() {
               <Button
                 type="submit"
                 size="lg"
-                className="h-12 px-6 bg-[#D4A017] hover:bg-[#B8860B] text-[#1A1A1A] font-semibold rounded-xl shadow-lg"
+                className="h-12 px-6 bg-[#2E86C1] hover:bg-[#2471A3] text-white font-semibold rounded-xl shadow-lg"
               >
                 <Search className="h-5 w-5" />
               </Button>
@@ -598,7 +598,7 @@ export function HomeFeed() {
             >
               <Button
                 size="lg"
-                className="bg-[#D4A017] hover:bg-[#B8860B] text-[#1A1A1A] font-semibold shadow-lg rounded-xl h-12"
+                className="bg-[#2E86C1] hover:bg-[#2471A3] text-white font-semibold shadow-lg rounded-xl h-12"
                 onClick={() => navigate(isAuthenticated ? "sell-product" : "register")}
               >
                 <Store className="h-5 w-5 mr-2" /> Vender en la Plataforma
@@ -833,9 +833,9 @@ export function HomeFeed() {
         >
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold font-[family-name:var(--font-poppins)] flex items-center gap-2">
-              <Zap className="h-5 w-5 text-[#D4A017]" /> Destacados y Ofertas
+              <Zap className="h-5 w-5 text-[#F4D03F]" /> Destacados y Ofertas
             </h2>
-            <Badge variant="secondary" className="rounded-lg bg-[#D4A017]/10 text-[#D4A017] border border-[#D4A017]/20">
+            <Badge variant="secondary" className="rounded-lg bg-[#F4D03F]/10 text-[#F4D03F] border border-[#F4D03F]/20">
               <Sparkles className="h-3 w-3 mr-1" /> Trending
             </Badge>
           </div>
@@ -885,7 +885,7 @@ export function HomeFeed() {
                             </motion.div>
                           )}
                           {/* Featured badge */}
-                          <Badge className="absolute top-2 right-2 bg-[#D4A017] text-[#1A1A1A] text-[10px] px-1.5 py-0.5 rounded-lg shadow-sm">
+                          <Badge className="absolute top-2 right-2 bg-[#F4D03F] text-[#1C2833] text-[10px] px-1.5 py-0.5 rounded-lg shadow-sm">
                             <Star className="h-2.5 w-2.5 mr-0.5" fill="currentColor" /> TOP
                           </Badge>
                         </div>
@@ -1084,7 +1084,7 @@ export function HomeFeed() {
                         <Bookmark
                           className={`h-3.5 w-3.5 transition-colors ${
                             savedProducts.has(product.id)
-                              ? "fill-[#D4A017] text-[#D4A017]"
+                              ? "fill-[#F4D03F] text-[#F4D03F]"
                               : "text-gray-600"
                           }`}
                         />
@@ -1283,10 +1283,10 @@ export function HomeFeed() {
       >
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold font-[family-name:var(--font-poppins)] flex items-center gap-2">
-            <Quote className="h-5 w-5 text-[#D4A017]" /> Testimonios
+            <Quote className="h-5 w-5 text-[#F4D03F]" /> Testimonios
           </h2>
           <Badge variant="secondary" className="rounded-lg">
-            <Star className="h-3 w-3 mr-1 fill-[#D4A017] text-[#D4A017]" /> 4.9 promedio
+            <Star className="h-3 w-3 mr-1 fill-[#F4D03F] text-[#F4D03F]" /> 4.9 promedio
           </Badge>
         </div>
 
@@ -1319,7 +1319,7 @@ export function HomeFeed() {
                     {/* Stars */}
                     <div className="flex gap-0.5 mb-3">
                       {Array.from({ length: testimonial.rating }).map((_, si) => (
-                        <Star key={si} className="h-4 w-4 fill-[#D4A017] text-[#D4A017]" />
+                        <Star key={si} className="h-4 w-4 fill-[#F4D03F] text-[#F4D03F]" />
                       ))}
                     </div>
 
@@ -1364,7 +1364,7 @@ export function HomeFeed() {
           <motion.div
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 bg-[#D4A017]/10 rounded-full px-4 py-1.5 text-sm font-medium text-[#B8860B] mb-3"
+            className="inline-flex items-center gap-2 bg-[#F4D03F]/10 rounded-full px-4 py-1.5 text-sm font-medium text-[#D4AC0D] mb-3"
           >
             <Zap className="h-4 w-4" /> Fácil y Rápido
           </motion.div>
@@ -1386,7 +1386,7 @@ export function HomeFeed() {
             },
             {
               step: 2,
-              icon: <Search className="h-8 w-8 text-[#D4A017]" />,
+              icon: <Search className="h-8 w-8 text-[#F4D03F]" />,
               title: "Publica o Busca",
               desc: "Vende tus productos o encuentra lo que necesitas",
             },
@@ -1408,7 +1408,7 @@ export function HomeFeed() {
               <Card className="border-0 shadow-md h-full">
                 <CardContent className="p-6 text-center">
                   {/* Step number */}
-                  <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#D4A017] text-[#1A1A1A] flex items-center justify-center text-sm font-bold shadow-md">
+                  <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#F4D03F] text-[#1C2833] flex items-center justify-center text-sm font-bold shadow-md">
                     {item.step}
                   </div>
                   {/* Icon container */}
@@ -1492,7 +1492,7 @@ export function HomeFeed() {
           transition={{ duration: 0.6 }}
         >
           <Card className="border-0 shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-primary via-[#00897B] to-[#004D40] p-8 md:p-10 text-center relative">
+            <div className="bg-gradient-to-r from-primary via-[#2E86C1] to-[#154360] p-8 md:p-10 text-center relative">
               <FloatingParticles />
               <motion.div
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -1508,7 +1508,7 @@ export function HomeFeed() {
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <Button
                     size="lg"
-                    className="bg-[#D4A017] hover:bg-[#B8860B] text-[#1A1A1A] font-semibold rounded-xl shadow-lg h-12"
+                    className="bg-[#2E86C1] hover:bg-[#2471A3] text-white font-semibold rounded-xl shadow-lg h-12"
                     onClick={() => navigate("register")}
                   >
                     <ShoppingBag className="h-5 w-5 mr-2" /> Registrarme Gratis

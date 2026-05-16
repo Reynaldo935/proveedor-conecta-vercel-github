@@ -198,7 +198,7 @@ export function BuyerDashboard() {
                   </div>
                   <h3 className="font-semibold text-lg mb-1">Sin compras aún</h3>
                   <p className="text-sm text-muted-foreground mb-4">Explora productos y realiza tu primera compra</p>
-                  <Button className="bg-gradient-to-r from-[#00695C] to-[#00897B] text-white" onClick={() => navigate("home")}>
+                  <Button className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] text-white" onClick={() => navigate("home")}>
                     Explorar Productos
                   </Button>
                 </CardContent>
@@ -262,7 +262,7 @@ export function BuyerDashboard() {
                   </div>
                   <h3 className="font-semibold text-lg mb-1">Sin productos guardados</h3>
                   <p className="text-sm text-muted-foreground mb-4">Guarda productos que te interesen para encontrarlos fácilmente</p>
-                  <Button className="bg-gradient-to-r from-[#00695C] to-[#00897B] text-white" onClick={() => navigate("home")}>
+                  <Button className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] text-white" onClick={() => navigate("home")}>
                     Explorar Productos
                   </Button>
                 </CardContent>
@@ -346,7 +346,7 @@ export function BuyerDashboard() {
                   </div>
                   <h3 className="font-semibold text-lg mb-1">No sigues a ningún vendedor</h3>
                   <p className="text-sm text-muted-foreground mb-4">Sigue a vendedores para recibir novedades de sus productos</p>
-                  <Button className="bg-gradient-to-r from-[#00695C] to-[#00897B] text-white" onClick={() => navigate("home")}>
+                  <Button className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] text-white" onClick={() => navigate("home")}>
                     Explorar Vendedores
                   </Button>
                 </CardContent>

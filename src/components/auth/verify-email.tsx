@@ -145,7 +145,7 @@ export function VerifyEmail({ email, verificationToken, verificationLink }: Veri
       >
         <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
           {/* Top gradient bar */}
-          <div className="h-2 bg-gradient-to-r from-[#00695C] via-[#00897B] to-[#00BFA5]" />
+          <div className="h-2 bg-gradient-to-r from-[#1A5276] via-[#2E86C1] to-[#3498DB]" />
 
           <CardContent className="p-8">
             <AnimatePresence mode="wait">
@@ -220,7 +220,7 @@ export function VerifyEmail({ email, verificationToken, verificationLink }: Veri
                         <p className="text-xs font-mono text-muted-foreground">{currentLink}</p>
                       </div>
                       <Button
-                        className="w-full bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white shadow-md"
+                        className="w-full bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white shadow-md"
                         onClick={handleSimulateClick}
                         disabled={verifyingWithToken}
                       >
@@ -330,7 +330,7 @@ export function VerifyEmail({ email, verificationToken, verificationLink }: Veri
                     transition={{ delay: 1 }}
                   >
                     <Button
-                      className="w-full h-11 bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white font-medium shadow-md"
+                      className="w-full h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md"
                       onClick={() => navigate("home")}
                     >
                       <PartyPopper className="h-4 w-4 mr-2" /> Ir al Marketplace
@@ -363,7 +363,7 @@ export function VerifyEmail({ email, verificationToken, verificationLink }: Veri
                     </p>
                   </div>
                   <Button
-                    className="w-full bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white"
+                    className="w-full bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white"
                     onClick={handleResend}
                     disabled={resending || countdown > 0}
                   >
@@ -402,7 +402,7 @@ export function VerifyEmail({ email, verificationToken, verificationLink }: Veri
                     </p>
                   </div>
                   <Button
-                    className="w-full bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white"
+                    className="w-full bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white"
                     onClick={handleResend}
                     disabled={resending}
                   >

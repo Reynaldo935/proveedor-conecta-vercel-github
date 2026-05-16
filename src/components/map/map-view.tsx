@@ -198,7 +198,7 @@ export function MapView() {
 
         // Custom green marker for vendors
         const vendorIcon = L.divIcon({
-          html: `<div style="background:#00695C;width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"><span style="transform:rotate(45deg);color:white;font-size:14px">🏪</span></div>`,
+          html: `<div style="background:#1A5276;width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"><span style="transform:rotate(45deg);color:white;font-size:14px">🏪</span></div>`,
           className: "",
           iconSize: [32, 32],
           iconAnchor: [16, 32],
@@ -238,7 +238,7 @@ export function MapView() {
           })
 
           marker.bindPopup(
-            `<strong style="font-size:14px">${v.businessProfile?.businessName || v.name}</strong><br/><span style="color:#666">${v.address}</span><br/><em style="color:#00695C">${v.businessProfile?.category || ""}</em>`
+            `<strong style="font-size:14px">${v.businessProfile?.businessName || v.name}</strong><br/><span style="color:#666">${v.address}</span><br/><em style="color:#1A5276">${v.businessProfile?.category || ""}</em>`
           )
         })
 
@@ -250,7 +250,7 @@ export function MapView() {
               setSelectedVendor(v)
             })
             marker.bindPopup(
-              `<strong style="font-size:14px">${v.name}</strong><br/><em style="color:#00695C">${v.cat}</em>`
+              `<strong style="font-size:14px">${v.name}</strong><br/><em style="color:#1A5276">${v.cat}</em>`
             )
           })
           setVendorCount(SAMPLE_VENDORS.length)

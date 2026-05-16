@@ -116,13 +116,13 @@ export default function ProveedorConecta() {
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-          whileHover={{ scale: 1.08, boxShadow: "0 8px 30px rgba(0, 105, 92, 0.4)" }}
+          whileHover={{ scale: 1.08, boxShadow: "0 8px 30px rgba(26, 82, 118, 0.4)" }}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate("sell-product")}
           className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-5 py-3.5 rounded-full text-white font-semibold shadow-lg"
           style={{
-            background: "linear-gradient(135deg, #00695C, #00897B)",
-            boxShadow: "0 4px 20px rgba(0, 105, 92, 0.35)",
+            background: "linear-gradient(135deg, #1A5276, #2E86C1)",
+            boxShadow: "0 4px 20px rgba(26, 82, 118, 0.35)",
           }}
           aria-label="Vender producto"
         >

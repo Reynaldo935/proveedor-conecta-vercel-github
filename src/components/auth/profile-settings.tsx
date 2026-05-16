@@ -220,7 +220,7 @@ export function ProfileSettings() {
         transition={{ duration: 0.4, delay: 0.1 }}
       >
         <Card className="overflow-hidden">
-          <div className="h-24 bg-gradient-to-r from-[#00695C] to-[#00BFA5]" />
+          <div className="h-24 bg-gradient-to-r from-[#1A5276] to-[#3498DB]" />
           <CardContent className="p-6 -mt-10">
             <div className="flex items-end gap-4">
               <div className="relative group">
@@ -318,7 +318,7 @@ export function ProfileSettings() {
                 </AnimatePresence>
 
                 <Button
-                  className="bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white"
+                  className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white"
                   onClick={handleSave}
                   disabled={saving}
                 >
@@ -403,7 +403,7 @@ export function ProfileSettings() {
                   </AnimatePresence>
 
                   <Button
-                    className="bg-gradient-to-r from-[#D4A017] to-[#E6B422] hover:from-[#C49000] hover:to-[#D4A017] text-white"
+                    className="bg-gradient-to-r from-[#F4D03F] to-[#E6B422] hover:from-[#C49000] hover:to-[#F4D03F] text-white"
                     onClick={handleBusinessSave}
                     disabled={saving}
                   >

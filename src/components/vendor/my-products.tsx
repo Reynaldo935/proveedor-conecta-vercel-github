@@ -126,7 +126,7 @@ export function MyProducts() {
           </Button>
           <h1 className="text-2xl font-bold font-[family-name:var(--font-poppins)]">Mis Productos</h1>
         </div>
-        <Button className="bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white shadow-md" onClick={() => navigate("sell-product")}>
+        <Button className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white shadow-md" onClick={() => navigate("sell-product")}>
           <Plus className="h-4 w-4 mr-1" /> Nuevo Producto
         </Button>
       </div>
@@ -201,7 +201,7 @@ export function MyProducts() {
               </div>
               <h3 className="font-semibold text-lg mb-1">Sin productos aún</h3>
               <p className="text-sm text-muted-foreground mb-4">Publicá tu primer producto para empezar a vender</p>
-              <Button className="bg-gradient-to-r from-[#00695C] to-[#00897B] text-white" onClick={() => navigate("sell-product")}>
+              <Button className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] text-white" onClick={() => navigate("sell-product")}>
                 <Plus className="h-4 w-4 mr-1" /> Publicar Producto
               </Button>
             </CardContent>

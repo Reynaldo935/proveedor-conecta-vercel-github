@@ -16,8 +16,9 @@ import {
   validateCardNumber,
   validateCardExpiry,
   validateCVV,
-  validateBankAccount,
-  validatePhoneNicaragua,
+  validateBankAccountByBank,
+  validateBilleteraMovil,
+  identifyCardType,
   formatCedula,
   formatCardNumber,
   formatPhoneNicaragua,
@@ -106,7 +107,7 @@ export function CheckoutView() {
       if (!formData.accountNumber)
         errs.accountNumber = "Número de cuenta requerido"
       else {
-        const acctCheck = validateBankAccount(formData.accountNumber)
+        const acctCheck = validateBankAccountByBank(formData.accountNumber, paymentMethod)
         if (!acctCheck.valid) errs.accountNumber = acctCheck.message
       }
     }
@@ -119,7 +120,7 @@ export function CheckoutView() {
     }
 
     if (paymentMethod === "BILLETERA") {
-      const phoneCheck = validatePhoneNicaragua(formData.phone)
+      const phoneCheck = validateBilleteraMovil(formData.phone)
       if (!phoneCheck.valid) errs.phone = phoneCheck.message
     }
 

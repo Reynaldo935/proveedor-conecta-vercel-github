@@ -155,15 +155,19 @@ export function RegisterForm() {
       return
     }
 
-    // Server-side email validation
+    // Server-side email validation with account existence check
     try {
       const validateRes = await fetch("/api/auth/validate-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: googleEmail }),
+        body: JSON.stringify({ email: googleEmail, checkAccount: true }),
       })
       const validateData = await validateRes.json()
       if (validateData.success && validateData.data) {
+        if (validateData.data.correoInvalido || !validateData.data.accountExists) {
+          toast.error("Correo inválido — la cuenta de Google no existe o no se puede verificar")
+          return
+        }
         if (validateData.data.disposable) {
           toast.error("No se permiten correos de dominios desechables")
           return
@@ -242,7 +246,7 @@ export function RegisterForm() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="bg-gradient-to-br from-[#00695C] via-[#00796B] to-[#00BFA5] rounded-2xl p-6 text-center shadow-xl"
+            className="bg-gradient-to-br from-[#1A5276] via-[#2471A3] to-[#3498DB] rounded-2xl p-6 text-center shadow-xl"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -302,7 +306,7 @@ export function RegisterForm() {
                         onClick={() => setForm(f => ({ ...f, role: "BUYER" }))}
                         className={`relative p-6 rounded-2xl border-2 transition-all text-center ${
                           form.role === "BUYER"
-                            ? "border-[#00695C] bg-[#00695C]/5 shadow-md"
+                            ? "border-[#1A5276] bg-[#1A5276]/5 shadow-md"
                             : "border-muted bg-card hover:border-muted-foreground/30"
                         }`}
                       >
@@ -310,7 +314,7 @@ export function RegisterForm() {
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="absolute top-2 right-2 w-5 h-5 bg-[#00695C] rounded-full flex items-center justify-center"
+                            className="absolute top-2 right-2 w-5 h-5 bg-[#1A5276] rounded-full flex items-center justify-center"
                           >
                             <Check className="h-3 w-3 text-white" />
                           </motion.div>
@@ -328,7 +332,7 @@ export function RegisterForm() {
                         onClick={() => setForm(f => ({ ...f, role: "SELLER" }))}
                         className={`relative p-6 rounded-2xl border-2 transition-all text-center ${
                           form.role === "SELLER"
-                            ? "border-[#D4A017] bg-[#D4A017]/5 shadow-md"
+                            ? "border-[#F4D03F] bg-[#F4D03F]/5 shadow-md"
                             : "border-muted bg-card hover:border-muted-foreground/30"
                         }`}
                       >
@@ -336,7 +340,7 @@ export function RegisterForm() {
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="absolute top-2 right-2 w-5 h-5 bg-[#D4A017] rounded-full flex items-center justify-center"
+                            className="absolute top-2 right-2 w-5 h-5 bg-[#F4D03F] rounded-full flex items-center justify-center"
                           >
                             <Check className="h-3 w-3 text-white" />
                           </motion.div>
@@ -352,7 +356,7 @@ export function RegisterForm() {
                       <Button
                         type="button"
                         onClick={handleNext}
-                        className="w-full h-11 bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white font-medium shadow-md"
+                        className="w-full h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md"
                       >
                         Continuar <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
@@ -478,7 +482,7 @@ export function RegisterForm() {
                       <Button type="button" variant="outline" onClick={handleBack} className="h-11">
                         <ArrowLeft className="h-4 w-4 mr-1" /> Atrás
                       </Button>
-                      <Button type="button" onClick={handleNext} className="flex-1 h-11 bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white font-medium">
+                      <Button type="button" onClick={handleNext} className="flex-1 h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium">
                         Continuar <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
                     </div>
@@ -604,7 +608,7 @@ export function RegisterForm() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 h-11 bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white font-medium shadow-md"
+                        className="flex-1 h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md"
                       >
                         {loading ? (
                           <span className="flex items-center gap-2">

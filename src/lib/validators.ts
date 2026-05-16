@@ -142,6 +142,85 @@ export function validateBankAccount(account: string): { valid: boolean; message:
   return { valid: true, message: 'Número de cuenta válido' }
 }
 
+// Validar cuenta específica por banco nicaragüense
+export function validateBankAccountByBank(account: string, bank: string): { valid: boolean; message: string } {
+  const cleaned = account.replace(/\D/g, '')
+  
+  switch (bank) {
+    case 'BANPRO':
+      // Banpro: 14-16 dígitos, empieza con 1, 2 o 3
+      if (cleaned.length < 14 || cleaned.length > 16) {
+        return { valid: false, message: 'Cuenta Banpro: 14-16 dígitos' }
+      }
+      if (!/^[1-3]/.test(cleaned)) {
+        return { valid: false, message: 'Cuenta Banpro debe iniciar con 1, 2 o 3' }
+      }
+      return { valid: true, message: 'Cuenta Banpro válida' }
+      
+    case 'BAC':
+      // BAC Credomatic: 14-16 dígitos, empieza con 4, 5 o 6
+      if (cleaned.length < 14 || cleaned.length > 16) {
+        return { valid: false, message: 'Cuenta BAC: 14-16 dígitos' }
+      }
+      if (!/^[4-6]/.test(cleaned)) {
+        return { valid: false, message: 'Cuenta BAC debe iniciar con 4, 5 o 6' }
+      }
+      return { valid: true, message: 'Cuenta BAC válida' }
+      
+    case 'LAFISE':
+      // Lafise: 12-14 dígitos, empieza con 7 u 8
+      if (cleaned.length < 12 || cleaned.length > 14) {
+        return { valid: false, message: 'Cuenta Lafise: 12-14 dígitos' }
+      }
+      if (!/^[78]/.test(cleaned)) {
+        return { valid: false, message: 'Cuenta Lafise debe iniciar con 7 u 8' }
+      }
+      return { valid: true, message: 'Cuenta Lafise válida' }
+      
+    default:
+      return validateBankAccount(account)
+  }
+}
+
+// Validar Billetera Móvil (teléfono nicaragüense con proveedor)
+export function validateBilleteraMovil(phone: string, provider?: string): { valid: boolean; message: string } {
+  const cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/^\+505/, '')
+  
+  // Nicaraguan mobile: 8 digits starting with 7 or 8
+  const phoneRegex = /^[78]\d{7}$/
+  
+  if (!phoneRegex.test(cleaned)) {
+    return { valid: false, message: 'Número inválido. Formato: 8XXX-XXXX' }
+  }
+  
+  // Provider prefixes (optional validation)
+  if (provider) {
+    const providerPrefixes: Record<string, string[]> = {
+      'CLARO': ['8', '3'],
+      'MOVISTAR': ['7'],
+      'CooTel': ['6'],
+    }
+    const prefixes = providerPrefixes[provider.toUpperCase()]
+    if (prefixes && !prefixes.some(p => cleaned.startsWith(p))) {
+      return { valid: false, message: `Número no corresponde a ${provider}` }
+    }
+  }
+  
+  return { valid: true, message: 'Número de Billetera Móvil válido' }
+}
+
+// Identificar tipo de tarjeta por BIN
+export function identifyCardType(cardNumber: string): { type: string; brand: string } {
+  const cleaned = cardNumber.replace(/\D/g, '')
+  
+  if (/^4/.test(cleaned)) return { type: 'VISA', brand: 'Visa' }
+  if (/^5[1-5]/.test(cleaned)) return { type: 'MASTERCARD', brand: 'Mastercard' }
+  if (/^3[47]/.test(cleaned)) return { type: 'AMEX', brand: 'American Express' }
+  if (/^6(?:011|5)/.test(cleaned)) return { type: 'DISCOVER', brand: 'Discover' }
+  
+  return { type: 'UNKNOWN', brand: 'Desconocida' }
+}
+
 // Formatear cédula mientras se escribe
 export function formatCedula(value: string): string {
   const digits = value.replace(/[^0-9A-Za-z]/g, '')

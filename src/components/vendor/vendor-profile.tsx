@@ -213,7 +213,7 @@ export function VendorProfile() {
         animate={{ opacity: 1, y: 0 }}
         className="relative"
       >
-        <div className="h-48 md:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-[#00695C] via-[#00796B] to-[#00BFA5]">
+        <div className="h-48 md:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-[#1A5276] via-[#2471A3] to-[#3498DB]">
           {coverImage ? (
             <img src={coverImage} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -242,7 +242,7 @@ export function VendorProfile() {
                   size="sm"
                   onClick={handleFollow}
                   disabled={followLoading}
-                  className={isFollowing ? "bg-white/90 dark:bg-card/90" : "bg-[#00695C] text-white shadow-md"}
+                  className={isFollowing ? "bg-white/90 dark:bg-card/90" : "bg-[#1A5276] text-white shadow-md"}
                 >
                   {followLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -533,7 +533,7 @@ export function VendorProfile() {
                         size="sm"
                         onClick={handleCreatePost}
                         disabled={posting || !newPostContent.trim()}
-                        className="bg-gradient-to-r from-[#00695C] to-[#00897B] text-white"
+                        className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] text-white"
                       >
                         {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
                         Publicar

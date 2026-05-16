@@ -18,7 +18,7 @@ import {
 } from "recharts"
 import { motion } from "framer-motion"
 
-const COLORS = ["#00695C", "#D4A017", "#C0392B", "#2E7D32", "#F57F17"]
+const COLORS = ["#1A5276", "#F4D03F", "#C0392B", "#2E7D32", "#F57F17"]
 
 // Generate monthly revenue data from transactions
 function generateRevenueData(transactions: any[]) {
@@ -154,7 +154,7 @@ export function VendorDashboard() {
           <h1 className="text-2xl font-bold font-[family-name:var(--font-poppins)]">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Bienvenido, {user?.name}</p>
         </div>
-        <Button className="bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white shadow-md" onClick={() => navigate("sell-product")}>
+        <Button className="bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white shadow-md" onClick={() => navigate("sell-product")}>
           <Plus className="h-4 w-4 mr-1" /> Vender
         </Button>
       </motion.div>
@@ -198,8 +198,8 @@ export function VendorDashboard() {
                 <AreaChart data={revenueData}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00695C" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#00695C" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#1A5276" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#1A5276" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -214,7 +214,7 @@ export function VendorDashboard() {
                     }}
                     formatter={(value: number) => [formatPrice(value), "Ingresos"]}
                   />
-                  <Area type="monotone" dataKey="revenue" stroke="#00695C" strokeWidth={2} fill="url(#colorRevenue)" />
+                  <Area type="monotone" dataKey="revenue" stroke="#1A5276" strokeWidth={2} fill="url(#colorRevenue)" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>

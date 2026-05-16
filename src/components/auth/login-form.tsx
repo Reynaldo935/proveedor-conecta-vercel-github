@@ -108,15 +108,19 @@ export function LoginForm() {
       return
     }
 
-    // Server-side email validation
+    // Server-side email validation with account existence check
     try {
       const validateRes = await fetch("/api/auth/validate-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: googleEmail }),
+        body: JSON.stringify({ email: googleEmail, checkAccount: true }),
       })
       const validateData = await validateRes.json()
       if (validateData.success && validateData.data) {
+        if (validateData.data.correoInvalido || !validateData.data.accountExists) {
+          toast.error("Correo inválido — la cuenta de Google no existe o no se puede verificar")
+          return
+        }
         if (validateData.data.disposable) {
           toast.error("No se permiten correos de dominios desechables")
           return
@@ -177,7 +181,7 @@ export function LoginForm() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="bg-gradient-to-br from-[#00695C] via-[#00796B] to-[#00BFA5] rounded-2xl p-8 text-center shadow-xl"
+            className="bg-gradient-to-br from-[#1A5276] via-[#2471A3] to-[#3498DB] rounded-2xl p-8 text-center shadow-xl"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -317,7 +321,7 @@ export function LoginForm() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.2 }}
               >
-                <Button type="submit" className="w-full h-11 bg-gradient-to-r from-[#00695C] to-[#00897B] hover:from-[#005A4E] hover:to-[#00796B] text-white font-medium shadow-md hover:shadow-lg transition-all" disabled={loading}>
+                <Button type="submit" className="w-full h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md hover:shadow-lg transition-all" disabled={loading}>
                   <AnimatePresence mode="wait">
                     {loading ? (
                       <motion.div
