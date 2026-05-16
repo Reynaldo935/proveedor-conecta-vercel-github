@@ -130,7 +130,7 @@ const TESTIMONIALS = [
 
 // ─── Animated Counter Component ──────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(target)
   const ref = useRef<HTMLSpanElement>(null)
   const hasAnimated = useRef(false)
 
@@ -430,7 +430,7 @@ export function HomeFeed() {
 
   // ─── Framer Motion Variants ──────────────────────────────────────────────
   const staggerContainer = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     show: {
       opacity: 1,
       transition: { staggerChildren: 0.07 },
@@ -438,7 +438,7 @@ export function HomeFeed() {
   }
 
   const staggerItem = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 1, y: 0 },
     show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
   }
 
@@ -507,7 +507,6 @@ export function HomeFeed() {
           <div className="max-w-2xl">
             {/* Badge */}
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="inline-flex items-center gap-2 bg-white/15 rounded-full px-4 py-1.5 text-sm font-medium mb-5 backdrop-blur-sm border border-white/10"
@@ -523,7 +522,6 @@ export function HomeFeed() {
 
             {/* Title */}
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.3 }}
               className="text-3xl md:text-5xl lg:text-6xl font-bold font-[family-name:var(--font-poppins)] mb-4 leading-tight text-white"
@@ -536,7 +534,6 @@ export function HomeFeed() {
 
             {/* Subtitle */}
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.4 }}
               className="text-lg md:text-xl text-white/90 mb-8 max-w-lg leading-relaxed"
@@ -546,7 +543,6 @@ export function HomeFeed() {
 
             {/* Search Bar in Hero */}
             <motion.form
-              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.5 }}
               onSubmit={handleSearch}
@@ -573,7 +569,6 @@ export function HomeFeed() {
 
             {/* CTA Buttons */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.6 }}
               className="flex flex-wrap gap-3"
@@ -598,7 +593,6 @@ export function HomeFeed() {
 
           {/* Animated Stats */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
             className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10 pt-8 border-t border-white/15"
@@ -611,7 +605,6 @@ export function HomeFeed() {
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 1 + i * 0.1 }}
                 className="text-center sm:text-left"
@@ -636,7 +629,6 @@ export function HomeFeed() {
           SECTION 2: CATEGORIES - Animated cards with hover effects
           ═══════════════════════════════════════════════════════════════════ */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.6 }}
@@ -716,7 +708,6 @@ export function HomeFeed() {
                   {PRODUCT_CATEGORIES.map((cat, i) => (
                     <motion.div
                       key={cat}
-                      initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.03 }}
                     >
@@ -742,7 +733,6 @@ export function HomeFeed() {
           ═══════════════════════════════════════════════════════════════════ */}
       {featuredProducts.length > 0 && !selectedCategory && (
         <motion.section
-          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.6 }}
@@ -852,7 +842,6 @@ export function HomeFeed() {
           SECTION 4: PRODUCT GRID - Beautiful cards with animations
           ═══════════════════════════════════════════════════════════════════ */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.6 }}
@@ -880,7 +869,6 @@ export function HomeFeed() {
             {Array.from({ length: 8 }).map((_, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
@@ -891,7 +879,6 @@ export function HomeFeed() {
         ) : products.length === 0 ? (
           /* Better Empty State */
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-20"
           >
@@ -1110,7 +1097,6 @@ export function HomeFeed() {
           SECTION 5: TRUST / PAYMENT METHODS
           ═══════════════════════════════════════════════════════════════════ */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.6 }}
@@ -1119,7 +1105,6 @@ export function HomeFeed() {
           <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-6 md:p-8">
             <div className="text-center mb-6">
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-1.5 text-sm font-medium text-primary mb-3"
@@ -1154,7 +1139,6 @@ export function HomeFeed() {
               ].map((item, i) => (
                 <motion.div
                   key={item.title}
-                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.15 }}
@@ -1179,7 +1163,6 @@ export function HomeFeed() {
                 {PAYMENT_METHODS.map((method, i) => (
                   <motion.div
                     key={method.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
@@ -1200,7 +1183,6 @@ export function HomeFeed() {
           SECTION 6: TESTIMONIALS - Auto-scrolling cards
           ═══════════════════════════════════════════════════════════════════ */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.6 }}
@@ -1281,7 +1263,6 @@ export function HomeFeed() {
           ═══════════════════════════════════════════════════════════════════ */}
       {!isAuthenticated && (
         <motion.section
-          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
@@ -1290,7 +1271,6 @@ export function HomeFeed() {
             <div className="bg-gradient-to-r from-primary via-[#00897B] to-[#004D40] p-8 md:p-10 text-center relative">
               <FloatingParticles />
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 className="relative z-10"

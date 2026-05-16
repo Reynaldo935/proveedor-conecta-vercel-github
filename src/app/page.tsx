@@ -1,34 +1,56 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
-import { useAppStore, type AppView } from "@/store/app-store"
-import { useAuthStore, type User } from "@/store/auth-store"
-import { useChatStore } from "@/store/chat-store"
+import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
+import { useAppStore } from "@/store/app-store"
+import { useAuthStore } from "@/store/auth-store"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { HomeFeed } from "@/components/marketplace/home-feed"
-import { LoginForm } from "@/components/auth/login-form"
-import { RegisterForm } from "@/components/auth/register-form"
-import { VerifyEmail } from "@/components/auth/verify-email"
-import { ProductDetail } from "@/components/marketplace/product-detail"
-import { SellProductForm } from "@/components/marketplace/sell-product-form"
-import { MyProducts } from "@/components/vendor/my-products"
-import { VendorProfile } from "@/components/vendor/vendor-profile"
-import { VendorDashboard } from "@/components/vendor/vendor-dashboard"
-import { BuyerDashboard } from "@/components/marketplace/buyer-dashboard"
-import { ChatView } from "@/components/chat/chat-view"
-import { ChatList } from "@/components/chat/chat-list"
-import { CheckoutView } from "@/components/payment/checkout-view"
-import { MapView } from "@/components/map/map-view"
-import { CotizacionView } from "@/components/cotizacion/cotizacion-view"
-import { NotificationsPanel } from "@/components/layout/notifications-panel"
-import { ProfileSettings } from "@/components/auth/profile-settings"
-import { SearchView } from "@/components/marketplace/search-view"
-import { AIChatbot } from "@/components/chatbot/ai-chatbot"
+import { Skeleton } from "@/components/ui/skeleton"
+
+// Dynamic imports to reduce initial bundle size and prevent server overload
+const HomeFeed = dynamic(() => import("@/components/marketplace/home-feed").then(m => ({ default: m.HomeFeed })), { ssr: true })
+const LoginForm = dynamic(() => import("@/components/auth/login-form").then(m => ({ default: m.LoginForm })), { ssr: false })
+const RegisterForm = dynamic(() => import("@/components/auth/register-form").then(m => ({ default: m.RegisterForm })), { ssr: false })
+const VerifyEmail = dynamic(() => import("@/components/auth/verify-email").then(m => ({ default: m.VerifyEmail })), { ssr: false })
+const ProductDetail = dynamic(() => import("@/components/marketplace/product-detail").then(m => ({ default: m.ProductDetail })), { ssr: false })
+const SellProductForm = dynamic(() => import("@/components/marketplace/sell-product-form").then(m => ({ default: m.SellProductForm })), { ssr: false })
+const MyProducts = dynamic(() => import("@/components/vendor/my-products").then(m => ({ default: m.MyProducts })), { ssr: false })
+const VendorProfile = dynamic(() => import("@/components/vendor/vendor-profile").then(m => ({ default: m.VendorProfile })), { ssr: false })
+const VendorDashboard = dynamic(() => import("@/components/vendor/vendor-dashboard").then(m => ({ default: m.VendorDashboard })), { ssr: false })
+const BuyerDashboard = dynamic(() => import("@/components/marketplace/buyer-dashboard").then(m => ({ default: m.BuyerDashboard })), { ssr: false })
+const ChatView = dynamic(() => import("@/components/chat/chat-view").then(m => ({ default: m.ChatView })), { ssr: false })
+const ChatList = dynamic(() => import("@/components/chat/chat-list").then(m => ({ default: m.ChatList })), { ssr: false })
+const CheckoutView = dynamic(() => import("@/components/payment/checkout-view").then(m => ({ default: m.CheckoutView })), { ssr: false })
+const MapView = dynamic(() => import("@/components/map/map-view").then(m => ({ default: m.MapView })), { ssr: false })
+const CotizacionView = dynamic(() => import("@/components/cotizacion/cotizacion-view").then(m => ({ default: m.CotizacionView })), { ssr: false })
+const NotificationsPanel = dynamic(() => import("@/components/layout/notifications-panel").then(m => ({ default: m.NotificationsPanel })), { ssr: false })
+const ProfileSettings = dynamic(() => import("@/components/auth/profile-settings").then(m => ({ default: m.ProfileSettings })), { ssr: false })
+const SearchView = dynamic(() => import("@/components/marketplace/search-view").then(m => ({ default: m.SearchView })), { ssr: false })
+const AIChatbot = dynamic(() => import("@/components/chatbot/ai-chatbot").then(m => ({ default: m.AIChatbot })), { ssr: false })
+
+// Loading fallback
+function PageLoader() {
+  return (
+    <div className="space-y-6 p-4">
+      <Skeleton className="h-12 w-3/4" />
+      <Skeleton className="h-6 w-1/2" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function ProveedorConecta() {
   const { currentView } = useAppStore()
-  const { setUser, setLoading, isAuthenticated } = useAuthStore()
+  const { setUser, isAuthenticated } = useAuthStore()
   const [showChatbot, setShowChatbot] = useState(false)
 
   // Check auth on mount

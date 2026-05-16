@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   title: "ProveedorConecta Nicaragua - Marketplace B2B/B2C",
   description: "Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en Nicaragua.",
   keywords: ["Nicaragua", "proveedores", "MIPYMES", "marketplace", "B2B", "emprendedores"],
-  icons: { icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg" },
+  icons: { icon: "/favicon.ico" },
   openGraph: {
     title: "ProveedorConecta Nicaragua",
     description: "Marketplace B2B/B2C para emprendedores nicaragüenses",
