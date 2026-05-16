@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const verificationToken = await db.verificationToken.findUnique({
+    const verificationToken = await db.verificationToken.findFirst({
       where: { token },
     })
 
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const verificationToken = await db.verificationToken.findUnique({
+    const verificationToken = await db.verificationToken.findFirst({
       where: { token },
     })
 

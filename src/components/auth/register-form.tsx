@@ -1,16 +1,21 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
-import { Mail, Lock, User, Eye, EyeOff, Phone, MapPin, Store, ShoppingBag, ArrowRight, ArrowLeft, Loader2, Check, X, ShieldCheck } from "lucide-react"
-import { validateEmail, NICARAGUA_DEPARTMENTS } from "@/lib/validators"
+import {
+  Mail, Lock, User, Eye, EyeOff, Phone, MapPin, Store, ShoppingBag,
+  ArrowRight, ArrowLeft, Loader2, Check, X, ShieldCheck, Smartphone,
+  MessageSquare, RefreshCw, Clock
+} from "lucide-react"
+import { validateEmail, validatePhoneNicaragua, formatPhoneNicaragua, NICARAGUA_DEPARTMENTS } from "@/lib/validators"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { VerifyEmail } from "@/components/auth/verify-email"
 import { motion, AnimatePresence } from "framer-motion"
@@ -18,7 +23,8 @@ import { motion, AnimatePresence } from "framer-motion"
 const STEPS = [
   { id: 1, title: "Tipo de Cuenta", subtitle: "¿Cómo usarás ProveedorConecta?" },
   { id: 2, title: "Datos Personales", subtitle: "Cuéntanos sobre ti" },
-  { id: 3, title: "Contraseña", subtitle: "Protege tu cuenta" },
+  { id: 3, title: "Verificar Teléfono", subtitle: "Confirma tu número" },
+  { id: 4, title: "Contraseña", subtitle: "Protege tu cuenta" },
 ]
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -56,6 +62,15 @@ export function RegisterForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
+  // Phone verification state
+  const [smsCode, setSmsCode] = useState("")
+  const [smsSent, setSmsSent] = useState(false)
+  const [smsVerified, setSmsVerified] = useState(false)
+  const [smsSending, setSmsSending] = useState(false)
+  const [smsVerifying, setSmsVerifying] = useState(false)
+  const [smsCountdown, setSmsCountdown] = useState(0)
+  const [receivedCode, setReceivedCode] = useState("")
+
   const [verificationState, setVerificationState] = useState<{
     show: boolean
     email: string
@@ -65,16 +80,38 @@ export function RegisterForm() {
 
   const passwordStrength = useMemo(() => getPasswordStrength(form.password), [form.password])
 
+  // Countdown timer for SMS resend
+  const startCountdown = useCallback(() => {
+    setSmsCountdown(60)
+    const timer = setInterval(() => {
+      setSmsCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }, [])
+
   // Real-time validation
   const getFieldError = (field: string): string | undefined => {
     if (!touched[field]) return undefined
     switch (field) {
       case "name":
-        return form.name.trim() ? undefined : "Nombre es requerido"
+        return form.name.trim().length >= 3 ? undefined : "Nombre es requerido (mínimo 3 caracteres)"
       case "email": {
         const check = validateEmail(form.email)
         return check.valid ? undefined : check.message
       }
+      case "phone": {
+        const check = validatePhoneNicaragua(form.phone)
+        return check.valid ? undefined : check.message
+      }
+      case "department":
+        return form.department ? undefined : "Selecciona un departamento"
+      case "address":
+        return form.address.trim().length >= 5 ? undefined : "Dirección es requerida (mínimo 5 caracteres)"
       case "password":
         return form.password.length >= 6 ? undefined : "Mínimo 6 caracteres"
       case "confirmPassword":
@@ -87,25 +124,30 @@ export function RegisterForm() {
   const validateStep = (s: number): boolean => {
     const errs: Record<string, string> = {}
     if (s === 1) {
-      // Role is always valid (default BUYER)
+      // Role is always valid
     } else if (s === 2) {
-      if (!form.name.trim()) errs.name = "Nombre es requerido"
+      if (!form.name.trim() || form.name.trim().length < 3) errs.name = "Nombre es requerido (mínimo 3 caracteres)"
       const emailCheck = validateEmail(form.email)
       if (!emailCheck.valid) errs.email = emailCheck.message
+      const phoneCheck = validatePhoneNicaragua(form.phone)
+      if (!phoneCheck.valid) errs.phone = phoneCheck.message
+      if (!form.department) errs.department = "Selecciona un departamento"
+      if (!form.address.trim() || form.address.trim().length < 5) errs.address = "Dirección es requerida (mínimo 5 caracteres)"
     } else if (s === 3) {
+      if (!smsVerified) errs.sms = "Debes verificar tu número de teléfono"
+    } else if (s === 4) {
       if (form.password.length < 6) errs.password = "Mínimo 6 caracteres"
       if (form.password !== form.confirmPassword) errs.confirmPassword = "Las contraseñas no coinciden"
     }
     setErrors(errs)
-    // Mark all fields as touched for current step
-    const fieldsToTouch = s === 2 ? ["name", "email"] : s === 3 ? ["password", "confirmPassword"] : []
+    const fieldsToTouch = s === 2 ? ["name", "email", "phone", "department", "address"] : s === 4 ? ["password", "confirmPassword"] : []
     setTouched(t => ({ ...t, ...Object.fromEntries(fieldsToTouch.map(f => [f, true])) }))
     return Object.keys(errs).length === 0
   }
 
   const handleNext = () => {
     if (validateStep(step)) {
-      setStep(s => Math.min(s + 1, 3))
+      setStep(s => Math.min(s + 1, 4))
     }
   }
 
@@ -113,16 +155,85 @@ export function RegisterForm() {
     setStep(s => Math.max(s - 1, 1))
   }
 
+  // Send SMS verification code
+  const handleSendSms = async () => {
+    const phoneCheck = validatePhoneNicaragua(form.phone)
+    if (!phoneCheck.valid) {
+      toast.error(phoneCheck.message)
+      return
+    }
+
+    setSmsSending(true)
+    try {
+      const res = await fetch("/api/auth/phone-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSmsSent(true)
+        setReceivedCode(data.data.code) // For demo: show the code
+        startCountdown()
+        toast.success("Código de verificación enviado a tu teléfono")
+      } else {
+        toast.error(data.error || "Error al enviar código")
+      }
+    } catch {
+      toast.error("Error de conexión")
+    } finally {
+      setSmsSending(false)
+    }
+  }
+
+  // Verify SMS code
+  const handleVerifySms = async () => {
+    if (!smsCode || smsCode.length !== 6) {
+      toast.error("Ingresa el código de 6 dígitos")
+      return
+    }
+
+    setSmsVerifying(true)
+    try {
+      const res = await fetch("/api/auth/phone-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone, code: smsCode, action: "verify" }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSmsVerified(true)
+        toast.success("¡Teléfono verificado exitosamente!")
+      } else {
+        toast.error(data.error || "Código incorrecto")
+      }
+    } catch {
+      toast.error("Error de conexión")
+    } finally {
+      setSmsVerifying(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateStep(3)) return
+    if (!validateStep(4)) return
+
+    // Double-check phone verification
+    if (!smsVerified) {
+      toast.error("Debes verificar tu número de teléfono primero")
+      setStep(3)
+      return
+    }
 
     setLoading(true)
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          phoneVerified: true,
+        }),
       })
       const data = await res.json()
       if (data.success) {
@@ -148,7 +259,6 @@ export function RegisterForm() {
     const googleEmail = prompt("Ingresa tu correo de Google (simulación OAuth):")
     if (!googleEmail) return
 
-    // Local email format validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     if (!emailRegex.test(googleEmail)) {
       toast.error("Formato de correo inválido")
@@ -178,7 +288,13 @@ export function RegisterForm() {
         }
       }
     } catch {
-      // If validation endpoint fails, proceed anyway (don't block registration)
+      // If validation endpoint fails, proceed anyway
+    }
+
+    // For Google OAuth, still require phone verification
+    if (!smsVerified) {
+      toast.error("Primero completa el formulario y verifica tu teléfono antes de registrarte con Google")
+      return
     }
 
     setLoading(true)
@@ -188,10 +304,13 @@ export function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: googleEmail,
-          name: googleEmail.split("@")[0],
+          name: form.name || googleEmail.split("@")[0],
           googleId: "google_" + Date.now(),
           avatar: "",
           role: form.role,
+          phone: form.phone,
+          department: form.department,
+          address: form.address,
         }),
       })
       const data = await res.json()
@@ -230,7 +349,7 @@ export function RegisterForm() {
     )
   }
 
-  const progressValue = (step / 3) * 100
+  const progressValue = (step / 4) * 100
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
@@ -264,7 +383,7 @@ export function RegisterForm() {
             {/* Step Progress */}
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-xs text-white/70">
-                <span>Paso {step} de 3</span>
+                <span>Paso {step} de 4</span>
                 <span>{STEPS[step - 1].title}</span>
               </div>
               <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
@@ -274,6 +393,20 @@ export function RegisterForm() {
                   animate={{ width: `${progressValue}%` }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                 />
+              </div>
+              {/* Step indicators */}
+              <div className="flex justify-between mt-2">
+                {STEPS.map((s, i) => (
+                  <div key={s.id} className="flex flex-col items-center">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                      step > i + 1 ? "bg-white/90 text-[#1A5276]" :
+                      step === i + 1 ? "bg-white/40 text-white border-2 border-white" :
+                      "bg-white/10 text-white/50"
+                    }`}>
+                      {step > i + 1 ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>
@@ -381,7 +514,7 @@ export function RegisterForm() {
                   </motion.div>
                 )}
 
-                {/* Step 2: Personal Info */}
+                {/* Step 2: Personal Info - ALL FIELDS REQUIRED */}
                 {step === 2 && (
                   <motion.div
                     key="step2"
@@ -393,11 +526,12 @@ export function RegisterForm() {
                   >
                     <div className="text-center mb-4">
                       <h2 className="text-lg font-semibold">Datos Personales</h2>
-                      <p className="text-sm text-muted-foreground">Cuéntanos sobre ti</p>
+                      <p className="text-sm text-muted-foreground">Todos los campos son obligatorios</p>
                     </div>
 
+                    {/* Name */}
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nombre completo</Label>
+                      <Label htmlFor="name">Nombre completo <span className="text-destructive">*</span></Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -419,8 +553,9 @@ export function RegisterForm() {
                       )}
                     </div>
 
+                    {/* Email */}
                     <div className="space-y-2">
-                      <Label htmlFor="email">Correo electrónico</Label>
+                      <Label htmlFor="email">Correo electrónico <span className="text-destructive">*</span></Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -443,10 +578,41 @@ export function RegisterForm() {
                       )}
                     </div>
 
+                    {/* Phone */}
                     <div className="space-y-2">
-                      <Label htmlFor="department">Departamento</Label>
-                      <Select value={form.department} onValueChange={(value) => setForm(f => ({ ...f, department: value }))}>
-                        <SelectTrigger className="w-full h-11">
+                      <Label htmlFor="phone">Teléfono <span className="text-destructive">*</span></Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="8XXX-XXXX"
+                          value={form.phone}
+                          onChange={(e) => {
+                            const formatted = formatPhoneNicaragua(e.target.value)
+                            setForm(f => ({ ...f, phone: formatted }))
+                            setTouched(t => ({ ...t, phone: true }))
+                          }}
+                          onBlur={() => setTouched(t => ({ ...t, phone: true }))}
+                          className={`pl-9 h-11 ${getFieldError("phone") ? "border-destructive" : touched.phone && form.phone && !getFieldError("phone") ? "border-green-500" : ""}`}
+                          maxLength={9}
+                        />
+                        {touched.phone && form.phone && !getFieldError("phone") && (
+                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                        )}
+                      </div>
+                      {getFieldError("phone") && (
+                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+                          <X className="h-3 w-3" /> {getFieldError("phone")}
+                        </motion.p>
+                      )}
+                    </div>
+
+                    {/* Department */}
+                    <div className="space-y-2">
+                      <Label htmlFor="department">Departamento <span className="text-destructive">*</span></Label>
+                      <Select value={form.department} onValueChange={(value) => { setForm(f => ({ ...f, department: value })); setTouched(t => ({ ...t, department: true })) }}>
+                        <SelectTrigger className={`w-full h-11 ${getFieldError("department") ? "border-destructive" : form.department ? "border-green-500" : ""}`}>
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-muted-foreground" />
                             <SelectValue placeholder="Selecciona un departamento" />
@@ -460,22 +626,35 @@ export function RegisterForm() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {getFieldError("department") && (
+                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+                          <X className="h-3 w-3" /> {getFieldError("department")}
+                        </motion.p>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Teléfono</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input id="phone" placeholder="8XXX-XXXX" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} className="pl-9 h-11" />
-                        </div>
+                    {/* Address */}
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Dirección <span className="text-destructive">*</span></Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="address"
+                          placeholder="Casa #12, Barrio Central, Managua"
+                          value={form.address}
+                          onChange={(e) => { setForm(f => ({ ...f, address: e.target.value })); setTouched(t => ({ ...t, address: true })) }}
+                          onBlur={() => setTouched(t => ({ ...t, address: true }))}
+                          className={`pl-9 h-11 ${getFieldError("address") ? "border-destructive" : touched.address && form.address && !getFieldError("address") ? "border-green-500" : ""}`}
+                        />
+                        {touched.address && form.address && !getFieldError("address") && (
+                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                        )}
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="address">Dirección</Label>
-                        <div className="relative">
-                          <Input id="address" placeholder="Casa #12, Barrio..." value={form.address} onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))} className="h-11" />
-                        </div>
-                      </div>
+                      {getFieldError("address") && (
+                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+                          <X className="h-3 w-3" /> {getFieldError("address")}
+                        </motion.p>
+                      )}
                     </div>
 
                     <div className="flex gap-3 pt-2">
@@ -489,10 +668,181 @@ export function RegisterForm() {
                   </motion.div>
                 )}
 
-                {/* Step 3: Password */}
+                {/* Step 3: Phone Verification (SMS Code) */}
                 {step === 3 && (
                   <motion.div
                     key="step3"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-5"
+                  >
+                    <div className="text-center mb-4">
+                      <h2 className="text-lg font-semibold">Verificar Teléfono</h2>
+                      <p className="text-sm text-muted-foreground">Te enviaremos un código por SMS</p>
+                    </div>
+
+                    {/* Phone number display */}
+                    <div className="bg-muted/50 rounded-xl p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Smartphone className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Número registrado</p>
+                        <p className="font-semibold">{form.phone}</p>
+                      </div>
+                      {smsVerified && (
+                        <Badge className="ml-auto bg-green-100 text-green-700 border-green-200">
+                          <Check className="h-3 w-3 mr-1" /> Verificado
+                        </Badge>
+                      )}
+                    </div>
+
+                    {!smsVerified && (
+                      <>
+                        {/* Send code button */}
+                        {!smsSent ? (
+                          <Button
+                            type="button"
+                            className="w-full h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md"
+                            onClick={handleSendSms}
+                            disabled={smsSending}
+                          >
+                            {smsSending ? (
+                              <span className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" /> Enviando código...
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4" /> Enviar código de verificación
+                              </span>
+                            )}
+                          </Button>
+                        ) : (
+                          <>
+                            {/* Show received code for demo */}
+                            {receivedCode && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 border border-amber-200 dark:border-amber-700"
+                              >
+                                <p className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-1">
+                                  📱 Código de verificación (demo):
+                                </p>
+                                <p className="text-2xl font-bold font-[family-name:var(--font-jetbrains)] text-amber-800 dark:text-amber-200 tracking-widest">
+                                  {receivedCode}
+                                </p>
+                                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                                  En producción, este código llegaría por SMS a tu teléfono
+                                </p>
+                              </motion.div>
+                            )}
+
+                            {/* Code input */}
+                            <div className="space-y-2">
+                              <Label htmlFor="smsCode">Código de verificación (6 dígitos)</Label>
+                              <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                  <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    id="smsCode"
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="000000"
+                                    value={smsCode}
+                                    onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                    className="pl-9 h-11 text-center text-lg font-[family-name:var(--font-jetbrains)] tracking-widest"
+                                    maxLength={6}
+                                  />
+                                </div>
+                                <Button
+                                  type="button"
+                                  onClick={handleVerifySms}
+                                  disabled={smsVerifying || smsCode.length !== 6}
+                                  className="h-11 px-4 bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  {smsVerifying ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Check className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Resend */}
+                            <div className="text-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleSendSms}
+                                disabled={smsCountdown > 0 || smsSending}
+                                className="text-sm"
+                              >
+                                {smsCountdown > 0 ? (
+                                  <span className="flex items-center gap-1 text-muted-foreground">
+                                    <Clock className="h-3 w-3" /> Reenviar en {smsCountdown}s
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1">
+                                    <RefreshCw className="h-3 w-3" /> Reenviar código
+                                  </span>
+                                )}
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {/* Verified success */}
+                    {smsVerified && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-700"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+                            <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-green-700 dark:text-green-400">¡Teléfono verificado!</p>
+                            <p className="text-sm text-green-600 dark:text-green-500">Tu número {form.phone} ha sido confirmado</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {errors.sms && (
+                      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+                        <X className="h-3 w-3" /> {errors.sms}
+                      </motion.p>
+                    )}
+
+                    <div className="flex gap-3 pt-2">
+                      <Button type="button" variant="outline" onClick={handleBack} className="h-11">
+                        <ArrowLeft className="h-4 w-4 mr-1" /> Atrás
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleNext}
+                        disabled={!smsVerified}
+                        className="flex-1 h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium"
+                      >
+                        Continuar <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Step 4: Password */}
+                {step === 4 && (
+                  <motion.div
+                    key="step4"
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -50 }}

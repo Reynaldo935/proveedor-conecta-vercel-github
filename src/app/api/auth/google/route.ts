@@ -2,15 +2,41 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
+import { validateEmail, validatePhoneNicaragua, NICARAGUA_DEPARTMENTS } from '@/lib/validators'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, name, googleId, avatar, role } = body
+    const { email, name, googleId, avatar, role, phone, department, address } = body
 
     if (!email) {
       return NextResponse.json({ success: false, error: 'Email es requerido' }, { status: 400 })
     }
+
+    // Validate email format and reject disposable domains
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.valid) {
+      return NextResponse.json({ success: false, error: 'Correo inválido: ' + emailValidation.message }, { status: 400 })
+    }
+
+    // Validate phone if provided
+    if (phone) {
+      const phoneValidation = validatePhoneNicaragua(phone)
+      if (!phoneValidation.valid) {
+        return NextResponse.json({ success: false, error: phoneValidation.message }, { status: 400 })
+      }
+    }
+
+    // Validate department if provided
+    if (department) {
+      const validDepartments = NICARAGUA_DEPARTMENTS as readonly string[]
+      if (!validDepartments.includes(department)) {
+        return NextResponse.json({ success: false, error: 'Departamento inválido' }, { status: 400 })
+      }
+    }
+
+    // Normalize phone if provided
+    const cleanedPhone = phone ? phone.replace(/[\s\-\(\)]/g, '') : undefined
 
     let user = await db.user.findUnique({
       where: { email },
@@ -18,15 +44,20 @@ export async function POST(request: NextRequest) {
     })
 
     if (user) {
-      // Update Google ID but do NOT auto-verify email
+      // Update Google ID and any provided fields, but do NOT auto-verify email
+      const updateData: Record<string, unknown> = {
+        googleId: googleId || user.googleId,
+        avatar: avatar || user.avatar,
+        name: name || user.name,
+      }
+      // Only update phone/department/address if provided (don't overwrite existing with empty)
+      if (cleanedPhone) updateData.phone = cleanedPhone
+      if (department) updateData.department = department
+      if (address) updateData.address = address
+
       user = await db.user.update({
         where: { id: user.id },
-        data: {
-          googleId: googleId || user.googleId,
-          avatar: avatar || user.avatar,
-          name: name || user.name,
-          // emailVerified stays as-is — must verify explicitly
-        },
+        data: updateData,
         include: { businessProfile: true },
       })
     } else {
@@ -39,8 +70,12 @@ export async function POST(request: NextRequest) {
           googleId: googleId || '',
           avatar: avatar || '',
           role: userRole,
+          phone: cleanedPhone || '',
+          department: department || '',
+          address: address || '',
           isVerified: false,
           emailVerified: false, // Must verify even for Google users
+          phoneVerified: false,
         },
         include: { businessProfile: true },
       })

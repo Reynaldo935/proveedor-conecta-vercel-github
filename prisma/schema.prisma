@@ -15,11 +15,13 @@ model User {
   role          String   @default("BUYER") // BUYER, SELLER, ADMIN
   avatar        String   @default("")
   phone         String   @default("")
+  department    String   @default("")
   address       String   @default("")
   bio           String   @default("")
   isVerified    Boolean  @default(false)
   googleId      String?
   emailVerified Boolean  @default(false)
+  phoneVerified Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -245,6 +247,15 @@ model VerificationToken {
   id        String   @id @default(cuid())
   email     String
   token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PhoneVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  verified  Boolean  @default(false)
   expiresAt DateTime
   createdAt DateTime @default(now())
 }

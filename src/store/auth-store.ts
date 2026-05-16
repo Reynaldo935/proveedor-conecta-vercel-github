@@ -7,10 +7,12 @@ interface User {
   role: 'BUYER' | 'SELLER' | 'ADMIN'
   avatar: string
   phone: string
+  department: string
   address: string
   bio: string
   isVerified: boolean
   emailVerified: boolean
+  phoneVerified: boolean
   businessProfile?: {
     id: string
     businessName: string

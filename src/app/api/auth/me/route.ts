@@ -21,7 +21,14 @@ export async function GET() {
     }
 
     const { password: _, ...safeUser } = user
-    return NextResponse.json({ success: true, data: safeUser })
+    // Ensure phoneVerified is explicitly included in response
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...safeUser,
+        phoneVerified: user.phoneVerified,
+      },
+    })
   } catch (error) {
     console.error('Get current user error:', error)
     return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 500 })
@@ -38,16 +45,30 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { name, phone, address, bio, avatar } = body
+    const { name, phone, department, address, bio, avatar } = body
+
+    const updateData: Record<string, unknown> = {}
+    if (name !== undefined) updateData.name = name
+    if (phone !== undefined) updateData.phone = phone
+    if (department !== undefined) updateData.department = department
+    if (address !== undefined) updateData.address = address
+    if (bio !== undefined) updateData.bio = bio
+    if (avatar !== undefined) updateData.avatar = avatar
 
     const user = await db.user.update({
       where: { id: userId },
-      data: { name, phone, address, bio, avatar },
+      data: updateData,
       include: { businessProfile: true },
     })
 
     const { password: _, ...safeUser } = user
-    return NextResponse.json({ success: true, data: safeUser })
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...safeUser,
+        phoneVerified: user.phoneVerified,
+      },
+    })
   } catch (error) {
     console.error('Update user error:', error)
     return NextResponse.json({ success: false, error: 'Error al actualizar usuario' }, { status: 500 })
