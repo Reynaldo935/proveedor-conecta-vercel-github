@@ -30,8 +30,16 @@ import {
   Camera,
   Check,
   Loader2,
+  Package,
+  Plus,
+  Trash2,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+
+interface QuantityDiscountRule {
+  minQty: number
+  discountPercent: number
+}
 
 interface ProductForm {
   title: string
@@ -46,6 +54,7 @@ interface ProductForm {
   quantity: string
   discountStart: string
   discountEnd: string
+  quantityDiscounts: QuantityDiscountRule[]
 }
 
 const STEP_INFO = [
@@ -75,6 +84,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
     quantity: "1",
     discountStart: "",
     discountEnd: "",
+    quantityDiscounts: [],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -104,6 +114,12 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
               discountEnd: p.discountEnd
                 ? new Date(p.discountEnd).toISOString().split("T")[0]
                 : "",
+              quantityDiscounts: p.quantityDiscounts
+                ? p.quantityDiscounts.map((qd: { minQty: number; discountPercent: number }) => ({
+                    minQty: qd.minQty,
+                    discountPercent: qd.discountPercent,
+                  }))
+                : [],
             })
           }
         })
@@ -647,6 +663,186 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Quantity Discount Section */}
+                <Card className="border-amber-500/40 bg-amber-50/50 dark:bg-amber-950/20 mt-2">
+                  <CardHeader className="pb-3 pt-4 px-4">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Badge className="bg-amber-500 text-white hover:bg-amber-600">
+                        📦 Cantidad
+                      </Badge>
+                      Descuento por Cantidad
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Configura descuentos cuando el comprador lleva más cantidad
+                    </p>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 space-y-3">
+                    {/* Existing rules list */}
+                    <AnimatePresence>
+                      {form.quantityDiscounts.map((rule, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: -10, height: 0 }}
+                          animate={{ opacity: 1, y: 0, height: "auto" }}
+                          exit={{ opacity: 0, y: -10, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex items-center justify-between gap-2 bg-background rounded-lg px-3 py-2 border"
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <Package className="h-4 w-4 text-amber-500 shrink-0" />
+                            <span className="text-sm font-medium truncate">
+                              Lleva {rule.minQty}+ → {rule.discountPercent}% descuento
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {form.price && (
+                              <span className="text-xs text-muted-foreground">
+                                C$
+                                {(
+                                  parseFloat(form.price) *
+                                  (1 - rule.discountPercent / 100)
+                                ).toFixed(2)}{" "}
+                                c/u
+                              </span>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() =>
+                                setForm((f) => ({
+                                  ...f,
+                                  quantityDiscounts: f.quantityDiscounts.filter(
+                                    (_, i) => i !== idx
+                                  ),
+                                }))
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+
+                    {/* Add rule button / form */}
+                    {form.quantityDiscounts.length < 5 ? (
+                      <div className="space-y-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-amber-500/40 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+                          onClick={() => {
+                            setForm((f) => ({
+                              ...f,
+                              quantityDiscounts: [
+                                ...f.quantityDiscounts,
+                                { minQty: 2, discountPercent: 5 },
+                              ],
+                            }))
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Agregar regla
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Máximo 5 reglas de descuento por cantidad
+                      </p>
+                    )}
+
+                    {/* Editing the last added (or newly added) rule — inline inputs for the newest rule */}
+                    {form.quantityDiscounts.length > 0 && (
+                      <div className="space-y-2 border-t pt-3">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Editar última regla agregada:
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Cantidad mínima</Label>
+                            <Input
+                              type="number"
+                              min={2}
+                              value={
+                                form.quantityDiscounts[
+                                  form.quantityDiscounts.length - 1
+                                ].minQty
+                              }
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 2
+                                setForm((f) => {
+                                  const updated = [...f.quantityDiscounts]
+                                  updated[updated.length - 1] = {
+                                    ...updated[updated.length - 1],
+                                    minQty: val,
+                                  }
+                                  return { ...f, quantityDiscounts: updated }
+                                })
+                              }}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Descuento %</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={99}
+                              value={
+                                form.quantityDiscounts[
+                                  form.quantityDiscounts.length - 1
+                                ].discountPercent
+                              }
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0
+                                setForm((f) => {
+                                  const updated = [...f.quantityDiscounts]
+                                  updated[updated.length - 1] = {
+                                    ...updated[updated.length - 1],
+                                    discountPercent: val,
+                                  }
+                                  return { ...f, quantityDiscounts: updated }
+                                })
+                              }}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Preview */}
+                    {form.quantityDiscounts.length > 0 && form.price && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-background rounded-lg p-3 border border-amber-500/20"
+                      >
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1.5">
+                          Vista previa:
+                        </p>
+                        <div className="space-y-1">
+                          {form.quantityDiscounts
+                            .sort((a, b) => a.minQty - b.minQty)
+                            .map((rule, idx) => (
+                              <p key={idx} className="text-xs text-muted-foreground">
+                                Ej: Lleva {rule.minQty}+ → {rule.discountPercent}% de
+                                descuento → Precio unitario: C$
+                                {(
+                                  parseFloat(form.price) *
+                                  (1 - rule.discountPercent / 100)
+                                ).toFixed(2)}
+                              </p>
+                            ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </CardContent>
+                </Card>
               </motion.div>
             )}
           </AnimatePresence>

@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
 import { Mail, Lock, User, Eye, EyeOff, Phone, MapPin, Store, ShoppingBag, ArrowRight, ArrowLeft, Loader2, Check, X, ShieldCheck } from "lucide-react"
-import { validateEmail } from "@/lib/validators"
+import { validateEmail, NICARAGUA_DEPARTMENTS } from "@/lib/validators"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { VerifyEmail } from "@/components/auth/verify-email"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -48,6 +49,7 @@ export function RegisterForm() {
     password: "",
     confirmPassword: "",
     phone: "",
+    department: "",
     address: "",
     role: "BUYER" as "BUYER" | "SELLER",
   })
@@ -145,6 +147,35 @@ export function RegisterForm() {
   const handleGoogleRegister = async () => {
     const googleEmail = prompt("Ingresa tu correo de Google (simulación OAuth):")
     if (!googleEmail) return
+
+    // Local email format validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!emailRegex.test(googleEmail)) {
+      toast.error("Formato de correo inválido")
+      return
+    }
+
+    // Server-side email validation
+    try {
+      const validateRes = await fetch("/api/auth/validate-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: googleEmail }),
+      })
+      const validateData = await validateRes.json()
+      if (validateData.success && validateData.data) {
+        if (validateData.data.disposable) {
+          toast.error("No se permiten correos de dominios desechables")
+          return
+        }
+        if (!validateData.data.valid) {
+          toast.error("Correo inválido. Verifica que la dirección de correo exista.")
+          return
+        }
+      }
+    } catch {
+      // If validation endpoint fails, proceed anyway (don't block registration)
+    }
 
     setLoading(true)
     try {
@@ -408,6 +439,25 @@ export function RegisterForm() {
                       )}
                     </div>
 
+                    <div className="space-y-2">
+                      <Label htmlFor="department">Departamento</Label>
+                      <Select value={form.department} onValueChange={(value) => setForm(f => ({ ...f, department: value }))}>
+                        <SelectTrigger className="w-full h-11">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Selecciona un departamento" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {NICARAGUA_DEPARTMENTS.map((dept) => (
+                            <SelectItem key={dept} value={dept}>
+                              {dept}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="phone">Teléfono</Label>
@@ -417,10 +467,9 @@ export function RegisterForm() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="address">Ubicación</Label>
+                        <Label htmlFor="address">Dirección</Label>
                         <div className="relative">
-                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input id="address" placeholder="Managua" value={form.address} onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))} className="pl-9 h-11" />
+                          <Input id="address" placeholder="Casa #12, Barrio..." value={form.address} onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))} className="h-11" />
                         </div>
                       </div>
                     </div>

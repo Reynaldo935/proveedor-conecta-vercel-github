@@ -88,6 +88,7 @@ model Product {
   savedBy      SavedProduct[]
   chatRooms    ChatRoom[]
   cotizacionResponses CotizacionResponse[]
+  quantityDiscounts QuantityDiscount[]
 }
 
 model Transaction {
@@ -243,7 +244,17 @@ model WallPost {
 model VerificationToken {
   id        String   @id @default(cuid())
   email     String
-  token     String
+  token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model QuantityDiscount {
+  id        String   @id @default(cuid())
+  productId String
+  minQty    Int      // minimum quantity to activate discount
+  discountPercent Float // e.g. 10 means 10% off
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }

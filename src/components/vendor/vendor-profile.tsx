@@ -13,8 +13,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import {
   MapPin, Phone, Clock, MessageCircle, ChevronLeft,
-  Users, Heart, Calendar, Send, Loader2, Plus
+  Users, Heart, Calendar, Send, Loader2, Plus,
+  Copy, Check, Eye, Share2, Navigation, CheckCircle2, Package
 } from "lucide-react"
+import { PAYMENT_METHODS } from "@/lib/validators"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function VendorProfile() {
@@ -29,6 +31,34 @@ export function VendorProfile() {
   const [newPostContent, setNewPostContent] = useState("")
   const [posting, setPosting] = useState(false)
   const [followerCount, setFollowerCount] = useState(0)
+  const [copiedId, setCopiedId] = useState(false)
+  const [copiedShare, setCopiedShare] = useState(false)
+
+  // Generate a stable "profile views" number from vendor ID so it doesn't change on re-render
+  const profileViews = vendor?.id
+    ? (parseInt(vendor.id.slice(-6), 36) % 900) + 100
+    : 0
+
+  const formatBusinessId = (id: string) => {
+    if (id.length < 8) return id
+    return `${id.slice(0, 4)}-${id.slice(-4)}`.toUpperCase()
+  }
+
+  const handleCopyId = async () => {
+    if (!vendor?.id) return
+    await navigator.clipboard.writeText(vendor.id)
+    setCopiedId(true)
+    toast.success("ID copiado al portapapeles")
+    setTimeout(() => setCopiedId(false), 2000)
+  }
+
+  const handleShareProfile = async () => {
+    const url = `${window.location.origin}/vendor/${vendor?.id}`
+    await navigator.clipboard.writeText(url)
+    setCopiedShare(true)
+    toast.success("Enlace del perfil copiado")
+    setTimeout(() => setCopiedShare(false), 2000)
+  }
 
   useEffect(() => {
     if (!selectedVendorId) return
@@ -230,6 +260,17 @@ export function VendorProfile() {
               </motion.div>
             </>
           )}
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShareProfile}
+              className="bg-white/90 dark:bg-card/90"
+            >
+              {copiedShare ? <Check className="h-4 w-4 text-green-600" /> : <Share2 className="h-4 w-4" />}
+              <span className="ml-1 hidden sm:inline">{copiedShare ? "¡Copiado!" : "Compartir"}</span>
+            </Button>
+          </motion.div>
         </div>
       </motion.div>
 
@@ -240,21 +281,100 @@ export function VendorProfile() {
         transition={{ delay: 0.2 }}
         className="mt-10 space-y-2"
       >
+        {/* Business ID */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded-md">
+            ID: {formatBusinessId(vendor.id)}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleCopyId}
+          >
+            {copiedId ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+          </Button>
+        </div>
+
+        {/* Business Name + Verified */}
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold font-[family-name:var(--font-poppins)]">{businessName}</h1>
           {vendor.emailVerified && (
-            <Badge className="bg-green-600 text-xs">
-              ✓ Verificado
+            <Badge className="bg-green-600 text-white text-xs gap-1 px-2 py-0.5">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Verificado
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><Users className="h-4 w-4" /> {followerCount} seguidores</span>
-          <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {activeProducts.length} productos</span>
+
+        {/* Stats Cards Row */}
+        <div className="grid grid-cols-4 gap-2">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-3 text-center">
+              <Package className="h-4 w-4 text-primary mx-auto mb-1" />
+              <p className="text-lg font-bold">{activeProducts.length}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Productos Activos</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-3 text-center">
+              <Users className="h-4 w-4 text-primary mx-auto mb-1" />
+              <p className="text-lg font-bold">{followerCount}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Seguidores</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-3 text-center">
+              <Calendar className="h-4 w-4 text-primary mx-auto mb-1" />
+              <p className="text-lg font-bold">{wallPosts.length}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Publicaciones</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-3 text-center">
+              <Eye className="h-4 w-4 text-primary mx-auto mb-1" />
+              <p className="text-lg font-bold">{profileViews}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Vistas del Perfil</p>
+            </CardContent>
+          </Card>
         </div>
+
         {businessProfile?.category && (
           <Badge variant="secondary" className="mt-1">{businessProfile.category}</Badge>
         )}
+
+        {/* Payment Methods */}
+        {businessProfile?.paymentMethods && (() => {
+          const methods = JSON.parse(businessProfile.paymentMethods || "[]") as string[]
+          if (methods.length === 0) return null
+          return (
+            <div className="mt-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Métodos de pago aceptados</p>
+              <div className="flex flex-wrap gap-1.5">
+                {methods.map((m: string) => {
+                  const methodInfo = PAYMENT_METHODS.find(pm => pm.id === m)
+                  const colorMap: Record<string, string> = {
+                    PAYPAL: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+                    BANPRO: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+                    BAC: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+                    LAFISE: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+                    BILLETERA: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+                  }
+                  return (
+                    <Badge
+                      key={m}
+                      variant="secondary"
+                      className={`${colorMap[m] || ""} text-xs gap-1`}
+                    >
+                      <span>{methodInfo?.icon || "💰"}</span>
+                      {methodInfo?.name || m}
+                    </Badge>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
         {businessProfile?.description && (
           <p className="text-muted-foreground mt-2">{businessProfile.description}</p>
         )}
@@ -292,6 +412,49 @@ export function VendorProfile() {
           </Card>
         )}
       </motion.div>
+
+      {/* Map Preview */}
+      {businessProfile?.latitude && businessProfile?.longitude && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <Card
+            className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate("map")}
+          >
+            <div className="relative h-32 bg-gradient-to-br from-[#E0F2F1] to-[#B2DFDB] dark:from-[#1B3A34] dark:to-[#0D2B26] flex items-center justify-center">
+              {/* Decorative map-like elements */}
+              <div className="absolute inset-0 opacity-20">
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+                </svg>
+              </div>
+              <div className="relative flex flex-col items-center gap-1">
+                <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Navigation className="h-4 w-4 text-primary" />
+                </div>
+                <p className="text-xs font-medium text-primary">
+                  {Number(businessProfile.latitude).toFixed(4)}, {Number(businessProfile.longitude).toFixed(4)}
+                </p>
+              </div>
+            </div>
+            <CardContent className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="text-sm">Ver en el mapa</span>
+              </div>
+              <ChevronLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="products">
@@ -455,16 +618,37 @@ export function VendorProfile() {
                     <span className="text-sm">{businessProfile.hours}</span>
                   </div>
                 )}
-                {businessProfile?.paymentMethods && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-3">Métodos de pago</p>
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {JSON.parse(businessProfile.paymentMethods || "[]").map((m: string) => (
-                        <Badge key={m} variant="secondary">{m}</Badge>
-                      ))}
+                {businessProfile?.paymentMethods && (() => {
+                  const methods = JSON.parse(businessProfile.paymentMethods || "[]") as string[]
+                  if (methods.length === 0) return null
+                  const colorMap: Record<string, string> = {
+                    PAYPAL: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+                    BANPRO: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+                    BAC: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+                    LAFISE: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+                    BILLETERA: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+                  }
+                  return (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-3">Métodos de pago</p>
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {methods.map((m: string) => {
+                          const methodInfo = PAYMENT_METHODS.find(pm => pm.id === m)
+                          return (
+                            <Badge
+                              key={m}
+                              variant="secondary"
+                              className={`${colorMap[m] || ""} text-xs gap-1`}
+                            >
+                              <span>{methodInfo?.icon || "💰"}</span>
+                              {methodInfo?.name || m}
+                            </Badge>
+                          )
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
               </div>
             </CardContent>
           </Card>

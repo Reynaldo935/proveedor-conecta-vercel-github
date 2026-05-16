@@ -37,8 +37,10 @@ import {
   Zap,
   Quote,
   ArrowUpRight,
+  UserPlus,
+  MessageCircle,
 } from "lucide-react"
-import { PRODUCT_CATEGORIES, PAYMENT_METHODS } from "@/lib/validators"
+import { PRODUCT_CATEGORIES, PAYMENT_METHODS, NICARAGUA_DEPARTMENTS } from "@/lib/validators"
 import { toast } from "sonner"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 
@@ -82,6 +84,27 @@ const CATEGORY_ICONS: Record<string, string> = {
   "Energía y Combustible": "⚡",
   "Impresión y Diseño": "🖨️",
   "Otros": "📦",
+}
+
+// ─── Department Emojis Map ───────────────────────────────────────────────────
+const DEPARTMENT_EMOJIS: Record<string, string> = {
+  "Managua": "🏙️",
+  "León": "⛪",
+  "Granada": "🏛️",
+  "Masaya": "🎭",
+  "Carazo": "🌊",
+  "Rivas": "🏖️",
+  "Chinandega": "🏭",
+  "Estelí": "🏔️",
+  "Matagalpa": "☕",
+  "Jinotega": "🌲",
+  "Nueva Segovia": "⛏️",
+  "Madriz": "🏺",
+  "Boaco": "🐄",
+  "Chontales": "🤠",
+  "Río San Juan": "🐊",
+  "Región Autónoma Caribe Norte": "🌴",
+  "Región Autónoma Caribe Sur": "🏝️",
 }
 
 // ─── Testimonials Data ───────────────────────────────────────────────────────
@@ -247,7 +270,7 @@ function FeaturedSkeleton() {
 // MAIN HOME FEED COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 export function HomeFeed() {
-  const { navigate, selectedCategory, setSelectedCategory, setSearchQuery } = useAppStore()
+  const { navigate, selectedCategory, setSelectedCategory, setSearchQuery, selectedLocation, setSelectedLocation } = useAppStore()
   const { user, isAuthenticated } = useAuthStore()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -723,6 +746,76 @@ export function HomeFeed() {
                   ))}
                 </div>
               </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 2.5: DEPARTAMENTOS DE NICARAGUA
+          ═══════════════════════════════════════════════════════════════════ */}
+      <motion.section
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.6 }}
+        className="space-y-5"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold font-[family-name:var(--font-poppins)] flex items-center gap-2">
+            📍 Explora por Departamento
+          </h2>
+          <Badge variant="secondary" className="rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <MapPin className="h-3 w-3 mr-1" /> 17 Departamentos
+          </Badge>
+        </div>
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3"
+        >
+          {NICARAGUA_DEPARTMENTS.map((dept) => (
+            <motion.button
+              key={dept}
+              variants={staggerItem}
+              whileHover={{ y: -6, scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                setSelectedLocation(selectedLocation === dept ? "" : dept)
+                if (selectedLocation !== dept) {
+                  setSearchQuery(dept)
+                  navigate("search")
+                }
+              }}
+              className={`flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all duration-300 ${
+                selectedLocation === dept
+                  ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                  : "border-transparent bg-card hover:border-primary/30 shadow-sm hover:shadow-md"
+              }`}
+            >
+              <span className="text-3xl">{DEPARTMENT_EMOJIS[dept] || "📍"}</span>
+              <span className="text-xs font-medium text-center leading-tight line-clamp-2">{dept}</span>
+            </motion.button>
+          ))}
+        </motion.div>
+
+        {/* Active location filter indicator */}
+        <AnimatePresence>
+          {selectedLocation && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex items-center gap-2 overflow-hidden"
+            >
+              <Badge variant="default" className="bg-primary rounded-lg">
+                {DEPARTMENT_EMOJIS[selectedLocation] || "📍"} {selectedLocation}
+              </Badge>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedLocation("")}>
+                Limpiar ubicación
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1255,6 +1348,137 @@ export function HomeFeed() {
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 7: CÓMO FUNCIONA - How it Works
+          ═══════════════════════════════════════════════════════════════════ */}
+      <motion.section
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.6 }}
+        className="space-y-5"
+      >
+        <div className="text-center mb-2">
+          <motion.div
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 bg-[#D4A017]/10 rounded-full px-4 py-1.5 text-sm font-medium text-[#B8860B] mb-3"
+          >
+            <Zap className="h-4 w-4" /> Fácil y Rápido
+          </motion.div>
+          <h2 className="text-xl font-semibold font-[family-name:var(--font-poppins)]">
+            ¿Cómo Funciona?
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tres pasos simples para empezar a hacer negocios
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {[
+            {
+              step: 1,
+              icon: <UserPlus className="h-8 w-8 text-primary" />,
+              title: "Regístrate Gratis",
+              desc: "Crea tu cuenta en segundos y verifica tu correo",
+            },
+            {
+              step: 2,
+              icon: <Search className="h-8 w-8 text-[#D4A017]" />,
+              title: "Publica o Busca",
+              desc: "Vende tus productos o encuentra lo que necesitas",
+            },
+            {
+              step: 3,
+              icon: <MessageCircle className="h-8 w-8 text-primary" />,
+              title: "Conecta y Negocia",
+              desc: "Chatea con vendedores y cierra tratos seguros",
+            },
+          ].map((item, i) => (
+            <motion.div
+              key={item.step}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.15 }}
+              whileHover={{ y: -8, boxShadow: "0 20px 40px rgba(0,0,0,0.12)" }}
+              className="relative"
+            >
+              <Card className="border-0 shadow-md h-full">
+                <CardContent className="p-6 text-center">
+                  {/* Step number */}
+                  <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#D4A017] text-[#1A1A1A] flex items-center justify-center text-sm font-bold shadow-md">
+                    {item.step}
+                  </div>
+                  {/* Icon container */}
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                    {item.icon}
+                  </div>
+                  <h3 className="font-semibold text-base mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                  {/* Connector line for desktop */}
+                  {item.step < 3 && (
+                    <div className="hidden sm:block absolute top-1/2 -right-3 w-6 text-muted-foreground">
+                      <ArrowRight className="h-5 w-5" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 8: MÉTODOS DE PAGO - Payment Methods
+          ═══════════════════════════════════════════════════════════════════ */}
+      <motion.section
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.6 }}
+        className="space-y-5"
+      >
+        <div className="text-center mb-2">
+          <motion.div
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-1.5 text-sm font-medium text-primary mb-3"
+          >
+            <CreditCard className="h-4 w-4" /> Pagos Seguros
+          </motion.div>
+          <h2 className="text-xl font-semibold font-[family-name:var(--font-poppins)]">
+            Métodos de Pago
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Múltiples opciones para facilitar tus transacciones
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {PAYMENT_METHODS.map((method, i) => (
+            <motion.div
+              key={method.id}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              whileHover={{ y: -6, scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Card className="border-0 shadow-md cursor-default overflow-hidden group">
+                <CardContent className="p-5 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-3 group-hover:bg-primary/20 transition-colors">
+                    <span className="text-3xl">{method.icon}</span>
+                  </div>
+                  <h3 className="text-sm font-semibold">{method.name}</h3>
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    <Shield className="h-3 w-3 text-primary" />
+                    <span className="text-[10px] text-muted-foreground">Seguro</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       </motion.section>
 

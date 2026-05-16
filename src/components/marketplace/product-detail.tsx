@@ -11,12 +11,17 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { Heart, MapPin, Phone, Share2, MessageCircle, ShoppingCart, FileText, ChevronLeft, ChevronRight, Bookmark } from "lucide-react"
 
+interface QuantityDiscount {
+  id: string; minQty: number; discountPercent: number
+}
+
 interface Product {
   id: string; title: string; description: string; price: number
   discountPrice: number | null; discountPercent: number | null
   category: string; images: string[]; tags: string; quantity: number
   likeCount: number; videoUrl: string
   discountStart: string | null; discountEnd: string | null
+  quantityDiscounts?: QuantityDiscount[]
   seller: {
     id: string; name: string; avatar: string; phone: string; address: string
     businessProfile?: { businessName: string; logo: string; category: string; description: string } | null
@@ -133,6 +138,34 @@ export function ProductDetail() {
             )}
             <p className="text-sm text-muted-foreground">Cantidad disponible: {product.quantity}</p>
           </div>
+
+          {/* Quantity Discounts */}
+          {product.quantityDiscounts && product.quantityDiscounts.length > 0 && (
+            <Card className="border-dorado/30 bg-dorado/5">
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                  🏷️ Descuentos por Cantidad
+                </h3>
+                <div className="space-y-1.5">
+                  {product.quantityDiscounts
+                    .sort((a, b) => a.minQty - b.minQty)
+                    .map((qd) => (
+                      <div key={qd.id} className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-1.5">
+                          <Badge variant="secondary" className="text-xs bg-dorado/10 text-dorado border-dorado/20">
+                            {qd.minQty}+
+                          </Badge>
+                          <span>Lleva {qd.minQty} o más</span>
+                        </span>
+                        <span className="font-semibold text-volcan">
+                          {qd.discountPercent}% off → {formatPrice(product.price * (1 - qd.discountPercent / 100))}/u
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">

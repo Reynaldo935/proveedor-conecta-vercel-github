@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, price, discountPrice, discountPercent, category, tags, images, videoUrl, quantity, discountStart, discountEnd } = body
+    const { title, description, price, discountPrice, discountPercent, category, tags, images, videoUrl, quantity, discountStart, discountEnd, quantityDiscounts } = body
 
     if (!title || !price) {
       return NextResponse.json({ success: false, error: 'Título y precio son requeridos' }, { status: 400 })
@@ -126,9 +126,20 @@ export async function POST(request: NextRequest) {
         status: 'ACTIVE',
         discountStart: discountStart ? new Date(discountStart) : null,
         discountEnd: discountEnd ? new Date(discountEnd) : null,
+        quantityDiscounts: {
+          create: Array.isArray(quantityDiscounts)
+            ? quantityDiscounts
+                .filter((qd: { minQty: number; discountPercent: number }) => qd.minQty > 0 && qd.discountPercent > 0)
+                .map((qd: { minQty: number; discountPercent: number }) => ({
+                  minQty: qd.minQty,
+                  discountPercent: qd.discountPercent,
+                }))
+            : [],
+        },
       },
       include: {
         seller: { select: { id: true, name: true, avatar: true, businessProfile: { select: { businessName: true } } } },
+        quantityDiscounts: true,
       },
     })
 

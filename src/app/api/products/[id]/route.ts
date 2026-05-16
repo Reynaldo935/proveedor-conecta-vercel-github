@@ -19,6 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           },
         },
         likes: { select: { userId: true } },
+        quantityDiscounts: true,
       },
     })
 
@@ -81,6 +82,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json()
+
+    // Handle quantity discounts: delete existing and recreate
+    if (body.quantityDiscounts !== undefined) {
+      await db.quantityDiscount.deleteMany({ where: { productId: id } })
+      if (Array.isArray(body.quantityDiscounts) && body.quantityDiscounts.length > 0) {
+        await db.quantityDiscount.createMany({
+          data: body.quantityDiscounts
+            .filter((qd: { minQty: number; discountPercent: number }) => qd.minQty > 0 && qd.discountPercent > 0)
+            .map((qd: { minQty: number; discountPercent: number }) => ({
+              productId: id,
+              minQty: qd.minQty,
+              discountPercent: qd.discountPercent,
+            })),
+        })
+      }
+    }
+
     const updated = await db.product.update({
       where: { id },
       data: {
@@ -99,6 +117,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         ...(body.discountStart !== undefined && { discountStart: body.discountStart ? new Date(body.discountStart) : null }),
         ...(body.discountEnd !== undefined && { discountEnd: body.discountEnd ? new Date(body.discountEnd) : null }),
       },
+      include: { quantityDiscounts: true },
     })
 
     await db.auditLog.create({

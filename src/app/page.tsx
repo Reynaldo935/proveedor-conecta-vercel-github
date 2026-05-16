@@ -7,6 +7,8 @@ import { useAuthStore } from "@/store/auth-store"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Skeleton } from "@/components/ui/skeleton"
+import { motion } from "framer-motion"
+import { Plus } from "lucide-react"
 
 // Dynamic imports to reduce initial bundle size and prevent server overload
 const HomeFeed = dynamic(() => import("@/components/marketplace/home-feed").then(m => ({ default: m.HomeFeed })), { ssr: true })
@@ -49,9 +51,11 @@ function PageLoader() {
 }
 
 export default function ProveedorConecta() {
-  const { currentView } = useAppStore()
-  const { setUser, isAuthenticated } = useAuthStore()
+  const { currentView, navigate } = useAppStore()
+  const { setUser, isAuthenticated, user } = useAuthStore()
   const [showChatbot, setShowChatbot] = useState(false)
+
+  const isSeller = isAuthenticated && user?.role === "SELLER"
 
   // Check auth on mount
   useEffect(() => {
@@ -105,6 +109,27 @@ export default function ProveedorConecta() {
       </main>
       <Footer />
       <AIChatbot isOpen={showChatbot} onToggle={() => setShowChatbot(!showChatbot)} />
+
+      {/* Floating Vender Button for authenticated sellers */}
+      {isSeller && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+          whileHover={{ scale: 1.08, boxShadow: "0 8px 30px rgba(0, 105, 92, 0.4)" }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate("sell-product")}
+          className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-5 py-3.5 rounded-full text-white font-semibold shadow-lg"
+          style={{
+            background: "linear-gradient(135deg, #00695C, #00897B)",
+            boxShadow: "0 4px 20px rgba(0, 105, 92, 0.35)",
+          }}
+          aria-label="Vender producto"
+        >
+          <Plus className="h-5 w-5" />
+          <span>Vender</span>
+        </motion.button>
+      )}
     </div>
   )
 }

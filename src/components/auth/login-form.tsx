@@ -101,6 +101,35 @@ export function LoginForm() {
     const googleEmail = prompt("Ingresa tu correo de Google (simulación OAuth):")
     if (!googleEmail) return
 
+    // Local email format validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!emailRegex.test(googleEmail)) {
+      toast.error("Formato de correo inválido")
+      return
+    }
+
+    // Server-side email validation
+    try {
+      const validateRes = await fetch("/api/auth/validate-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: googleEmail }),
+      })
+      const validateData = await validateRes.json()
+      if (validateData.success && validateData.data) {
+        if (validateData.data.disposable) {
+          toast.error("No se permiten correos de dominios desechables")
+          return
+        }
+        if (!validateData.data.valid) {
+          toast.error("Correo inválido. Verifica que la dirección de correo exista.")
+          return
+        }
+      }
+    } catch {
+      // If validation endpoint fails, proceed anyway (don't block login)
+    }
+
     setLoading(true)
     try {
       const res = await fetch("/api/auth/google", {

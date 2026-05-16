@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
 
     // Try using z-ai-web-dev-sdk LLM
     try {
-      const { LLM } = await import('z-ai-web-dev-sdk')
-      const llm = new LLM()
+      const ZAI = (await import('z-ai-web-dev-sdk')).default
+      const zai = await ZAI.create()
 
       const systemPrompt = `Eres el asistente virtual de ProveedorConecta Nicaragua, una plataforma B2B/B2C que conecta emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en Nicaragua.
 
@@ -32,17 +32,20 @@ ${userId ? `- El usuario está autenticado en la plataforma` : '- El usuario no 
 
 Contexto adicional del usuario: ${context || 'Sin contexto adicional'}`
 
-      const response = await llm.chat({
+      const completion = await zai.chat.completions.create({
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'assistant', content: systemPrompt },
           { role: 'user', content: message },
         ],
+        thinking: { type: 'disabled' },
       })
+
+      const response = completion.choices[0]?.message?.content
 
       return NextResponse.json({
         success: true,
         data: {
-          message: response.content || response.choices?.[0]?.message?.content || 'Lo siento, no pude procesar tu consulta. Intenta de nuevo.',
+          message: response || 'Lo siento, no pude procesar tu consulta. Intenta de nuevo.',
           model: 'Z.ai LLM',
         },
       })
