@@ -22,6 +22,7 @@ export type AppView =
   | 'profile'
   | 'settings'
   | 'search'
+  | 'admin'
 
 interface AppState {
   currentView: AppView

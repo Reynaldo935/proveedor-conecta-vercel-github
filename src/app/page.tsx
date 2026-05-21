@@ -30,6 +30,7 @@ const NotificationsPanel = dynamic(() => import("@/components/layout/notificatio
 const ProfileSettings = dynamic(() => import("@/components/auth/profile-settings").then(m => ({ default: m.ProfileSettings })), { ssr: false })
 const SearchView = dynamic(() => import("@/components/marketplace/search-view").then(m => ({ default: m.SearchView })), { ssr: false })
 const AIChatbot = dynamic(() => import("@/components/chatbot/ai-chatbot").then(m => ({ default: m.AIChatbot })), { ssr: false })
+const AdminPanel = dynamic(() => import("@/components/admin/admin-panel").then(m => ({ default: m.AdminPanel })), { ssr: false })
 
 // Loading fallback
 function PageLoader() {
@@ -97,6 +98,7 @@ export default function ProveedorConecta() {
       case "profile": return isAuthenticated ? <ProfileSettings /> : <LoginForm />
       case "settings": return isAuthenticated ? <ProfileSettings /> : <LoginForm />
       case "search": return <SearchView />
+      case "admin": return isAuthenticated ? <AdminPanel /> : <LoginForm />
       default: return <HomeFeed />
     }
   }

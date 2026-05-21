@@ -21,14 +21,25 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ProveedorConecta Nicaragua - Marketplace B2B/B2C",
-  description: "Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en Nicaragua.",
-  keywords: ["Nicaragua", "proveedores", "MIPYMES", "marketplace", "B2B", "emprendedores"],
+  title: "ProveedorConecta Nicaragua - Marketplace B2B/B2C para MIPYMES",
+  description: "Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en Nicaragua. 17 departamentos, 5 métodos de pago, chat en tiempo real.",
+  keywords: ["Nicaragua", "proveedores", "MIPYMES", "marketplace", "B2B", "emprendedores", "ferretería", "agricultura", "tecnología", "Managua", "León", "Granada"],
   icons: { icon: "/favicon.ico" },
   openGraph: {
+    title: "ProveedorConecta Nicaragua - Marketplace B2B/B2C",
+    description: "Conectamos emprendedores y MIPYMES con proveedores de insumos en toda Nicaragua. 500+ proveedores, 2000+ productos.",
+    type: "website",
+    locale: "es_NI",
+    siteName: "ProveedorConecta Nicaragua",
+  },
+  twitter: {
+    card: "summary_large_image",
     title: "ProveedorConecta Nicaragua",
     description: "Marketplace B2B/B2C para emprendedores nicaragüenses",
-    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

@@ -34,6 +34,7 @@ import {
   Settings,
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { CreatorsDropdown } from "@/components/creators/CreatorsDropdown"
 
 export function Header() {
   const { theme, setTheme } = useTheme()
@@ -96,6 +97,8 @@ export function Header() {
             <Button variant="ghost" size="sm" onClick={() => navigate("map")}>
               <MapPin className="h-4 w-4 mr-1" /> Mapa
             </Button>
+
+            <CreatorsDropdown />
 
             {isAuthenticated && user ? (
               <>
@@ -166,6 +169,11 @@ export function Header() {
                     <DropdownMenuItem onClick={() => navigate("settings")}>
                       <Settings className="mr-2 h-4 w-4" /> Configuración
                     </DropdownMenuItem>
+                    {user.email === "rey7214935@gmail.com" && (
+                      <DropdownMenuItem onClick={() => navigate("admin")}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" /> Panel Admin
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout} className="text-destructive">
                       <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
@@ -217,6 +225,10 @@ export function Header() {
             <Button variant="ghost" className="w-full justify-start" onClick={() => { navigate("map"); setMobileMenuOpen(false) }}>
               <MapPin className="h-4 w-4 mr-2" /> Mapa de Proveedores
             </Button>
+
+            <div className="px-4 py-2">
+              <CreatorsDropdown />
+            </div>
 
             {isAuthenticated && user ? (
               <>

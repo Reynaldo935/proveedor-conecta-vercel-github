@@ -39,6 +39,7 @@ import {
   ArrowUpRight,
   UserPlus,
   MessageCircle,
+  Play,
 } from "lucide-react"
 import { PRODUCT_CATEGORIES, PAYMENT_METHODS, NICARAGUA_DEPARTMENTS } from "@/lib/validators"
 import { toast } from "sonner"
@@ -1349,6 +1350,56 @@ export function HomeFeed() {
             ))}
           </motion.div>
         </div>
+      </motion.section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 6.5: MARKETING VIDEO - Tutorial/Demo
+          ═══════════════════════════════════════════════════════════════════ */}
+      <motion.section
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.6 }}
+        className="space-y-5"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold font-[family-name:var(--font-poppins)] flex items-center gap-2">
+            🎬 Conoce la Plataforma
+          </h2>
+          <Badge variant="secondary" className="rounded-lg">
+            <Play className="h-3 w-3 mr-1" /> Video Tutorial
+          </Badge>
+        </div>
+
+        <Card className="overflow-hidden border-0 shadow-lg">
+          <CardContent className="p-0">
+            <div className="relative aspect-video bg-gradient-to-br from-[#1A5276] to-[#0B3D6B]">
+              <iframe
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1"
+                title="ProveedorConecta Nicaragua - Tutorial"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full rounded-t-xl"
+              />
+            </div>
+            <div className="p-6">
+              <h3 className="font-semibold text-lg font-[family-name:var(--font-poppins)]">
+                Aprende a usar ProveedorConecta Nicaragua
+              </h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                Descubre cómo registrar tu negocio, publicar productos, conectarte con proveedores
+                de todo el país y realizar pagos seguros. En menos de 5 minutos estarás listo para
+                hacer negocios en la plataforma #1 de MIPYMES en Nicaragua 🇳🇮
+              </p>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Badge variant="secondary" className="text-xs">🛒 Comprar</Badge>
+                <Badge variant="secondary" className="text-xs">💰 Vender</Badge>
+                <Badge variant="secondary" className="text-xs">🗺️ Mapa</Badge>
+                <Badge variant="secondary" className="text-xs">💬 Chat</Badge>
+                <Badge variant="secondary" className="text-xs">💳 Pagos</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.section>
 
       {/* ═══════════════════════════════════════════════════════════════════
