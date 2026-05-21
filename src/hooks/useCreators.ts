@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import fallbackCreators from "@/data/creators.json"
 
 export interface Creator {
@@ -21,6 +21,58 @@ export function useCreators() {
   const [creators, setCreators] = useState<Creator[]>(fallbackCreators as Creator[])
   const [loading, setLoading] = useState(true)
   const [fromCache, setFromCache] = useState(false)
+
+  const refreshCreators = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Try Google Apps Script endpoint first
+      const endpoint = process.env.NEXT_PUBLIC_CREATORS_ENDPOINT
+      if (endpoint) {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
+        try {
+          const res = await fetch(endpoint, { signal: controller.signal })
+          clearTimeout(timeoutId)
+          if (res.ok) {
+            const data = await res.json()
+            if (Array.isArray(data) && data.length > 0) {
+              setCreators(data)
+              localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+              localStorage.setItem(CACHE_EXPIRY_KEY, String(Date.now()))
+              setLoading(false)
+              return
+            }
+          }
+        } catch {
+          clearTimeout(timeoutId)
+        }
+      }
+
+      // Try our own API as backup
+      try {
+        const res = await fetch('/api/creators')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setCreators(data.data)
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data.data))
+            localStorage.setItem(CACHE_EXPIRY_KEY, String(Date.now()))
+            setLoading(false)
+            return
+          }
+        }
+      } catch {}
+
+      // Clear cache and try localStorage
+      localStorage.removeItem(CACHE_KEY)
+      localStorage.removeItem(CACHE_EXPIRY_KEY)
+      
+      // Keep existing data (fallback or previous load)
+    } catch {
+      // Keep existing data
+    }
+    setLoading(false)
+  }, [])
 
   useEffect(() => {
     async function loadCreators() {
@@ -71,29 +123,18 @@ export function useCreators() {
     loadCreators()
   }, [])
 
-  const refreshCreators = async () => {
-    localStorage.removeItem(CACHE_KEY)
-    localStorage.removeItem(CACHE_EXPIRY_KEY)
-    setLoading(true)
-    // Re-trigger the load
-    try {
-      const endpoint = process.env.NEXT_PUBLIC_CREATORS_ENDPOINT
-      if (endpoint) {
-        const res = await fetch(endpoint)
-        if (res.ok) {
-          const data = await res.json()
-          if (Array.isArray(data) && data.length > 0) {
-            setCreators(data)
-            localStorage.setItem(CACHE_KEY, JSON.stringify(data))
-            localStorage.setItem(CACHE_EXPIRY_KEY, String(Date.now()))
-          }
-        }
-      }
-    } catch {
-      // Keep existing data
+  // Auto-refresh every 30 minutes
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      refreshCreators()
+    }, 30 * 60 * 1000) // 30 minutes
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
     }
-    setLoading(false)
-  }
+  }, [])
 
   return { creators, loading, fromCache, refreshCreators }
 }

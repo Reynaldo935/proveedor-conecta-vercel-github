@@ -9,7 +9,7 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {/* Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -70,6 +70,22 @@ export function Footer() {
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4" /> info@proveedorconecta.ni
               </div>
+            </div>
+          </div>
+
+          {/* Legal */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm">Legal</h4>
+            <div className="space-y-2">
+              <button onClick={() => navigate("terms")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+                Términos de Servicio
+              </button>
+              <button onClick={() => navigate("privacy")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+                Política de Privacidad
+              </button>
+              <button onClick={() => navigate("refund")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+                Reembolsos y Cancelaciones
+              </button>
             </div>
           </div>
         </div>

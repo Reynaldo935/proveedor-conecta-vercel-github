@@ -23,6 +23,9 @@ export type AppView =
   | 'settings'
   | 'search'
   | 'admin'
+  | 'terms'
+  | 'privacy'
+  | 'refund'
 
 interface AppState {
   currentView: AppView

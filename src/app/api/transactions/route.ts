@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Producto y método de pago son requeridos' }, { status: 400 })
     }
 
-    const validPaymentMethods = ['PAYPAL', 'BANPRO', 'BAC', 'LAFISE', 'BILLETERA']
+    const validPaymentMethods = ['PAYPAL', 'BANPRO', 'BAC', 'LAFISE', 'BILLETERA', 'PIXELPAY', 'PAGADITO', 'GOOGLE_PAY', 'BANPRO_BILLETERA', 'KASH', 'WESTERN_UNION']
     if (!validPaymentMethods.includes(paymentMethod)) {
       return NextResponse.json({ success: false, error: 'Método de pago no válido' }, { status: 400 })
     }
@@ -80,6 +80,9 @@ export async function POST(request: NextRequest) {
     }
 
     const finalAmount = amount || (product.discountPrice || product.price)
+    const COMMISSION_RATE = 0.03
+    const commission = Math.round(finalAmount * COMMISSION_RATE * 100) / 100
+    const sellerPayout = Math.round((finalAmount - commission) * 100) / 100
 
     const transaction = await db.transaction.create({
       data: {
@@ -87,6 +90,8 @@ export async function POST(request: NextRequest) {
         sellerId: product.sellerId,
         productId,
         amount: finalAmount,
+        commission,
+        sellerPayout,
         paymentMethod,
         status: 'PENDING',
         cedula: cedula || '',
@@ -128,6 +133,18 @@ export async function POST(request: NextRequest) {
         entity: 'Transaction',
         entityId: transaction.id,
         details: `Transacción creada: ${paymentMethod} - C$${finalAmount}`,
+      },
+    })
+
+    // Create commission log
+    await db.commissionLog.create({
+      data: {
+        transactionId: transaction.id,
+        amount: commission,
+        rate: COMMISSION_RATE,
+        destination: 'rey7214935@gmail.com',
+        bankAccount: 'LAFISE',
+        status: 'PENDING',
       },
     })
 

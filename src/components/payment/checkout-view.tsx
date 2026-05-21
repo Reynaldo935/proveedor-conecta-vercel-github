@@ -18,6 +18,8 @@ import {
   validateCVV,
   validateBankAccountByBank,
   validateBilleteraMovil,
+  validateKashPhone,
+  validateWesternUnionRef,
   identifyCardType,
   formatCedula,
   formatCardNumber,
@@ -88,13 +90,13 @@ export function CheckoutView() {
       return false
     }
 
-    if (["BANPRO", "BAC", "LAFISE", "BILLETERA"].includes(paymentMethod)) {
+    if (["BANPRO", "BAC", "LAFISE", "BILLETERA", "PIXELPAY", "PAGADITO", "BANPRO_BILLETERA", "KASH", "WESTERN_UNION"].includes(paymentMethod)) {
       if (!formData.fullName.trim()) errs.fullName = "Nombre requerido"
       const cedulaCheck = validateCedula(formData.cedula)
       if (!cedulaCheck.valid) errs.cedula = cedulaCheck.message
     }
 
-    if (["BAC", "LAFISE"].includes(paymentMethod)) {
+    if (["BAC", "LAFISE", "PIXELPAY", "PAGADITO"].includes(paymentMethod)) {
       const cardCheck = validateCardNumber(formData.cardNumber)
       if (!cardCheck.valid) errs.cardNumber = cardCheck.message
       const expiryCheck = validateCardExpiry(formData.cardExpiry)
@@ -112,9 +114,9 @@ export function CheckoutView() {
       }
     }
 
-    if (paymentMethod === "PAYPAL") {
+    if (paymentMethod === "PAYPAL" || paymentMethod === "GOOGLE_PAY") {
       if (!formData.paypalEmail.trim())
-        errs.paypalEmail = "Email de PayPal requerido"
+        errs.paypalEmail = paymentMethod === "PAYPAL" ? "Email de PayPal requerido" : "Email de Google Pay requerido"
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.paypalEmail))
         errs.paypalEmail = "Email inválido"
     }
@@ -122,6 +124,16 @@ export function CheckoutView() {
     if (paymentMethod === "BILLETERA") {
       const phoneCheck = validateBilleteraMovil(formData.phone)
       if (!phoneCheck.valid) errs.phone = phoneCheck.message
+    }
+
+    if (paymentMethod === "BANPRO_BILLETERA" || paymentMethod === "KASH") {
+      const phoneCheck = paymentMethod === "KASH" ? validateKashPhone(formData.phone) : validateBilleteraMovil(formData.phone)
+      if (!phoneCheck.valid) errs.phone = phoneCheck.message
+    }
+
+    if (paymentMethod === "WESTERN_UNION") {
+      const refCheck = validateWesternUnionRef(formData.accountNumber)
+      if (!refCheck.valid) errs.accountNumber = refCheck.message
     }
 
     setErrors(errs)
@@ -795,6 +807,166 @@ export function CheckoutView() {
                         </p>
                       )}
                     </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* PixelPay Form */}
+              {paymentMethod === "PIXELPAY" && (
+                <motion.div key="pixelpay" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
+                    <h4 className="font-medium flex items-center gap-2"><CreditCard className="h-4 w-4" /> Datos de PixelPay</h4>
+                    <div className="space-y-2">
+                      <Label>Nombre completo</Label>
+                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
+                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Cédula de identidad</Label>
+                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
+                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Número de tarjeta</Label>
+                      <Input value={formData.cardNumber} onChange={(e) => setFormData((f) => ({ ...f, cardNumber: formatCardNumber(e.target.value) }))} placeholder="4242 4242 4242 4242" maxLength={19} />
+                      {errors.cardNumber && <p className="text-xs text-destructive">{errors.cardNumber}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Fecha de expiración</Label>
+                        <Input value={formData.cardExpiry} onChange={(e) => setFormData((f) => ({ ...f, cardExpiry: e.target.value }))} placeholder="MM/AA" maxLength={5} />
+                        {errors.cardExpiry && <p className="text-xs text-destructive">{errors.cardExpiry}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>CVV</Label>
+                        <Input type="password" value={formData.cardCVV} onChange={(e) => setFormData((f) => ({ ...f, cardCVV: e.target.value }))} placeholder="123" maxLength={4} />
+                        {errors.cardCVV && <p className="text-xs text-destructive">{errors.cardCVV}</p>}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Pagadito Form */}
+              {paymentMethod === "PAGADITO" && (
+                <motion.div key="pagadito" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
+                    <h4 className="font-medium flex items-center gap-2"><CreditCard className="h-4 w-4" /> Datos de Pagadito</h4>
+                    <div className="space-y-2">
+                      <Label>Nombre completo</Label>
+                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
+                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Cédula de identidad</Label>
+                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
+                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Número de tarjeta</Label>
+                      <Input value={formData.cardNumber} onChange={(e) => setFormData((f) => ({ ...f, cardNumber: formatCardNumber(e.target.value) }))} placeholder="4242 4242 4242 4242" maxLength={19} />
+                      {errors.cardNumber && <p className="text-xs text-destructive">{errors.cardNumber}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Fecha de expiración</Label>
+                        <Input value={formData.cardExpiry} onChange={(e) => setFormData((f) => ({ ...f, cardExpiry: e.target.value }))} placeholder="MM/AA" maxLength={5} />
+                        {errors.cardExpiry && <p className="text-xs text-destructive">{errors.cardExpiry}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>CVV</Label>
+                        <Input type="password" value={formData.cardCVV} onChange={(e) => setFormData((f) => ({ ...f, cardCVV: e.target.value }))} placeholder="123" maxLength={4} />
+                        {errors.cardCVV && <p className="text-xs text-destructive">{errors.cardCVV}</p>}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Google Pay Form */}
+              {paymentMethod === "GOOGLE_PAY" && (
+                <motion.div key="googlepay" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
+                    <h4 className="font-medium flex items-center gap-2"><Smartphone className="h-4 w-4" /> Google Pay</h4>
+                    <div className="space-y-2">
+                      <Label>Email de Google Pay</Label>
+                      <Input type="email" placeholder="tu@gmail.com" value={formData.paypalEmail} onChange={(e) => setFormData((f) => ({ ...f, paypalEmail: e.target.value }))} />
+                      {errors.paypalEmail && <p className="text-xs text-destructive">{errors.paypalEmail}</p>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Se abrirá Google Pay para confirmar el pago de forma segura.</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Banpro Billetera Form */}
+              {paymentMethod === "BANPRO_BILLETERA" && (
+                <motion.div key="banprobilletera" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
+                    <h4 className="font-medium flex items-center gap-2"><Smartphone className="h-4 w-4" /> Banpro Billetera</h4>
+                    <div className="space-y-2">
+                      <Label>Nombre completo</Label>
+                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
+                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Cédula de identidad</Label>
+                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
+                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Número de teléfono móvil</Label>
+                      <Input value={formData.phone} onChange={(e) => setFormData((f) => ({ ...f, phone: formatPhoneNicaragua(e.target.value) }))} placeholder="8XXX-XXXX" />
+                      {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Kash Form */}
+              {paymentMethod === "KASH" && (
+                <motion.div key="kash" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
+                    <h4 className="font-medium flex items-center gap-2"><Smartphone className="h-4 w-4" /> Kash</h4>
+                    <div className="space-y-2">
+                      <Label>Nombre completo</Label>
+                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
+                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Cédula de identidad</Label>
+                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
+                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Número de teléfono móvil</Label>
+                      <Input value={formData.phone} onChange={(e) => setFormData((f) => ({ ...f, phone: formatPhoneNicaragua(e.target.value) }))} placeholder="8XXX-XXXX" />
+                      {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Western Union Form */}
+              {paymentMethod === "WESTERN_UNION" && (
+                <motion.div key="westernunion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
+                    <h4 className="font-medium flex items-center gap-2"><Building2 className="h-4 w-4" /> Western Union</h4>
+                    <div className="space-y-2">
+                      <Label>Nombre completo del remitente</Label>
+                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
+                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Cédula de identidad</Label>
+                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
+                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Número de referencia (MTCN)</Label>
+                      <Input value={formData.accountNumber} onChange={(e) => setFormData((f) => ({ ...f, accountNumber: e.target.value }))} placeholder="Número de 10 dígitos" />
+                      {errors.accountNumber && <p className="text-xs text-destructive">{errors.accountNumber}</p>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Realiza el giro en cualquier agencia Western Union y ingresa el número MTCN.</p>
                   </div>
                 </motion.div>
               )}

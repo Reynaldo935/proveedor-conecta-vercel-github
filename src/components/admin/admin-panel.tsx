@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -27,6 +29,9 @@ import {
   MessageSquare,
   RefreshCw,
   Download,
+  Loader2,
+  Megaphone,
+  FileSpreadsheet,
 } from "lucide-react"
 import { motion } from "framer-motion"
 
@@ -56,12 +61,27 @@ interface AdminStats {
 
 const COLORS = ["#1A5276", "#2E86C1", "#1E8449", "#F4D03F", "#C0392B", "#8E44AD"]
 
+const HELPER_ROLE_LABELS: Record<string, string> = {
+  DEVELOPER: "Desarrollador",
+  MARKETING: "Marketing",
+  FULLSTACK: "Fullstack",
+  GRAPHIC_DESIGN: "Diseño Gráfico",
+  COMMUNICATOR: "Comunicador",
+}
+
 export function AdminPanel() {
   const { navigate } = useAppStore()
   const { user } = useAuthStore()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [helpers, setHelpers] = useState<any[]>([])
+  const [helperEmail, setHelperEmail] = useState("")
+  const [helperRoleSelect, setHelperRoleSelect] = useState("")
+  const [assigningHelper, setAssigningHelper] = useState(false)
+  const [commissions, setCommissions] = useState<any[]>([])
+  const [commissionSummary, setCommissionSummary] = useState({ total: 0, paid: 0, pending: 0 })
+  const [ads, setAds] = useState<any[]>([])
 
   const loadStats = async () => {
     try {
@@ -80,8 +100,79 @@ export function AdminPanel() {
     }
   }
 
+  const loadHelpers = async () => {
+    try {
+      const res = await fetch("/api/admin/helpers")
+      const data = await res.json()
+      if (data.success) setHelpers(data.data)
+    } catch {}
+  }
+
+  const loadCommissions = async () => {
+    try {
+      const res = await fetch("/api/commissions")
+      const data = await res.json()
+      if (data.success) {
+        setCommissions(data.data.commissions)
+        setCommissionSummary(data.data.summary)
+      }
+    } catch {}
+  }
+
+  const loadAds = async () => {
+    try {
+      const res = await fetch("/api/advertisements")
+      const data = await res.json()
+      if (data.success) setAds(data.data)
+    } catch {}
+  }
+
+  const assignHelperRole = async () => {
+    if (!helperEmail || !helperRoleSelect) { toast.error("Email y rol son requeridos"); return }
+    setAssigningHelper(true)
+    try {
+      const userRes = await fetch(`/api/users/email?email=${encodeURIComponent(helperEmail)}`)
+      const userData = await userRes.json()
+      if (!userData.success) { toast.error("Usuario no encontrado"); return }
+
+      const res = await fetch("/api/admin/helpers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: userData.data.id, helperRole: helperRoleSelect }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Rol asignado exitosamente")
+        setHelperEmail("")
+        setHelperRoleSelect("")
+        loadHelpers()
+      } else {
+        toast.error(data.error || "Error al asignar rol")
+      }
+    } catch { toast.error("Error de conexión") }
+    finally { setAssigningHelper(false) }
+  }
+
+  const updateAdStatus = async (adId: string, status: string) => {
+    try {
+      const res = await fetch(`/api/advertisements/${adId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(status === "ACTIVE" ? "Anuncio aprobado" : "Anuncio rechazado")
+        loadAds()
+      }
+    } catch { toast.error("Error al actualizar anuncio") }
+  }
+
   useEffect(() => {
     loadStats()
+    loadHelpers()
+    loadCommissions()
+    loadAds()
   }, [])
 
   // Verify admin access (after hooks)
@@ -232,10 +323,14 @@ export function AdminPanel() {
 
       {/* Charts */}
       <Tabs defaultValue="overview">
-        <TabsList>
+        <TabsList className="flex flex-wrap">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="transactions">Transacciones</TabsTrigger>
           <TabsTrigger value="users">Usuarios</TabsTrigger>
+          <TabsTrigger value="helpers">Ayudantes</TabsTrigger>
+          <TabsTrigger value="commissions">Comisiones</TabsTrigger>
+          <TabsTrigger value="ads">Anuncios</TabsTrigger>
+          <TabsTrigger value="exports">Exportar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -253,7 +348,7 @@ export function AdminPanel() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis dataKey="name" fontSize={12} />
                     <YAxis fontSize={12} />
-                    <Tooltip formatter={(value: number) => formatPrice(value)} />
+                    <Tooltip formatter={(value: unknown) => formatPrice(Number(value))} />
                     <Bar dataKey="monto" fill="#1A5276" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -392,6 +487,176 @@ export function AdminPanel() {
                     <span className="text-sm">Nuevos registros (7 días)</span>
                   </div>
                   <span className="font-bold text-green-600">+{stats?.recentSignups || 0}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        <TabsContent value="helpers" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" /> Gestión de Ayudantes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 p-3 rounded-lg bg-muted/50">
+                <p className="text-sm text-muted-foreground mb-2">Asignar rol a un usuario por email</p>
+                <div className="flex gap-2">
+                  <Input placeholder="Email del usuario" value={helperEmail} onChange={(e) => setHelperEmail(e.target.value)} className="flex-1" />
+                  <Select value={helperRoleSelect} onValueChange={setHelperRoleSelect}>
+                    <SelectTrigger className="w-48"><SelectValue placeholder="Seleccionar rol" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DEVELOPER">Desarrollador</SelectItem>
+                      <SelectItem value="MARKETING">Marketing</SelectItem>
+                      <SelectItem value="FULLSTACK">Fullstack</SelectItem>
+                      <SelectItem value="GRAPHIC_DESIGN">Diseño Gráfico</SelectItem>
+                      <SelectItem value="COMMUNICATOR">Comunicador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={assignHelperRole} disabled={assigningHelper}>
+                    {assigningHelper ? <Loader2 className="h-4 w-4 animate-spin" /> : "Asignar"}
+                  </Button>
+                </div>
+              </div>
+
+              {helpers.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No hay ayudantes asignados</p>
+              ) : (
+                <div className="space-y-2">
+                  {helpers.map((h) => (
+                    <div key={h.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">{h.name?.charAt(0) || "U"}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{h.name}</p>
+                          <p className="text-xs text-muted-foreground">{h.email}</p>
+                        </div>
+                      </div>
+                      <Badge>{HELPER_ROLE_LABELS[h.helperRole] || h.helperRole}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="commissions" className="mt-4">
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <Card><CardContent className="p-4 text-center">
+              <p className="text-xs text-muted-foreground">Total Comisiones</p>
+              <p className="text-2xl font-bold text-primary">{formatPrice(commissionSummary.total)}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-center">
+              <p className="text-xs text-muted-foreground">Pagadas</p>
+              <p className="text-2xl font-bold text-green-600">{formatPrice(commissionSummary.paid)}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-center">
+              <p className="text-xs text-muted-foreground">Pendientes</p>
+              <p className="text-2xl font-bold text-yellow-600">{formatPrice(commissionSummary.pending)}</p>
+            </CardContent></Card>
+          </div>
+          <Card>
+            <CardHeader><CardTitle className="text-base">Registro de Comisiones</CardTitle></CardHeader>
+            <CardContent>
+              {commissions.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No hay comisiones registradas</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {commissions.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{c.transaction?.product?.title || "Producto"}</p>
+                        <p className="text-xs text-muted-foreground">Transacción: C${c.transaction?.amount || 0} · {c.destination}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">{formatPrice(c.amount)}</p>
+                        <Badge variant={c.status === "PAID" ? "default" : "secondary"} className={`text-[10px] ${c.status === "PAID" ? "bg-green-600" : ""}`}>
+                          {c.status === "PAID" ? "Pagada" : "Pendiente"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ads" className="mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Megaphone className="h-4 w-4 text-primary" /> Gestión de Anuncios</CardTitle></CardHeader>
+            <CardContent>
+              {ads.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No hay anuncios</p>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {ads.map((ad) => (
+                    <div key={ad.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        {ad.imageUrl ? <img src={ad.imageUrl} alt="" className="h-10 w-10 rounded object-cover" /> : <div className="h-10 w-10 rounded bg-muted flex items-center justify-center"><Megaphone className="h-5 w-5 text-muted-foreground" /></div>}
+                        <div>
+                          <p className="text-sm font-medium">{ad.title}</p>
+                          <p className="text-xs text-muted-foreground">{ad.seller?.name} · {ad.type} · ${ad.amount}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={ad.status === "ACTIVE" ? "default" : "secondary"} className={`text-[10px] ${ad.status === "ACTIVE" ? "bg-green-600" : ad.status === "REJECTED" ? "bg-red-600" : ""}`}>
+                          {ad.status === "PENDING" ? "Pendiente" : ad.status === "ACTIVE" ? "Activo" : ad.status === "REJECTED" ? "Rechazado" : ad.status}
+                        </Badge>
+                        {ad.status === "PENDING" && (
+                          <>
+                            <Button size="sm" variant="default" className="h-7 text-xs bg-green-600 hover:bg-green-700" onClick={() => updateAdStatus(ad.id, "ACTIVE")}>Aprobar</Button>
+                            <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => updateAdStatus(ad.id, "REJECTED")}>Rechazar</Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="exports" className="mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.open("/api/export?format=csv&type=transactions", "_blank")}>
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary/10"><FileSpreadsheet className="h-6 w-6 text-primary" /></div>
+                <div>
+                  <p className="font-semibold">Transacciones</p>
+                  <p className="text-xs text-muted-foreground">Exportar CSV de todas las transacciones</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.open("/api/export?format=csv&type=commissions", "_blank")}>
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/20"><DollarSign className="h-6 w-6 text-green-600" /></div>
+                <div>
+                  <p className="font-semibold">Comisiones</p>
+                  <p className="text-xs text-muted-foreground">Exportar CSV de comisiones</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.open("/api/export?format=csv&type=users", "_blank")}>
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/20"><Users className="h-6 w-6 text-blue-600" /></div>
+                <div>
+                  <p className="font-semibold">Usuarios</p>
+                  <p className="text-xs text-muted-foreground">Exportar CSV de todos los usuarios</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => window.open("/api/export?format=csv&type=products", "_blank")}>
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-yellow-100 dark:bg-yellow-900/20"><Package className="h-6 w-6 text-yellow-600" /></div>
+                <div>
+                  <p className="font-semibold">Productos</p>
+                  <p className="text-xs text-muted-foreground">Exportar CSV de productos</p>
                 </div>
               </CardContent>
             </Card>

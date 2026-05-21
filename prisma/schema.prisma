@@ -13,6 +13,7 @@ model User {
   name          String   @default("")
   password      String?
   role          String   @default("BUYER") // BUYER, SELLER, ADMIN
+  helperRole    String   @default("") // DEVELOPER, MARKETING, FULLSTACK, GRAPHIC_DESIGN, COMMUNICATOR
   avatar        String   @default("")
   phone         String   @default("")
   department    String   @default("")
@@ -40,6 +41,7 @@ model User {
   follows         Follow[]      @relation("Following")
   followers       Follow[]      @relation("Followers")
   auditLogs       AuditLog[]
+  advertisements  Advertisement[]
 }
 
 model BusinessProfile {
@@ -94,18 +96,21 @@ model Product {
 }
 
 model Transaction {
-  id             String   @id @default(cuid())
-  buyerId        String
-  sellerId       String
-  productId      String
-  amount         Float
-  paymentMethod  String   // PAYPAL, BANPRO, BAC, LAFISE, BILLETERA
-  status         String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
-  cedula         String   @default("")
-  cardLast4      String   @default("")
-  paymentDetails String   @default("") // encrypted JSON
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(cuid())
+  buyerId         String
+  sellerId        String
+  productId       String
+  amount          Float
+  commission      Float    @default(0) // 3% commission amount
+  sellerPayout    Float    @default(0) // 97% seller payout
+  paymentMethod   String   // PAYPAL, BANPRO, BAC, LAFISE, BILLETERA, PIXELPAY, PAGADITO, GOOGLE_PAY, BANPRO_BILLETERA, KASH, WESTERN_UNION
+  status          String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
+  cedula          String   @default("")
+  cardLast4       String   @default("")
+  paymentDetails  String   @default("") // encrypted JSON
+  voucherUrl      String   @default("") // Payment voucher URL
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   buyer   User    @relation("BuyerTransactions", fields: [buyerId], references: [id])
   seller  User    @relation("SellerSales", fields: [sellerId], references: [id])
@@ -268,4 +273,35 @@ model QuantityDiscount {
   createdAt DateTime @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Advertisement {
+  id           String   @id @default(cuid())
+  sellerId     String
+  type         String   // PUBLISH, REMOVE
+  plan         String   // WEEKLY, MONTHLY
+  title        String
+  description  String   @default("")
+  imageUrl     String   @default("")
+  targetUrl    String   @default("")
+  amount       Float    @default(0)
+  status       String   @default("PENDING") // PENDING, ACTIVE, PAUSED, EXPIRED, REJECTED
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+}
+
+model CommissionLog {
+  id             String   @id @default(cuid())
+  transactionId  String
+  amount         Float
+  rate           Float    @default(0.03)
+  destination    String   @default("rey7214935@gmail.com")
+  bankAccount    String   @default("LAFISE")
+  status         String   @default("PENDING") // PENDING, PAID, FAILED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

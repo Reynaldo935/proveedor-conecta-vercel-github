@@ -463,7 +463,7 @@ export function HomeFeed() {
 
   const staggerItem = {
     hidden: { opacity: 1, y: 0 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } },
   }
 
   const cardHover = {
@@ -471,7 +471,7 @@ export function HomeFeed() {
     hover: {
       y: -8,
       boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-      transition: { duration: 0.3, ease: "easeOut" },
+      transition: { duration: 0.3, ease: "easeOut" as const },
     },
   }
 

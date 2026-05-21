@@ -212,7 +212,7 @@ export function VendorDashboard() {
                       borderRadius: "8px",
                       color: "var(--foreground)",
                     }}
-                    formatter={(value: number) => [formatPrice(value), "Ingresos"]}
+                    formatter={(value: unknown) => [formatPrice(Number(value)), "Ingresos"]}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="#1A5276" strokeWidth={2} fill="url(#colorRevenue)" />
                 </AreaChart>
@@ -238,7 +238,7 @@ export function VendorDashboard() {
                     innerRadius={60}
                     outerRadius={90}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     labelLine={{ stroke: "var(--muted-foreground)" }}
                   >
                     {categoryData.map((_, i) => (

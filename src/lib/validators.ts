@@ -288,9 +288,29 @@ export const NICARAGUA_DEPARTMENTS = [
 
 // Métodos de pago
 export const PAYMENT_METHODS = [
+  { id: 'PIXELPAY', name: 'PixelPay', icon: '💳' },
+  { id: 'PAGADITO', name: 'Pagadito', icon: '💳' },
   { id: 'PAYPAL', name: 'PayPal', icon: '💳' },
-  { id: 'BANPRO', name: 'Banpro', icon: '🏦' },
+  { id: 'GOOGLE_PAY', name: 'Google Pay', icon: '📱' },
+  { id: 'BANPRO', name: 'Banpro Transferencia', icon: '🏦' },
+  { id: 'BANPRO_BILLETERA', name: 'Banpro Billetera', icon: '📱' },
   { id: 'BAC', name: 'BAC Credomatic', icon: '🏦' },
-  { id: 'LAFISE', name: 'Lafise', icon: '🏦' },
+  { id: 'LAFISE', name: 'LAFISE', icon: '🏦' },
+  { id: 'KASH', name: 'Kash', icon: '📱' },
   { id: 'BILLETERA', name: 'Billetera Móvil', icon: '📱' },
+  { id: 'WESTERN_UNION', name: 'Western Union', icon: '💸' },
 ] as const
+
+// Validar número de referencia de Western Union
+export function validateWesternUnionRef(ref: string): { valid: boolean; message: string } {
+  const cleaned = ref.trim()
+  if (cleaned.length < 8 || cleaned.length > 20) {
+    return { valid: false, message: 'Número de referencia inválido (8-20 caracteres)' }
+  }
+  return { valid: true, message: 'Referencia válida' }
+}
+
+// Validar teléfono Kash (mismo formato que Billetera Móvil)
+export function validateKashPhone(phone: string): { valid: boolean; message: string } {
+  return validateBilleteraMovil(phone)
+}

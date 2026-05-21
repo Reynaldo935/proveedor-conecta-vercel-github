@@ -31,6 +31,9 @@ const ProfileSettings = dynamic(() => import("@/components/auth/profile-settings
 const SearchView = dynamic(() => import("@/components/marketplace/search-view").then(m => ({ default: m.SearchView })), { ssr: false })
 const AIChatbot = dynamic(() => import("@/components/chatbot/ai-chatbot").then(m => ({ default: m.AIChatbot })), { ssr: false })
 const AdminPanel = dynamic(() => import("@/components/admin/admin-panel").then(m => ({ default: m.AdminPanel })), { ssr: false })
+const TermsPage = dynamic(() => import("@/components/legal/legal-pages").then(m => ({ default: m.TermsPage })), { ssr: false })
+const PrivacyPage = dynamic(() => import("@/components/legal/legal-pages").then(m => ({ default: m.PrivacyPage })), { ssr: false })
+const RefundPage = dynamic(() => import("@/components/legal/legal-pages").then(m => ({ default: m.RefundPage })), { ssr: false })
 
 // Loading fallback
 function PageLoader() {
@@ -99,6 +102,9 @@ export default function ProveedorConecta() {
       case "settings": return isAuthenticated ? <ProfileSettings /> : <LoginForm />
       case "search": return <SearchView />
       case "admin": return isAuthenticated ? <AdminPanel /> : <LoginForm />
+      case "terms": return <TermsPage />
+      case "privacy": return <PrivacyPage />
+      case "refund": return <RefundPage />
       default: return <HomeFeed />
     }
   }
