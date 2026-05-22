@@ -2,8 +2,8 @@
   {
     "id": "1",
     "name": "Apolonio",
-    "role": "Desarrollador Backend",
-    "bio": "Especialista en PHP, Laravel y bases de datos. Arquitecto del sistema de comisiones y pagos.",
+    "role": "Desarrollador Frontend",
+    "bio": "Especialista en React, CSS y diseño de interfaces. Constructor de la experiencia visual e interactiva del proyecto.",
     "photo": "",
     "email": "",
     "color": "#1A5276"
@@ -11,8 +11,8 @@
   {
     "id": "2",
     "name": "Arbela",
-    "role": "Marketing Digital",
-    "bio": "Experta en estrategia de mercado y posicionamiento de marca. Lidera las campañas publicitarias.",
+    "role": "Diseño Gráfico",
+    "bio": "Diseñadora gráfica con ojo para el detalle. Creadora de la identidad visual, materiales gráficos y experiencia de usuario.",
     "photo": "",
     "email": "",
     "color": "#2E86C1"
@@ -20,8 +20,8 @@
   {
     "id": "3",
     "name": "Mychael",
-    "role": "Desarrollador Fullstack",
-    "bio": "Dominio completo de React, Node.js y TypeScript. Constructor del frontend y las APIs en tiempo real.",
+    "role": "Marketing",
+    "bio": "Experto en estrategia de mercado y posicionamiento de marca. Lidera las campañas publicitarias y comunicación digital.",
     "photo": "",
     "email": "",
     "color": "#1E8449"
@@ -29,8 +29,8 @@
   {
     "id": "4",
     "name": "Pedro",
-    "role": "Diseño Gráfico",
-    "bio": "Diseñador UI/UX con ojo para el detalle. Creador de la identidad visual y experiencia de usuario.",
+    "role": "Comunicador",
+    "bio": "Comunicador estratégico y gestor de relaciones. Conexión con proveedores nicaragüenses y administración general.",
     "photo": "",
     "email": "",
     "color": "#F4D03F"
@@ -38,8 +38,8 @@
   {
     "id": "5",
     "name": "Reynaldo",
-    "role": "Comunicador y Fundador",
-    "bio": "Visionario y líder del proyecto. Conexión con proveedores nicaragüenses y administración general.",
+    "role": "Desarrollador Fullstack",
+    "bio": "Dominio completo de React, Node.js y TypeScript. Constructor del frontend y las APIs en tiempo real.",
     "photo": "",
     "email": "rey7214935@gmail.com",
     "color": "#C0392B"

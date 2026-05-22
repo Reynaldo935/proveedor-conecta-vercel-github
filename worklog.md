@@ -263,3 +263,44 @@ Stage Summary:
 - Legal pages (Terms, Privacy, Refund) with footer links
 - Creators dropdown with auto-refresh and responsive 5-column layout
 - Zero lint errors, server running correctly
+
+---
+Task ID: 6
+Agent: Main Orchestrator
+Task: Fix navbar (comprehensive with ALL features) and Google Maps API
+
+Work Log:
+- Analyzed user screenshots via VLM - confirmed navbar renders but is too minimal (only Mapa, Team, Login)
+- User complained: "no sirve el navbar", "no da la api de google maps"
+- Completely rewrote /src/components/layout/header.tsx with comprehensive navigation:
+  - DESKTOP (lg+): Full dropdown menus - Inicio, Explorar (Marketplace/Productos/Mapa), Vender (seller), Pagos (Cotizaciones/Checkout), Chats (with badge), Más (Dashboard/Productos/Perfil/Config/Notificaciones/Admin), Team, Theme, User avatar
+  - MOBILE/TABLET (<lg): Hamburger → Sheet slide-in with organized sections (Navegación, Vendedor, Pagos, Comunicación, Mi Cuenta, Administración, Equipo, Auth)
+  - Uses lg:hidden for mobile toggle (covers tablets too)
+- Created /src/components/map/map-data.ts - shared types/constants for map components
+- Created /src/components/map/google-map-inner.tsx - Google Maps via @vis.gl/react-google-maps
+  - Uses APIProvider, Map, AdvancedMarker, Pin, InfoWindow
+  - Satellite view toggle, all 17 department markers, vendor markers
+  - Runtime fallback to Leaflet if API key missing
+- Created /src/components/map/leaflet-map-inner.tsx - Enhanced Leaflet with satellite tiles
+  - OpenStreetMap base + Esri World Imagery satellite + labels overlay
+  - Satellite/Map toggle button
+  - forwardRef with useImperativeHandle for flyTo control
+- Rewrote /src/components/map/map-view.tsx - Dual approach (Google Maps + Leaflet fallback)
+  - Auto-detects NEXT_PUBLIC_GOOGLE_MAPS_API_KEY env variable
+  - Falls back gracefully to Leaflet with toast notification
+  - Provider badge shows active engine
+- Updated /src/data/creators.json with correct team roles:
+  - Reynaldo: Comunicador → Desarrollador Fullstack
+  - Apolonio: Desarrollador Backend → Desarrollador Frontend
+  - Pedro: Diseño Gráfico → Comunicador
+  - Arbela: Marketing Digital → Diseño Gráfico
+  - Mychael: Desarrollador Fullstack → Marketing
+- Installed @vis.gl/react-google-maps and @react-google-maps/api
+- All lint checks pass clean
+
+Stage Summary:
+- Navbar now has ALL features organized in dropdown menus (desktop) and Sheet menu (mobile)
+- Google Maps API integrated with automatic Leaflet fallback when no API key
+- Satellite view available on both map engines
+- Team roles corrected per user specification
+- Zero lint errors, dev server running on port 3000
