@@ -26,6 +26,10 @@ export type AppView =
   | 'terms'
   | 'privacy'
   | 'refund'
+  | 'payments'
+  | 'featured'
+  | 'downloads'
+  | 'backup'
 
 interface AppState {
   currentView: AppView

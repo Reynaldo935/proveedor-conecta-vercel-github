@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -34,14 +33,12 @@ import {
   Bell,
   MapPin,
   Menu,
-  X,
   Plus,
   User,
   LogOut,
   Package,
   LayoutDashboard,
   FileText,
-  Heart,
   Settings,
   Home,
   Compass,
@@ -50,17 +47,61 @@ import {
   MoreHorizontal,
   Shield,
   Store,
-  ClipboardList,
+  Star,
+  Download,
+  DatabaseBackup,
+  Wallet,
+  FileSpreadsheet,
+  FileImage,
+  FileDown,
 } from "lucide-react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { CreatorsDropdown } from "@/components/creators/CreatorsDropdown"
 
+// Theme toggle button - declared outside render to avoid lint error
+function ThemeToggleButton({
+  mounted,
+  setTheme,
+  className,
+}: {
+  mounted: boolean
+  setTheme: (theme: string) => void
+  className?: string
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => {
+        const current = document.documentElement.classList.contains("dark") ? "dark" : "light"
+        setTheme(current === "dark" ? "light" : "dark")
+      }}
+      className={className || "h-9 w-9"}
+    >
+      {mounted ? (
+        document.documentElement.classList.contains("dark") ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />
+      ) : (
+        <Moon className="h-4 w-4" />
+      )}
+    </Button>
+  )
+}
+
 export function Header() {
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
+  const mountedRef = useRef(false)
+  const [mounted, setMounted] = useState(false)
   const { navigate, searchQuery, setSearchQuery } = useAppStore()
   const { user, isAuthenticated, logout } = useAuthStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [notifCount, setNotifCount] = useState(0)
+
+  // Fix hydration: only render theme-dependent UI after mount
+  useEffect(() => {
+    mountedRef.current = true
+    // Use requestAnimationFrame to defer setState out of effect body
+    requestAnimationFrame(() => setMounted(true))
+  }, [])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -137,7 +178,7 @@ export function Header() {
                   <ChevronDown className="h-3 w-3 ml-0.5 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   Explorar Marketplace
                 </DropdownMenuLabel>
@@ -150,6 +191,10 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleNav("map")}>
                   <MapPin className="mr-2 h-4 w-4" /> Mapa Proveedores
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleNav("featured")}>
+                  <Star className="mr-2 h-4 w-4" /> Destacados y Ofertas
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -166,29 +211,32 @@ export function Header() {
               </Button>
             )}
 
-            {/* Pagos Dropdown */}
-            {isAuthenticated && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <CreditCard className="h-4 w-4 mr-1.5" /> Pagos
-                    <ChevronDown className="h-3 w-3 ml-0.5 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-52">
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    Pagos y Cotizaciones
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleNav("cotizaciones")}>
-                    <FileText className="mr-2 h-4 w-4" /> Cotizaciones
-                  </DropdownMenuItem>
+            {/* Métodos de Pago */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Wallet className="h-4 w-4 mr-1.5" /> Pagos
+                  <ChevronDown className="h-3 w-3 ml-0.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Métodos de Pago y Cotizaciones
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleNav("payments")}>
+                  <CreditCard className="mr-2 h-4 w-4" /> Métodos de Pago
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNav("cotizaciones")}>
+                  <FileText className="mr-2 h-4 w-4" /> Cotizaciones
+                </DropdownMenuItem>
+                {isAuthenticated && (
                   <DropdownMenuItem onClick={() => handleNav("checkout")}>
                     <ShoppingCart className="mr-2 h-4 w-4" /> Checkout
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Chats with unread badge */}
             {isAuthenticated && (
@@ -202,73 +250,95 @@ export function Header() {
               </Button>
             )}
 
-            {/* Más Dropdown */}
+            {/* Descargar Dropdown */}
             {isAuthenticated && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4 mr-1.5" /> Más
+                    <Download className="h-4 w-4 mr-1.5" /> Descargar
                     <ChevronDown className="h-3 w-3 ml-0.5 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    Mi Cuenta
+                    Exportar Datos
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleNav(isSeller ? "vendor-dashboard" : "buyer-dashboard")}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  <DropdownMenuItem onClick={() => handleNav("downloads")}>
+                    <FileDown className="mr-2 h-4 w-4" /> Centro de Descargas
                   </DropdownMenuItem>
-                  {isSeller && (
-                    <DropdownMenuItem onClick={() => handleNav("my-products")}>
-                      <Package className="mr-2 h-4 w-4" /> Mis Productos
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    Configuración
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleNav("profile")}>
-                    <User className="mr-2 h-4 w-4" /> Perfil
+                  <DropdownMenuItem onClick={() => { fetch("/api/export?type=products&format=xlsx").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "productos.xlsx"; a.click(); URL.revokeObjectURL(u); }) }}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (.xlsx)
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleNav("settings")}>
-                    <Settings className="mr-2 h-4 w-4" /> Configuración
+                  <DropdownMenuItem onClick={() => { fetch("/api/export?type=transactions&format=csv").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "transacciones.csv"; a.click(); URL.revokeObjectURL(u); }) }}>
+                    <FileText className="mr-2 h-4 w-4" /> CSV Transacciones
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleNav("notifications")}>
-                    <Bell className="mr-2 h-4 w-4" /> Notificaciones
-                    {notifCount > 0 && (
-                      <Badge className="ml-auto h-5 min-w-5 px-1 flex items-center justify-center text-[10px] bg-volcan text-volcan-foreground">
-                        {notifCount > 9 ? "9+" : notifCount}
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-xs text-muted-foreground">
-                        Administración
-                      </DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleNav("admin")}>
-                        <Shield className="mr-2 h-4 w-4" /> Panel Admin
-                      </DropdownMenuItem>
-                    </>
-                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+
+            {/* Más Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="h-4 w-4 mr-1.5" /> Más
+                  <ChevronDown className="h-3 w-3 ml-0.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {isAuthenticated && (
+                  <>
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">
+                      Mi Cuenta
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleNav(isSeller ? "vendor-dashboard" : "buyer-dashboard")}>
+                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                    </DropdownMenuItem>
+                    {isSeller && (
+                      <DropdownMenuItem onClick={() => handleNav("my-products")}>
+                        <Package className="mr-2 h-4 w-4" /> Mis Productos
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => handleNav("profile")}>
+                      <User className="mr-2 h-4 w-4" /> Perfil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNav("settings")}>
+                      <Settings className="mr-2 h-4 w-4" /> Configuración
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNav("notifications")}>
+                      <Bell className="mr-2 h-4 w-4" /> Notificaciones
+                      {notifCount > 0 && (
+                        <Badge className="ml-auto h-5 min-w-5 px-1 flex items-center justify-center text-[10px] bg-volcan text-volcan-foreground">
+                          {notifCount > 9 ? "9+" : notifCount}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">
+                      Administración
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleNav("admin")}>
+                      <Shield className="mr-2 h-4 w-4" /> Panel Admin
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNav("backup")}>
+                      <DatabaseBackup className="mr-2 h-4 w-4" /> Backup
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Team / Creators */}
             <CreatorsDropdown />
 
             {/* Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-9 w-9"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
+            <ThemeToggleButton mounted={mounted} setTheme={setTheme} />
 
             {/* Auth Section */}
             {isAuthenticated && user ? (
@@ -354,14 +424,7 @@ export function Header() {
                 <MessageCircle className="h-5 w-5" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-9 w-9"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
+            <ThemeToggleButton mounted={mounted} setTheme={setTheme} />
             <Button
               variant="ghost"
               size="icon"
@@ -412,29 +475,17 @@ export function Header() {
                   Navegación
                 </p>
               </div>
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-10"
-                onClick={() => handleNav("home")}
-              >
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("home")}>
                 <Home className="h-4 w-4 mr-3 text-primary" /> Inicio
               </Button>
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-10"
-                onClick={() => handleNav("search")}
-              >
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("search")}>
                 <Search className="h-4 w-4 mr-3 text-primary" /> Productos
               </Button>
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-10"
-                onClick={() => handleNav("map")}
-              >
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("map")}>
                 <MapPin className="h-4 w-4 mr-3 text-primary" /> Mapa Proveedores
+              </Button>
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("featured")}>
+                <Star className="h-4 w-4 mr-3 text-primary" /> Destacados y Ofertas
               </Button>
 
               {/* ── Sell Section (Seller Only) ── */}
@@ -446,46 +497,32 @@ export function Header() {
                       Vendedor
                     </p>
                   </div>
-                  <Button
-                    className="w-full justify-start h-10 bg-primary hover:bg-primary/90 font-semibold"
-                    onClick={() => handleNav("sell-product")}
-                  >
+                  <Button className="w-full justify-start h-10 bg-primary hover:bg-primary/90 font-semibold" onClick={() => handleNav("sell-product")}>
                     <Plus className="h-4 w-4 mr-3" /> Vender Producto
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav("my-products")}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("my-products")}>
                     <Package className="h-4 w-4 mr-3 text-primary" /> Mis Productos
                   </Button>
                 </>
               )}
 
               {/* ── Payments Section ── */}
+              <Separator className="my-2" />
+              <div className="px-2 pt-1 pb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Métodos de Pago
+                </p>
+              </div>
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("payments")}>
+                <CreditCard className="h-4 w-4 mr-3 text-primary" /> Métodos de Pago
+              </Button>
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("cotizaciones")}>
+                <FileText className="h-4 w-4 mr-3 text-primary" /> Cotizaciones
+              </Button>
               {isAuthenticated && (
-                <>
-                  <Separator className="my-2" />
-                  <div className="px-2 pt-1 pb-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Pagos
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav("cotizaciones")}
-                  >
-                    <FileText className="h-4 w-4 mr-3 text-primary" /> Cotizaciones
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav("checkout")}
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-3 text-primary" /> Checkout
-                  </Button>
-                </>
+                <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("checkout")}>
+                  <ShoppingCart className="h-4 w-4 mr-3 text-primary" /> Checkout
+                </Button>
               )}
 
               {/* ── Communication Section ── */}
@@ -497,24 +534,37 @@ export function Header() {
                       Comunicación
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav("chat-list")}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("chat-list")}>
                     <MessageCircle className="h-4 w-4 mr-3 text-primary" /> Chats
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav("notifications")}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("notifications")}>
                     <Bell className="h-4 w-4 mr-3 text-primary" /> Notificaciones
                     {notifCount > 0 && (
                       <Badge className="ml-auto bg-volcan text-volcan-foreground h-5 min-w-5 px-1 flex items-center justify-center text-[10px]">
                         {notifCount > 9 ? "9+" : notifCount}
                       </Badge>
                     )}
+                  </Button>
+                </>
+              )}
+
+              {/* ── Downloads Section ── */}
+              {isAuthenticated && (
+                <>
+                  <Separator className="my-2" />
+                  <div className="px-2 pt-1 pb-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Descargar Archivos
+                    </p>
+                  </div>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("downloads")}>
+                    <Download className="h-4 w-4 mr-3 text-primary" /> Centro de Descargas
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => { fetch("/api/export?type=products&format=xlsx").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "productos.xlsx"; a.click(); URL.revokeObjectURL(u); }) }}>
+                    <FileSpreadsheet className="h-4 w-4 mr-3 text-primary" /> Exportar Excel
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => { fetch("/api/export?type=transactions&format=csv").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "transacciones.csv"; a.click(); URL.revokeObjectURL(u); }) }}>
+                    <FileText className="h-4 w-4 mr-3 text-primary" /> Exportar CSV
                   </Button>
                 </>
               )}
@@ -528,25 +578,13 @@ export function Header() {
                       Mi Cuenta
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav(isSeller ? "vendor-dashboard" : "buyer-dashboard")}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav(isSeller ? "vendor-dashboard" : "buyer-dashboard")}>
                     <LayoutDashboard className="h-4 w-4 mr-3 text-primary" /> Dashboard
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav("profile")}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("profile")}>
                     <User className="h-4 w-4 mr-3 text-primary" /> Perfil
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10"
-                    onClick={() => handleNav("settings")}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("settings")}>
                     <Settings className="h-4 w-4 mr-3 text-primary" /> Configuración
                   </Button>
                 </>
@@ -561,12 +599,11 @@ export function Header() {
                       Administración
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10 text-destructive hover:text-destructive"
-                    onClick={() => handleNav("admin")}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10 text-destructive hover:text-destructive" onClick={() => handleNav("admin")}>
                     <Shield className="h-4 w-4 mr-3" /> Panel Admin
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10 text-destructive hover:text-destructive" onClick={() => handleNav("backup")}>
+                    <DatabaseBackup className="h-4 w-4 mr-3" /> Backup
                   </Button>
                 </>
               )}
@@ -598,27 +635,16 @@ export function Header() {
                       <span className="text-xs text-muted-foreground truncate">{user.email}</span>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-10 text-destructive hover:text-destructive"
-                    onClick={() => { logout(); setMobileMenuOpen(false) }}
-                  >
+                  <Button variant="ghost" className="w-full justify-start h-10 text-destructive hover:text-destructive" onClick={() => { logout(); setMobileMenuOpen(false) }}>
                     <LogOut className="h-4 w-4 mr-3" /> Cerrar Sesión
                   </Button>
                 </div>
               ) : (
                 <div className="px-2 space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full h-10"
-                    onClick={() => { navigate("login"); setMobileMenuOpen(false) }}
-                  >
+                  <Button variant="outline" className="w-full h-10" onClick={() => { navigate("login"); setMobileMenuOpen(false) }}>
                     Iniciar Sesión
                   </Button>
-                  <Button
-                    className="w-full h-10 bg-primary hover:bg-primary/90"
-                    onClick={() => { navigate("register"); setMobileMenuOpen(false) }}
-                  >
+                  <Button className="w-full h-10 bg-primary hover:bg-primary/90" onClick={() => { navigate("register"); setMobileMenuOpen(false) }}>
                     Registrarse
                   </Button>
                 </div>

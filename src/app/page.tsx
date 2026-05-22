@@ -34,6 +34,10 @@ const AdminPanel = dynamic(() => import("@/components/admin/admin-panel").then(m
 const TermsPage = dynamic(() => import("@/components/legal/legal-pages").then(m => ({ default: m.TermsPage })), { ssr: false })
 const PrivacyPage = dynamic(() => import("@/components/legal/legal-pages").then(m => ({ default: m.PrivacyPage })), { ssr: false })
 const RefundPage = dynamic(() => import("@/components/legal/legal-pages").then(m => ({ default: m.RefundPage })), { ssr: false })
+const DownloadsView = dynamic(() => import("@/components/downloads/downloads-view").then(m => ({ default: m.DownloadsView })), { ssr: false })
+const BackupView = dynamic(() => import("@/components/backup/backup-view").then(m => ({ default: m.BackupView })), { ssr: false })
+const PaymentsView = dynamic(() => import("@/components/payments/payments-view").then(m => ({ default: m.PaymentsView })), { ssr: false })
+const FeaturedView = dynamic(() => import("@/components/marketplace/featured-view").then(m => ({ default: m.FeaturedView })), { ssr: false })
 
 // Loading fallback
 function PageLoader() {
@@ -105,6 +109,10 @@ export default function ProveedorConecta() {
       case "terms": return <TermsPage />
       case "privacy": return <PrivacyPage />
       case "refund": return <RefundPage />
+      case "downloads": return isAuthenticated ? <DownloadsView /> : <LoginForm />
+      case "backup": return isAuthenticated ? <BackupView /> : <LoginForm />
+      case "payments": return <PaymentsView />
+      case "featured": return <FeaturedView />
       default: return <HomeFeed />
     }
   }

@@ -304,3 +304,33 @@ Stage Summary:
 - Satellite view available on both map engines
 - Team roles corrected per user specification
 - Zero lint errors, dev server running on port 3000
+
+---
+Task ID: 7
+Agent: Main Orchestrator
+Task: Add missing navbar items (Métodos de Pago, Destacados y Ofertas, Backup, Descargar archivos, Dashboard) and fix hydration error
+
+Work Log:
+- Fixed hydration error: ThemeToggleButton extracted to module-level component with mounted/setTheme props, uses requestAnimationFrame to defer setState
+- Added 4 new views to AppView type: 'payments', 'featured', 'downloads', 'backup'
+- Added all missing navbar items to both desktop and mobile menus:
+  - **Métodos de Pago** dropdown: Métodos de Pago page, Cotizaciones, Checkout
+  - **Destacados y Ofertas** in Explorar dropdown
+  - **Descargar** dropdown: Centro de Descargas, Exportar Excel, Exportar CSV
+  - **Dashboard** in Más dropdown (always visible for authenticated users)
+  - **Backup** in Más dropdown (admin only)
+- Created /src/components/downloads/downloads-view.tsx: 7 download options (Excel, CSV, PDF, Word, PNG image)
+- Created /src/components/backup/backup-view.tsx: Admin backup panel with create/restore/delete
+- Created /src/components/payments/payments-view.tsx: All 11 payment methods with 3% commission info
+- Created /src/components/marketplace/featured-view.tsx: Featured products with filter tabs
+- Created /src/app/api/backup/route.ts: GET (list backups), POST (create/restore backup)
+- Enhanced /src/app/api/export/route.ts: Added xlsx (SpreadsheetML), docx (HTML-Word) export formats
+- Updated page.tsx with dynamic imports and switch cases for all 4 new views
+- All lint checks pass clean with zero errors
+
+Stage Summary:
+- Hydration error fixed by extracting ThemeToggleButton to module level
+- Navbar now has ALL requested features: Inicio, Explorar, Vender, Pagos (Métodos de Pago), Chats, Descargar, Más (Dashboard/Perfil/Config/Notificaciones/Admin/Backup), Team
+- 4 new view components created (downloads, backup, payments, featured)
+- 2 API endpoints created/enhanced (backup, export with xlsx/docx)
+- Zero lint errors, dev server running on port 3000
