@@ -73,6 +73,7 @@ export function ProfileSettings() {
     setUploading(true)
     const fd = new FormData()
     fd.append("files", e.target.files[0])
+    fd.append("subfolder", "avatars")
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd })
       const d = await res.json()

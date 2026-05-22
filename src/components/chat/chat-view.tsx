@@ -292,6 +292,7 @@ export function ChatView() {
 
     const fd = new FormData()
     Array.from(files).forEach((f) => fd.append("files", f))
+    fd.append("subfolder", "chat")
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd })

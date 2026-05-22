@@ -136,6 +136,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
     setUploadProgress(0)
     const fd = new FormData()
     Array.from(files).forEach((f) => fd.append("files", f))
+    fd.append("subfolder", "products")
     try {
       // Simulate progress for UX
       const progressInterval = setInterval(() => {
