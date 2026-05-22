@@ -184,16 +184,23 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
   )
 }
 
-// ─── Floating Particles ──────────────────────────────────────────────────────
+// ─── Floating Particles (deterministic to avoid hydration mismatch) ────────
+function seededRandom(seed: number) {
+  // Simple deterministic PRNG based on seed
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453
+  return x - Math.floor(x)
+}
+
 function FloatingParticles() {
   const particles = useMemo(() =>
     Array.from({ length: 20 }, (_, i) => ({
       id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 6 + 2,
-      duration: Math.random() * 8 + 6,
-      delay: Math.random() * 4,
+      x: seededRandom(i * 3 + 1) * 100,
+      y: seededRandom(i * 3 + 2) * 100,
+      size: seededRandom(i * 3 + 3) * 6 + 2,
+      duration: seededRandom(i * 5 + 7) * 8 + 6,
+      delay: seededRandom(i * 5 + 11) * 4,
+      driftX: seededRandom(i * 7 + 13) * 20 - 10,
     })), []
   )
 
@@ -211,7 +218,7 @@ function FloatingParticles() {
           }}
           animate={{
             y: [0, -30, 0],
-            x: [0, Math.random() * 20 - 10, 0],
+            x: [0, p.driftX, 0],
             opacity: [0.2, 0.6, 0.2],
           }}
           transition={{

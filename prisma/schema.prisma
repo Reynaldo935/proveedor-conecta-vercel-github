@@ -118,13 +118,18 @@ model Transaction {
 }
 
 model Message {
-  id         String   @id @default(cuid())
-  chatRoomId String
-  senderId   String
-  content    String   @default("")
-  imageUrl   String   @default("")
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id           String   @id @default(cuid())
+  chatRoomId   String
+  senderId     String
+  content      String   @default("")
+  imageUrl     String   @default("")
+  messageType  String   @default("text") // text, image, video, audio, location
+  mediaUrl     String   @default("")
+  locationLat  Float?
+  locationLng  Float?
+  locationName String   @default("")
+  isRead       Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
   chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
   sender   User     @relation("SentMessages", fields: [senderId], references: [id])

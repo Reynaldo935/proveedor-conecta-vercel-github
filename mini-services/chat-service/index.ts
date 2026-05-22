@@ -119,16 +119,16 @@ io.on('connection', (socket) => {
   })
 
   // --- Send Message ---
-  socket.on('send-message', async (data: { roomId: string; senderId: string; content?: string; imageUrl?: string }) => {
-    const { roomId, senderId, content, imageUrl } = data
+  socket.on('send-message', async (data: { roomId: string; senderId: string; content?: string; imageUrl?: string; messageType?: string; mediaUrl?: string; locationLat?: number; locationLng?: number; locationName?: string }) => {
+    const { roomId, senderId, content, imageUrl, messageType, mediaUrl, locationLat, locationLng, locationName } = data
 
     if (!roomId || !senderId) {
       socket.emit('error', { message: 'roomId and senderId are required' })
       return
     }
 
-    if (!content && !imageUrl) {
-      socket.emit('error', { message: 'Mensaje o imagen requerido' })
+    if (!content && !imageUrl && !mediaUrl && !locationLat) {
+      socket.emit('error', { message: 'Mensaje, imagen o ubicación requerido' })
       return
     }
 
@@ -146,21 +146,35 @@ io.on('connection', (socket) => {
         return
       }
 
+      const msgType = messageType || (imageUrl ? 'image' : 'text')
+
       // Save message to database
       const message = await db.message.create({
         data: {
           chatRoomId: roomId,
           senderId,
           content: content || '',
-          imageUrl: imageUrl || '',
+          imageUrl: imageUrl || mediaUrl || '',
+          messageType: msgType,
+          mediaUrl: mediaUrl || '',
+          locationLat: locationLat || null,
+          locationLng: locationLng || null,
+          locationName: locationName || '',
         },
       })
+
+      // Determine display text for last message
+      let lastMsgDisplay = content || ''
+      if (msgType === 'image' && !content) lastMsgDisplay = '📷 Imagen'
+      else if (msgType === 'video') lastMsgDisplay = content || '🎥 Video'
+      else if (msgType === 'audio') lastMsgDisplay = content || '🎵 Audio'
+      else if (msgType === 'location') lastMsgDisplay = content || '📍 Ubicación'
 
       // Update chat room's last message
       await db.chatRoom.update({
         where: { id: roomId },
         data: {
-          lastMessage: content || '📷 Imagen',
+          lastMessage: lastMsgDisplay,
           lastMessageAt: new Date(),
         },
       })
@@ -194,13 +208,13 @@ io.on('connection', (socket) => {
       // Emit a room-updated event for chat list updates
       io.emit('room-updated', {
         roomId,
-        lastMessage: content || '📷 Imagen',
+        lastMessage: lastMsgDisplay,
         lastMessageAt: new Date().toISOString(),
         senderId,
         otherUserId,
       })
 
-      console.log(`[ChatService] Message in room ${roomId} from user ${senderId}`)
+      console.log(`[ChatService] ${msgType} message in room ${roomId} from user ${senderId}`)
     } catch (error) {
       console.error('[ChatService] Send message error:', error)
       socket.emit('error', { message: 'Error al enviar mensaje' })

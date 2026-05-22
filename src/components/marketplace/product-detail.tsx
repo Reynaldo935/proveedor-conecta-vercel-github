@@ -76,7 +76,10 @@ export function ProductDetail() {
     if (!isAuthenticated || !product) { navigate("login"); return }
     const res = await fetch("/api/chat/rooms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sellerId: product.seller.id, productId: product.id, message: `Hola, me interesa: ${product.title}` }) })
     const d = await res.json()
-    if (d.success) { toast.success("Chat iniciado"); navigate("chat-list") }
+    if (d.success) {
+      toast.success("Chat iniciado")
+      navigate("chat", { roomId: d.data.id } as unknown as Record<string, string>)
+    }
   }
 
   if (loading) return <div className="space-y-4"><Skeleton className="h-96 w-full" /><Skeleton className="h-8 w-3/4" /><Skeleton className="h-6 w-1/2" /></div>

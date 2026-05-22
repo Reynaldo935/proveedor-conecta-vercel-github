@@ -37,6 +37,7 @@ interface AppState {
   selectedVendorId: string | null
   selectedCotizacionId: string | null
   editProductId: string | null
+  selectedRoomId: string | null
   searchQuery: string
   selectedCategory: string
   priceRange: [number, number]
@@ -55,6 +56,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedVendorId: null,
   selectedCotizacionId: null,
   editProductId: null,
+  selectedRoomId: null,
   searchQuery: '',
   selectedCategory: '',
   priceRange: [0, 100000],
@@ -66,6 +68,7 @@ export const useAppStore = create<AppState>((set) => ({
     selectedVendorId: params.vendorId ?? null,
     selectedCotizacionId: params.cotizacionId ?? null,
     editProductId: params.editProductId ?? null,
+    selectedRoomId: params.roomId ?? null,
   }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   setSelectedCategory: (c) => set({ selectedCategory: c }),

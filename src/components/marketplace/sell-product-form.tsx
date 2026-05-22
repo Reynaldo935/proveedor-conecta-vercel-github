@@ -327,7 +327,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                         : "Arrastra fotos aquí o haz clic para subir"}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Máximo 5 fotos · JPG, PNG
+                      Máximo 5 fotos · Cualquier formato de imagen
                     </p>
                   </label>
                 </div>

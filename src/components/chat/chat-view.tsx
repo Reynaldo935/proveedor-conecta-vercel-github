@@ -10,7 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
-import { Send, ChevronLeft, ImagePlus, Package, Wifi, WifiOff } from "lucide-react"
+import {
+  Send, ChevronLeft, ImagePlus, Package, Wifi, WifiOff,
+  Paperclip, MapPin, Mic, Video, X, Loader2, Play, Volume2,
+} from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface ChatMessage {
@@ -22,6 +25,11 @@ interface ChatMessage {
   isRead: boolean
   createdAt: string
   sender?: { id: string; name: string; avatar: string }
+  messageType?: "text" | "image" | "video" | "audio" | "location"
+  mediaUrl?: string
+  locationLat?: number
+  locationLng?: number
+  locationName?: string
 }
 
 interface ChatRoomData {
@@ -44,6 +52,7 @@ interface ChatRoomData {
 export function ChatView() {
   const { navigate } = useAppStore()
   const { user } = useAuthStore()
+  const appStore = useAppStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMsg, setNewMsg] = useState("")
   const [chatRoom, setChatRoom] = useState<ChatRoomData | null>(null)
@@ -51,9 +60,14 @@ export function ChatView() {
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(appStore.selectedRoomId || null)
   const socketRef = useRef<Socket | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Connect to Socket.IO
   useEffect(() => {
@@ -86,7 +100,7 @@ export function ChatView() {
 
     // Listen for typing indicators
     socket.on("typing", (data: { roomId: string; users: string[] }) => {
-      if (data.roomId === chatRoom?.id) {
+      if (data.roomId === activeRoomId) {
         const otherTyping = data.users.filter((u) => u !== user?.id)
         setTypingUsers(otherTyping)
       }
@@ -94,20 +108,20 @@ export function ChatView() {
 
     // Listen for user online/offline
     socket.on("user-online", (data: { roomId: string; userId: string }) => {
-      if (data.roomId === chatRoom?.id && data.userId !== user?.id) {
+      if (data.roomId === activeRoomId && data.userId !== user?.id) {
         setIsOtherOnline(true)
       }
     })
 
     socket.on("user-offline", (data: { roomId: string; userId: string }) => {
-      if (data.roomId === chatRoom?.id && data.userId !== user?.id) {
+      if (data.roomId === activeRoomId && data.userId !== user?.id) {
         setIsOtherOnline(false)
       }
     })
 
     // Listen for read receipts
     socket.on("messages-read", (data: { roomId: string; userId: string }) => {
-      if (data.roomId === chatRoom?.id) {
+      if (data.roomId === activeRoomId) {
         setMessages((prev) =>
           prev.map((m) =>
             m.senderId === user?.id ? { ...m, isRead: true } : m
@@ -120,24 +134,62 @@ export function ChatView() {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [chatRoom?.id, user?.id])
+  }, [activeRoomId, user?.id])
 
   // Load initial chat room and messages via REST API
   useEffect(() => {
+    const targetRoomId = appStore.selectedRoomId || activeRoomId
+
+    if (targetRoomId) {
+      // Load a specific room by ID
+      fetch(`/api/chat/rooms`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success) {
+            const room = d.data.find((r: ChatRoomData) => r.id === targetRoomId)
+            if (room) {
+              setChatRoom(room)
+              setActiveRoomId(room.id)
+              if (socketRef.current && user) {
+                socketRef.current.emit("join-room", {
+                  roomId: room.id,
+                  userId: user.id,
+                })
+              }
+              fetch(`/api/chat/rooms/${room.id}/messages`)
+                .then((r) => r.json())
+                .then((md) => {
+                  if (md.success) setMessages(md.data)
+                })
+                .finally(() => setLoading(false))
+            } else {
+              setLoading(false)
+            }
+          } else {
+            setLoading(false)
+          }
+        })
+        .catch(() => {
+          toast.error("Error al cargar chat")
+          setLoading(false)
+        })
+      return
+    }
+
+    // No specific room ID - load first available room
     fetch("/api/chat/rooms")
       .then((r) => r.json())
       .then((d) => {
         if (d.success && d.data.length > 0) {
           const room = d.data[0]
           setChatRoom(room)
-          // Join the socket room
+          setActiveRoomId(room.id)
           if (socketRef.current && user) {
             socketRef.current.emit("join-room", {
               roomId: room.id,
               userId: user.id,
             })
           }
-          // Load messages via REST
           fetch(`/api/chat/rooms/${room.id}/messages`)
             .then((r) => r.json())
             .then((md) => {
@@ -188,12 +240,13 @@ export function ChatView() {
     [chatRoom, user]
   )
 
-  // Send message via Socket.IO
+  // Send text message via Socket.IO
   const sendMessage = async () => {
     if (!newMsg.trim() || !chatRoom || !user) return
 
     const content = newMsg.trim()
     setNewMsg("")
+    setShowAttachMenu(false)
 
     // Stop typing indicator
     if (socketRef.current) {
@@ -228,6 +281,105 @@ export function ChatView() {
       } catch {
         toast.error("Error al enviar mensaje")
       }
+    }
+  }
+
+  // Upload media file (image, video, audio)
+  const handleMediaUpload = async (files: FileList, type: "image" | "video" | "audio") => {
+    if (!chatRoom || !user) return
+    setUploading(true)
+    setShowAttachMenu(false)
+
+    const fd = new FormData()
+    Array.from(files).forEach((f) => fd.append("files", f))
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const d = await res.json()
+      if (d.success && d.data.length > 0) {
+        for (const url of d.data) {
+          if (isConnected && socketRef.current) {
+            socketRef.current.emit("send-message", {
+              roomId: chatRoom.id,
+              senderId: user.id,
+              content: type === "image" ? "📷 Imagen" : type === "video" ? "🎥 Video" : "🎵 Audio",
+              imageUrl: url,
+              messageType: type,
+              mediaUrl: url,
+            })
+          } else {
+            const msgRes = await fetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: type === "image" ? "📷 Imagen" : type === "video" ? "🎥 Video" : "🎵 Audio",
+                imageUrl: url,
+                messageType: type,
+                mediaUrl: url,
+              }),
+            })
+            const md = await msgRes.json()
+            if (md.success) setMessages((prev) => [...prev, md.data])
+          }
+        }
+        toast.success(`${type === "image" ? "Imagen" : type === "video" ? "Video" : "Audio"} enviado`)
+      } else {
+        toast.error(d.error || "Error al subir archivo")
+      }
+    } catch {
+      toast.error("Error al subir archivo")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // Send location
+  const sendLocation = async () => {
+    if (!chatRoom || !user) return
+    setLocationLoading(true)
+    setShowAttachMenu(false)
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        })
+      })
+
+      const { latitude, longitude } = position.coords
+      const locationName = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+
+      if (isConnected && socketRef.current) {
+        socketRef.current.emit("send-message", {
+          roomId: chatRoom.id,
+          senderId: user.id,
+          content: `📍 Ubicación: ${locationName}`,
+          messageType: "location",
+          locationLat: latitude,
+          locationLng: longitude,
+          locationName,
+        })
+      } else {
+        const res = await fetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: `📍 Ubicación: ${locationName}`,
+            messageType: "location",
+            locationLat: latitude,
+            locationLng: longitude,
+            locationName,
+          }),
+        })
+        const d = await res.json()
+        if (d.success) setMessages((prev) => [...prev, d.data])
+      }
+      toast.success("Ubicación enviada")
+    } catch {
+      toast.error("No se pudo obtener tu ubicación. Activa el GPS.")
+    } finally {
+      setLocationLoading(false)
     }
   }
 
@@ -269,6 +421,112 @@ export function ChatView() {
       groupedMessages.push({ date, messages: [m] })
     }
   })
+
+  // Render message content based on type
+  const renderMessageContent = (m: ChatMessage) => {
+    const msgType = m.messageType || (m.imageUrl ? "image" : "text")
+
+    switch (msgType) {
+      case "image":
+        return (
+          <div>
+            {m.imageUrl && (
+              <img
+                src={m.imageUrl}
+                alt="Imagen compartida"
+                className="rounded-lg mb-2 max-h-64 max-w-full object-cover cursor-pointer"
+                onClick={() => window.open(m.imageUrl, "_blank")}
+              />
+            )}
+            {m.content && m.content !== "📷 Imagen" && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+            )}
+          </div>
+        )
+      case "video":
+        return (
+          <div>
+            {m.mediaUrl ? (
+              <video
+                src={m.mediaUrl}
+                controls
+                className="rounded-lg mb-2 max-h-64 max-w-full"
+                preload="metadata"
+              >
+                Tu navegador no soporta video.
+              </video>
+            ) : m.imageUrl ? (
+              <video
+                src={m.imageUrl}
+                controls
+                className="rounded-lg mb-2 max-h-64 max-w-full"
+                preload="metadata"
+              >
+                Tu navegador no soporta video.
+              </video>
+            ) : null}
+            {m.content && m.content !== "🎥 Video" && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+            )}
+          </div>
+        )
+      case "audio":
+        return (
+          <div>
+            {m.mediaUrl ? (
+              <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 rounded-lg p-2">
+                <Volume2 className="h-4 w-4 flex-shrink-0" />
+                <audio src={m.mediaUrl} controls className="h-8 max-w-[200px]" preload="metadata">
+                  Tu navegador no soporta audio.
+                </audio>
+              </div>
+            ) : m.imageUrl ? (
+              <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 rounded-lg p-2">
+                <Volume2 className="h-4 w-4 flex-shrink-0" />
+                <audio src={m.imageUrl} controls className="h-8 max-w-[200px]" preload="metadata">
+                  Tu navegador no soporta audio.
+                </audio>
+              </div>
+            ) : null}
+            {m.content && m.content !== "🎵 Audio" && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap mt-1">{m.content}</p>
+            )}
+          </div>
+        )
+      case "location":
+        return (
+          <div>
+            <a
+              href={`https://www.openstreetmap.org/?mlat=${m.locationLat || ""}&mlon=${m.locationLng || ""}#map=15/${m.locationLat || ""}/${m.locationLng || ""}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-primary/10 rounded-lg p-3 hover:bg-primary/20 transition-colors"
+            >
+              <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-primary">📍 Compartió ubicación</p>
+                <p className="text-xs text-muted-foreground">{m.locationName || m.content}</p>
+              </div>
+            </a>
+          </div>
+        )
+      default:
+        return (
+          <div>
+            {m.imageUrl && (
+              <img
+                src={m.imageUrl}
+                alt=""
+                className="rounded-lg mb-2 max-h-48 max-w-full"
+              />
+            )}
+            {m.content && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+            )}
+          </div>
+        )
+    }
+  }
 
   if (loading) {
     return (
@@ -442,7 +700,7 @@ export function ChatView() {
                 Inicia la conversación con {otherName}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Envía un mensaje para comenzar
+                Envía texto, imágenes, videos, audio o tu ubicación
               </p>
             </motion.div>
           ) : (
@@ -476,22 +734,11 @@ export function ChatView() {
                       <div
                         className={`max-w-[75%] px-4 py-2.5 ${
                           isMine
-                            ? "bg-primary text-primary-foreground chat-bubble-sent"
-                            : "bg-card border chat-bubble-received shadow-sm"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card border shadow-sm"
                         } ${sameSender ? (isMine ? "rounded-br-sm" : "rounded-bl-sm") : ""}`}
                       >
-                        {m.imageUrl && (
-                          <img
-                            src={m.imageUrl}
-                            alt=""
-                            className="rounded-lg mb-2 max-h-48 max-w-full"
-                          />
-                        )}
-                        {m.content && (
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                            {m.content}
-                          </p>
-                        )}
+                        {renderMessageContent(m)}
                         <div className="flex items-center gap-1 justify-end mt-1">
                           <p
                             className={`text-[10px] ${
@@ -548,36 +795,132 @@ export function ChatView() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mt-3 flex gap-2"
+        className="mt-3"
       >
-        <Button
-          variant="outline"
-          size="icon"
-          className="flex-shrink-0"
-          onClick={() => toast.info("Subir imagen próximamente")}
-        >
-          <ImagePlus className="h-4 w-4" />
-        </Button>
-        <Input
-          placeholder="Escribe un mensaje..."
-          value={newMsg}
-          onChange={(e) => handleTyping(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault()
-              sendMessage()
-            }
-          }}
-          className="flex-1"
+        {/* Attachment menu */}
+        <AnimatePresence>
+          {showAttachMenu && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-2 overflow-hidden"
+            >
+              <div className="flex gap-2 p-2 bg-card border rounded-xl">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 flex flex-col items-center gap-1 h-auto py-2"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.accept = "image/*"
+                      fileInputRef.current.onchange = (e) => {
+                        const target = e.target as HTMLInputElement
+                        if (target.files?.length) handleMediaUpload(target.files, "image")
+                      }
+                      fileInputRef.current.click()
+                    }
+                  }}
+                >
+                  <ImagePlus className="h-5 w-5 text-green-600" />
+                  <span className="text-[10px]">Foto</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 flex flex-col items-center gap-1 h-auto py-2"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.accept = "video/*"
+                      fileInputRef.current.onchange = (e) => {
+                        const target = e.target as HTMLInputElement
+                        if (target.files?.length) handleMediaUpload(target.files, "video")
+                      }
+                      fileInputRef.current.click()
+                    }
+                  }}
+                >
+                  <Video className="h-5 w-5 text-blue-600" />
+                  <span className="text-[10px]">Video</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 flex flex-col items-center gap-1 h-auto py-2"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.accept = "audio/*"
+                      fileInputRef.current.onchange = (e) => {
+                        const target = e.target as HTMLInputElement
+                        if (target.files?.length) handleMediaUpload(target.files, "audio")
+                      }
+                      fileInputRef.current.click()
+                    }
+                  }}
+                >
+                  <Mic className="h-5 w-5 text-purple-600" />
+                  <span className="text-[10px]">Audio</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 flex flex-col items-center gap-1 h-auto py-2"
+                  onClick={sendLocation}
+                  disabled={locationLoading}
+                >
+                  {locationLoading ? (
+                    <Loader2 className="h-5 w-5 text-red-600 animate-spin" />
+                  ) : (
+                    <MapPin className="h-5 w-5 text-red-600" />
+                  )}
+                  <span className="text-[10px]">Ubicación</span>
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
         />
-        <Button
-          size="icon"
-          onClick={sendMessage}
-          disabled={!newMsg.trim()}
-          className="bg-primary hover:bg-primary/90 flex-shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0"
+            onClick={() => setShowAttachMenu(!showAttachMenu)}
+          >
+            {showAttachMenu ? <X className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
+          </Button>
+          <Input
+            placeholder="Escribe un mensaje..."
+            value={newMsg}
+            onChange={(e) => handleTyping(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                sendMessage()
+              }
+            }}
+            className="flex-1"
+          />
+          <Button
+            size="icon"
+            onClick={sendMessage}
+            disabled={!newMsg.trim() || uploading}
+            className="bg-primary hover:bg-primary/90 flex-shrink-0"
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </motion.div>
     </div>
   )

@@ -86,22 +86,41 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const body = await request.json()
-    const { content, imageUrl } = body
+    const { content, imageUrl, messageType, mediaUrl, locationLat, locationLng, locationName } = body
 
-    if (!content && !imageUrl) {
-      return NextResponse.json({ success: false, error: 'Mensaje o imagen requerido' }, { status: 400 })
+    if (!content && !imageUrl && !mediaUrl && !locationLat) {
+      return NextResponse.json({ success: false, error: 'Mensaje, imagen o ubicación requerido' }, { status: 400 })
     }
 
+    const msgType = messageType || (imageUrl ? 'image' : 'text')
+
     const message = await db.message.create({
-      data: { chatRoomId: roomId, senderId: userId, content: content || '', imageUrl: imageUrl || '' },
+      data: {
+        chatRoomId: roomId,
+        senderId: userId,
+        content: content || '',
+        imageUrl: imageUrl || mediaUrl || '',
+        messageType: msgType,
+        mediaUrl: mediaUrl || '',
+        locationLat: locationLat || null,
+        locationLng: locationLng || null,
+        locationName: locationName || '',
+      },
       include: {
         sender: { select: { id: true, name: true, avatar: true } },
       },
     })
 
+    // Determine display text for last message
+    let lastMsgDisplay = content || ''
+    if (msgType === 'image' && !content) lastMsgDisplay = '📷 Imagen'
+    else if (msgType === 'video') lastMsgDisplay = content || '🎥 Video'
+    else if (msgType === 'audio') lastMsgDisplay = content || '🎵 Audio'
+    else if (msgType === 'location') lastMsgDisplay = content || '📍 Ubicación'
+
     await db.chatRoom.update({
       where: { id: roomId },
-      data: { lastMessage: content || '📷 Imagen', lastMessageAt: new Date() },
+      data: { lastMessage: lastMsgDisplay, lastMessageAt: new Date() },
     })
 
     // Notify the other user
