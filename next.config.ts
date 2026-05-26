@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  serverExternalPackages: ["bcryptjs", "sharp"],
   allowedDevOrigins: [
     "preview-chat-209caf1c-61ef-4935-aa21-0ed59ca5f08a.space-z.ai",
     ".space-z.ai",

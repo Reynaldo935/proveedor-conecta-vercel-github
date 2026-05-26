@@ -1,10 +1,23 @@
 "use client"
 
+import { useSyncExternalStore } from "react"
 import { useAppStore } from "@/store/app-store"
 import { Heart, MapPin, Phone, Mail } from "lucide-react"
 
+// Hydration-safe year: returns a static value during SSR and the real year on
+// the client, using useSyncExternalStore (no setState-in-effect).
+const emptySubscribe = () => () => {}
+function useCurrentYear() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => new Date().getFullYear(),
+    () => 2026
+  )
+}
+
 export function Footer() {
   const { navigate } = useAppStore()
+  const year = useCurrentYear()
 
   return (
     <footer className="mt-auto border-t bg-card">
@@ -91,8 +104,8 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-4 border-t flex flex-col sm:flex-row justify-between items-center gap-2">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} ProveedorConecta Nicaragua. Todos los derechos reservados.
+          <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+            © {year} ProveedorConecta Nicaragua. Todos los derechos reservados.
           </p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             Hecho con <Heart className="h-3 w-3 text-volcan fill-volcan" /> en Nicaragua 🇳🇮

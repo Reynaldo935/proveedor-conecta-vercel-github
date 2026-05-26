@@ -55,10 +55,19 @@ import {
   FileImage,
   FileDown,
 } from "lucide-react"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react"
 import { CreatorsDropdown } from "@/components/creators/CreatorsDropdown"
 
-// Theme toggle button - declared outside render to avoid lint error
+// ─── Hydration-safe "mounted" flag via useSyncExternalStore ─────────────────
+// Returns false during SSR and true on the client – avoids both hydration
+// mismatches AND the react-hooks/set-state-in-effect lint error.
+const emptySubscribe = () => () => {}
+function useMounted() {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false)
+}
+
+// Theme toggle button – reads resolvedTheme from next-themes context
+// (no DOM reads, no MutationObserver, no setState-in-effect).
 function ThemeToggleButton({
   mounted,
   setTheme,
@@ -68,42 +77,15 @@ function ThemeToggleButton({
   setTheme: (theme: string) => void
   className?: string
 }) {
-  // Read dark state from DOM only during event handlers, not in effects
-  const getIsDark = useCallback(() => {
-    if (typeof document === 'undefined') return false
-    return document.documentElement.classList.contains("dark")
-  }, [])
-
-  const [isDark, setIsDark] = useState(false)
-
-  // Use requestAnimationFrame to defer state update out of effect body
-  useEffect(() => {
-    if (mounted) {
-      requestAnimationFrame(() => {
-        setIsDark(getIsDark())
-      })
-    }
-  }, [mounted, getIsDark])
-
-  // Also listen for theme changes from external sources
-  useEffect(() => {
-    if (!mounted) return
-    const observer = new MutationObserver(() => {
-      setIsDark(getIsDark())
-    })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [mounted, getIsDark])
+  const { resolvedTheme } = useTheme()
+  const isDark = mounted && resolvedTheme === "dark"
 
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={() => {
-        const current = getIsDark() ? "dark" : "light"
-        const next = current === "dark" ? "light" : "dark"
-        setTheme(next)
-        setIsDark(next === "dark")
+        setTheme(isDark ? "light" : "dark")
       }}
       className={className || "h-9 w-9"}
       suppressHydrationWarning
@@ -119,19 +101,11 @@ function ThemeToggleButton({
 
 export function Header() {
   const { setTheme } = useTheme()
-  const mountedRef = useRef(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const { navigate, searchQuery, setSearchQuery } = useAppStore()
   const { user, isAuthenticated, logout } = useAuthStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [notifCount, setNotifCount] = useState(0)
-
-  // Fix hydration: only render theme-dependent UI after mount
-  useEffect(() => {
-    mountedRef.current = true
-    // Use requestAnimationFrame to defer setState out of effect body
-    requestAnimationFrame(() => setMounted(true))
-  }, [])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -164,7 +138,7 @@ export function Header() {
   const isSeller = user?.role === "SELLER"
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

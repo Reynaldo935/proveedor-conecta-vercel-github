@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/client-auth"
 import {
   Send, ChevronLeft, ImagePlus, Package, Wifi, WifiOff,
   Paperclip, MapPin, Mic, Video, X, Loader2, Volume2,
@@ -358,7 +359,7 @@ export function ChatView() {
     fd.append("subfolder", "chat")
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const res = await authFetch("/api/upload", { method: "POST", body: fd })
       const d = await res.json()
       if (d.success && d.data.length > 0) {
         for (const url of d.data) {

@@ -165,46 +165,60 @@ export async function POST(request: NextRequest) {
 
     // ============================================================
     // ALL VALIDATIONS PASSED — DEDUCT BALANCE & CREATE TRANSACTION
+    // Use Prisma $transaction to ensure atomicity:
+    //   1. Deduct from buyer balance
+    //   2. Credit seller balance (97% payout)
+    //   3. Create transaction record
+    //   4. Decrease product quantity
+    // If any step fails, all changes are rolled back.
     // ============================================================
 
-    // Deduct balance from buyer
-    try {
-      await db.user.update({
+    const transaction = await db.$transaction(async (tx) => {
+      // 1. Deduct balance from buyer (atomic decrement)
+      await tx.user.update({
         where: { id: userId },
-        data: { 
-          balance: { decrement: finalAmount } 
+        data: {
+          balance: { decrement: finalAmount },
         },
       })
-    } catch {
-      // If balance field doesn't exist, skip deduction (backward compatible)
-      console.log('Balance field not available, skipping deduction')
-    }
 
-    const transaction = await db.transaction.create({
-      data: {
-        buyerId: userId,
-        sellerId: product.sellerId,
-        productId,
-        amount: finalAmount,
-        commission,
-        sellerPayout,
-        paymentMethod,
-        status: 'COMPLETED', // Mark as completed immediately since balance was deducted
-        cedula: cedula || '',
-        cardLast4: cardLast4 || '',
-        paymentDetails: paymentDetails || '',
-      },
-      include: {
-        product: { select: { id: true, title: true, images: true, price: true } },
-        buyer: { select: { id: true, name: true, avatar: true } },
-        seller: { select: { id: true, name: true, avatar: true } },
-      },
-    })
+      // 2. Credit seller balance with 97% payout (atomic increment)
+      await tx.user.update({
+        where: { id: product.sellerId },
+        data: {
+          balance: { increment: sellerPayout },
+        },
+      })
 
-    // Decrease product quantity
-    await db.product.update({
-      where: { id: productId },
-      data: { quantity: { decrement: 1 } },
+      // 3. Create transaction record
+      const newTransaction = await tx.transaction.create({
+        data: {
+          buyerId: userId,
+          sellerId: product.sellerId,
+          productId,
+          amount: finalAmount,
+          commission,
+          sellerPayout,
+          paymentMethod,
+          status: 'COMPLETED', // Mark as completed immediately since balance was deducted
+          cedula: cedula || '',
+          cardLast4: cardLast4 || '',
+          paymentDetails: paymentDetails || '',
+        },
+        include: {
+          product: { select: { id: true, title: true, images: true, price: true } },
+          buyer: { select: { id: true, name: true, avatar: true } },
+          seller: { select: { id: true, name: true, avatar: true } },
+        },
+      })
+
+      // 4. Decrease product quantity
+      await tx.product.update({
+        where: { id: productId },
+        data: { quantity: { decrement: 1 } },
+      })
+
+      return newTransaction
     })
 
     // Notify seller
@@ -213,7 +227,7 @@ export async function POST(request: NextRequest) {
         userId: product.sellerId,
         type: 'PAYMENT',
         title: 'Pago recibido',
-        message: `Pago de C$${finalAmount} recibido por "${product.title}"`,
+        message: `Pago de C$${finalAmount} recibido por "${product.title}" (Tu ganancia: C$${sellerPayout.toFixed(2)})`,
         link: `/transactions/${transaction.id}`,
       },
     })
@@ -224,7 +238,7 @@ export async function POST(request: NextRequest) {
         action: 'CREATE_TRANSACTION',
         entity: 'Transaction',
         entityId: transaction.id,
-        details: `Transacción creada: ${paymentMethod} - C$${finalAmount} — Saldo restante: C$${Math.max(0, userBalance - finalAmount).toFixed(2)}`,
+        details: `Transacción creada: ${paymentMethod} - C$${finalAmount} — Comisión: C$${commission.toFixed(2)} — Pago vendedor: C$${sellerPayout.toFixed(2)} — Saldo restante: C$${Math.max(0, userBalance - finalAmount).toFixed(2)}`,
       },
     })
 

@@ -7,7 +7,7 @@
     // GitHub Pages SPA redirect workaround
     // This script takes the current URL and converts the path and query string
     // into just a query string, and then redirects to index.html
-    var pathSegmentsToKeep = 0; // Adjust if repo is under a subpath
+    var pathSegmentsToKeep = 1; // Repo is served under /hakaton/ subpath on GitHub Pages
     var l = window.location;
     l.replace(
       l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +

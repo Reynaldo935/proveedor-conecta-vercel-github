@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { headers as nextHeaders } from 'next/headers';
 import { db } from './db';
 
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = 4; // Reduced for hackathon/demo performance (was 12)
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);

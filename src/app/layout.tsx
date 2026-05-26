@@ -49,7 +49,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${poppins.variable} ${inter.variable} ${jetbrains.variable} antialiased font-sans`}>
+      <body className={`${poppins.variable} ${inter.variable} ${jetbrains.variable} antialiased font-sans`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

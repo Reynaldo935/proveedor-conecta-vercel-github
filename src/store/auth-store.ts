@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { storeAuthData, clearAuthData, getStoredUser, getStoredUserId } from '@/lib/client-auth'
+import { storeAuthData, clearAuthData, getStoredUser, getStoredUserId, setCurrentUserId } from '@/lib/client-auth'
 
 interface User {
   id: string
@@ -53,14 +53,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user, isAuthenticated: !!user, isLoading: false })
     if (user) {
       storeAuthData(user as unknown as Record<string, unknown>)
+      setCurrentUserId(user.id)
     } else {
       clearAuthData()
+      setCurrentUserId(null)
     }
   },
   setLoading: (isLoading) => set({ isLoading }),
   logout: () => {
     set({ user: null, isAuthenticated: false, isLoading: false })
     clearAuthData()
+    setCurrentUserId(null)
     fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
   },
   initAuth: async () => {
@@ -70,6 +73,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (storedUser) {
       set({ user: storedUser as User, isAuthenticated: true, isLoading: false })
+      if (storedUser.id) setCurrentUserId(storedUser.id as string)
     }
 
     // Then verify with the server using the X-User-Id header as fallback
@@ -88,10 +92,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const user = data.data
         set({ user, isAuthenticated: true, isLoading: false })
         storeAuthData(user)
+        setCurrentUserId(user.id)
       } else {
         // Server says not authenticated - clear stored data
         set({ user: null, isAuthenticated: false, isLoading: false })
         clearAuthData()
+        setCurrentUserId(null)
       }
     } catch {
       // Network error - keep stored user if available

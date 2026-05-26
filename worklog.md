@@ -71,3 +71,127 @@ Stage Summary:
 - Payment validation with "Sin fondos" already implemented
 - Database has 73 products, 23 sellers, 1 buyer seeded
 - Both servers (main :3000, chat :3003) confirmed working
+
+---
+Task ID: 4
+Agent: GitHub Pages Fix Agent
+Task: Fix GitHub Pages deployment for ProveedorConecta Nicaragua
+
+Work Log:
+- Fixed 404.html: Changed `pathSegmentsToKeep` from 0 to 1 to account for `/hakaton/` subpath on GitHub Pages
+- Fixed index.html favicon reference: Changed `href="favicon.ico"` to `href="./favicon.ico"` for relative path compatibility
+- Added `<meta property="og:url">` tag with correct GitHub Pages URL
+- Fixed Billetera Móvil payment card: Replaced broken " cellular " text with proper 📱 emoji icon
+- Created `.nojekyll` file at project root to prevent GitHub Pages Jekyll processing (which ignores underscore-prefixed files)
+- Created `.github/workflows/deploy.yml` GitHub Actions workflow that:
+  - Triggers on push to main branch and manual dispatch
+  - Prepares deployment files (index.html, 404.html, .nojekyll, public/ folder)
+  - Uses official GitHub Pages deployment actions (configure-pages, upload-pages-artifact, deploy-pages)
+
+Stage Summary:
+- 404.html: pathSegmentsToKeep=1 (fixes SPA redirect under /hakaton/ subpath)
+- index.html: relative favicon path, og:url meta tag, fixed payment emoji
+- .nojekyll: created (prevents Jekyll processing)
+- .github/workflows/deploy.yml: created (automated GitHub Pages deployment)
+- All links in index.html already use relative paths (no absolute / paths found)
+
+---
+Task ID: 3
+Agent: Bug Fixer
+Task: Fix critical auth and payment bugs in ProveedorConecta Nicaragua
+
+Work Log:
+- Bug 1 (Image upload auth): Enhanced `client-auth.ts` with 3-tier user ID resolution:
+  1. Module-level `_currentUserId` variable (in-memory, set by auth store)
+  2. localStorage `pc_user_id` key
+  3. Extract from `pc_user` JSON object (repairs missing key)
+- Added `setCurrentUserId()` function, integrated into auth store's setUser/logout/initAuth
+- Added automatic 401 retry in `authFetch`: re-verifies auth and retries once before giving up
+- Bug 2 (Profile save): Changed `profile-settings.tsx` loadProfile() and refreshUser() from plain `fetch` to `authFetch`
+- Bug 3 (Payment validation): Wrapped transaction operations in `db.$transaction()` for atomicity:
+  - Deduct buyer balance (atomic decrement)
+  - Credit seller balance with 97% payout (atomic increment) — WAS MISSING
+  - Create transaction record
+  - Decrease product quantity
+  - If any step fails, ALL changes are rolled back
+- Bug 4 (Sell product form): Changed edit mode product load from `fetch` to `authFetch`
+- Bonus: Fixed 3 more components using plain `fetch` for auth endpoints:
+  - vendor-profile.tsx: wall post creation
+  - buyer-dashboard.tsx: transactions, saved, auth/me
+  - chat-view.tsx: file upload
+
+Stage Summary:
+- Auth system now has triple fallback: in-memory → localStorage key → localStorage JSON
+- All components consistently use `authFetch` for authenticated API calls
+- Transaction API now atomically deducts buyer + credits seller (97%) in a single transaction
+- 0 new lint errors introduced
+- 8 files modified across auth, payment, and component layers
+
+---
+Task ID: 6-7
+Agent: Hydration Fix Agent
+Task: Fix hydration errors in ProveedorConecta Nicaragua
+
+Work Log:
+
+### Bug 1: Header hydration error
+- **Root cause**: Theme toggle used `useState` + `useEffect`/`useLayoutEffect` + `requestAnimationFrame` + `MutationObserver` pattern to read dark mode from DOM — this caused both hydration fragility and `react-hooks/set-state-in-effect` lint errors.
+- **Fix**: Replaced entire theme detection approach:
+  - Created `useMounted()` hook using `useSyncExternalStore` — returns `false` on SSR, `true` on client (no setState-in-effect)
+  - Simplified `ThemeToggleButton` to read `resolvedTheme` from `next-themes` context instead of querying `document.documentElement.classList` — eliminates MutationObserver, useLayoutEffect, and all DOM reads
+  - Added `suppressHydrationWarning` to `<header>` root element
+  - Removed unused `mountedRef`, `useRef` import, `requestAnimationFrame` wrappers
+
+### Bug 2: Home feed hydration
+- **Verified**: No `Math.random()` calls during render in home-feed.tsx
+- **Verified**: FloatingParticles component has been removed (was the original cause of Math.random hydration errors)
+- **Verified**: `AnimatedCounter` correctly uses `useState(0)` + `useEffect` with `suppressHydrationWarning`
+- **Verified**: No `Date.now()` or `new Date()` calls during render
+- **No changes needed** — home feed is hydration-safe
+
+### Bug 3: General hydration
+- **Footer bug found**: `new Date().getFullYear()` was called during render, causing potential hydration mismatch when server/client are in different timezones
+- **Fix**: Created `useCurrentYear()` hook using `useSyncExternalStore` — returns `2026` during SSR and `new Date().getFullYear()` on client
+- **Layout**: `suppressHydrationWarning` was already on `<html>` — added it to `<body>` as well
+- **page.tsx**: No SSR issues found — auth init is in `useEffect`, all dynamic imports use `ssr: false` except HomeFeed which starts in safe empty state
+
+### Lint Results
+- 0 errors, 1 pre-existing warning (unused eslint-disable in chat route)
+- All `react-hooks/set-state-in-effect` errors resolved
+
+Stage Summary:
+- Header: Theme toggle simplified from DOM-reading pattern to next-themes context (3 files of logic removed)
+- Footer: Year rendering made hydration-safe with useSyncExternalStore
+- Layout: suppressHydrationWarning added to <body>
+- Home feed: Confirmed hydration-safe (no changes needed)
+- 4 files modified: header.tsx, footer.tsx, layout.tsx (all hydration fixes)
+- 0 lint errors, no functionality broken
+
+---
+Task ID: 1-9
+Agent: Main Developer
+Task: Fix all critical bugs and prepare GitHub Pages deployment
+
+Work Log:
+- Started dev server on port 3000 (daemon.sh for auto-restart)
+- Started chat Socket.IO service on port 3003
+- Fixed GitHub Pages deployment: 404.html pathSegmentsToKeep=1 for /hakaton/ subpath, favicon relative paths, .nojekyll file, GitHub Actions workflow
+- Fixed auth system: 3-tier user ID resolution (memory > localStorage > JSON fallback), auto 401 retry in authFetch
+- Fixed profile save persistence: Changed all plain fetch() calls to authFetch() in profile-settings.tsx
+- Fixed payment validation: Server-side balance check, INSUFFICIENT_FUNDS error code, atomic transaction with $transaction(), seller 97% payout credit
+- Fixed sell product form: Changed to authFetch for image uploads and edit mode
+- Fixed header hydration: useSyncExternalStore-based useMounted() hook, simplified ThemeToggleButton
+- Fixed footer hydration: new Date().getFullYear() replaced with useCurrentYear() hook
+- FloatingParticles already removed from codebase (no Math.random() in render)
+- Reduced bcrypt SALT_ROUNDS from 12 to 4 for hackathon performance
+- Added serverExternalPackages: ["bcryptjs", "sharp"] to next.config.ts
+- Bonus fixes: vendor-profile.tsx, buyer-dashboard.tsx, chat-view.tsx all converted to authFetch
+
+Stage Summary:
+- All critical bugs fixed
+- GitHub Pages deployment files ready (index.html, 404.html, .nojekyll, .github/workflows/deploy.yml)
+- Auth system now robust with 3-tier fallback
+- Payment validation now checks balance server-side with atomic transactions
+- Hydration errors fixed with proper SSR-safe patterns
+- Dev server running on port 3000, chat service on port 3003
+- Note: Login API route compilation via Turbopack is slow for bcryptjs - first request may take 60+ seconds to compile but works after that

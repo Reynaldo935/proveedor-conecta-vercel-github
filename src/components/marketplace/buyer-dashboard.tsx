@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/client-auth"
 import {
   ShoppingCart, Heart, FileText, ChevronLeft, Bookmark,
   Users, Package, Clock, CheckCircle2, AlertCircle, Loader2,
@@ -54,8 +55,8 @@ export function BuyerDashboard() {
     const loadData = async () => {
       try {
         const [transRes, savedRes] = await Promise.all([
-          fetch("/api/transactions?role=buyer").then(r => r.json()).catch(() => ({ success: false })),
-          fetch("/api/saved").then(r => r.json()).catch(() => ({ success: false })),
+          authFetch("/api/transactions?role=buyer").then(r => r.json()).catch(() => ({ success: false })),
+          authFetch("/api/saved").then(r => r.json()).catch(() => ({ success: false })),
         ])
 
         if (transRes.success) setTransactions(transRes.data)
@@ -64,7 +65,7 @@ export function BuyerDashboard() {
         // Load following vendors - fetch the user's following list
         if (user?.id) {
           try {
-            const meRes = await fetch("/api/auth/me")
+            const meRes = await authFetch("/api/auth/me")
             const meData = await meRes.json()
             if (meData.success && meData.data?.following) {
               // The user object might have a following relation

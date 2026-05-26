@@ -17,6 +17,7 @@ import {
   Copy, Check, Eye, Share2, Navigation, CheckCircle2, Package
 } from "lucide-react"
 import { PAYMENT_METHODS } from "@/lib/validators"
+import { authFetch } from "@/lib/client-auth"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function VendorProfile() {
@@ -136,7 +137,7 @@ export function VendorProfile() {
     if (!newPostContent.trim()) return
     setPosting(true)
     try {
-      const res = await fetch("/api/wall", {
+      const res = await authFetch("/api/wall", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newPostContent }),

@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import { PAYMENT_METHODS } from "@/lib/validators"
-import { authFetch, getStoredUserId } from "@/lib/client-auth"
+import { authFetch } from "@/lib/client-auth"
 import {
   ChevronLeft, Camera, Store, User, Loader2, Save, CheckCircle2,
   Wallet, Heart, MessageCircle, Share2, Plus, ImagePlus, Video,
@@ -122,11 +122,7 @@ export function ProfileSettings() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const userId = getStoredUserId()
-        const headers: Record<string, string> = {}
-        if (userId) headers['X-User-Id'] = userId
-
-        const res = await fetch("/api/auth/me", { credentials: 'include', headers })
+        const res = await authFetch("/api/auth/me")
         const data = await res.json()
         if (data.success && data.data) {
           const u = data.data
@@ -232,14 +228,15 @@ export function ProfileSettings() {
   // ─── Refresh User ────────────────────────────────────────────────────────────
 
   const refreshUser = async () => {
-    const userId = getStoredUserId()
-    const headers: Record<string, string> = {}
-    if (userId) headers['X-User-Id'] = userId
-    const meRes = await fetch("/api/auth/me", { credentials: 'include', headers })
-    const meData = await meRes.json()
-    if (meData.success && meData.data) {
-      setUser(meData.data)
-      return meData.data
+    try {
+      const meRes = await authFetch("/api/auth/me")
+      const meData = await meRes.json()
+      if (meData.success && meData.data) {
+        setUser(meData.data)
+        return meData.data
+      }
+    } catch {
+      // refresh failed
     }
     return null
   }

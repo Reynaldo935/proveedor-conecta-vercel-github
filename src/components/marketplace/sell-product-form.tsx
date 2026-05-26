@@ -91,7 +91,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
 
   useEffect(() => {
     if (editMode && editProductId) {
-      fetch(`/api/products/${editProductId}`)
+      authFetch(`/api/products/${editProductId}`)
         .then((r) => r.json())
         .then((d) => {
           if (d.success) {
