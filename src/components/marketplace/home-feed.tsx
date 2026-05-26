@@ -466,9 +466,14 @@ export function HomeFeed() {
         <div className="relative z-10 p-6 md:p-10 lg:p-14">
           <div className="max-w-2xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-3.5 py-1.5 text-sm font-medium mb-4 backdrop-blur-sm border border-white/10">
-              <span className="text-base">🇳🇮</span> Hecho en Nicaragua
-              <Sparkles className="h-3.5 w-3.5 text-[#F4D03F]" />
+            <div className="flex flex-wrap gap-2 mb-4">
+              <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-3.5 py-1.5 text-sm font-medium backdrop-blur-sm border border-white/10">
+                <span className="text-base">🇳🇮</span> Hecho en Nicaragua
+                <Sparkles className="h-3.5 w-3.5 text-[#F4D03F]" />
+              </div>
+              <div className="inline-flex items-center gap-2 bg-[#F4D03F]/15 rounded-full px-3.5 py-1.5 text-sm font-medium backdrop-blur-sm border border-[#F4D03F]/20">
+                🏆 Hackathon Nicaragua 2026 – 10ª Edición – Siempre más allá
+              </div>
             </div>
 
             {/* Title */}

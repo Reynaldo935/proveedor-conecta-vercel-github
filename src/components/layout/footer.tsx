@@ -107,9 +107,12 @@ export function Footer() {
           <p className="text-xs text-muted-foreground" suppressHydrationWarning>
             © {year} ProveedorConecta Nicaragua. Todos los derechos reservados.
           </p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            Hecho con <Heart className="h-3 w-3 text-volcan fill-volcan" /> en Nicaragua 🇳🇮
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              Hecho con <Heart className="h-3 w-3 text-volcan fill-volcan" /> en Nicaragua 🇳🇮
+            </p>
+            <span className="text-xs text-dorado font-semibold">🏆 Hackathon Nicaragua 2026 – 10ª Edición</span>
+          </div>
         </div>
       </div>
     </footer>

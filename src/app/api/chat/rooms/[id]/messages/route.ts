@@ -40,8 +40,7 @@ export async function GET(
     const cursor = searchParams.get('cursor');
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { chatRoomId: id };
+    const where: Record<string, unknown> = { chatRoomId: id };
 
     if (cursor) {
       where.id = { lt: cursor };

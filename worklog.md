@@ -195,3 +195,71 @@ Stage Summary:
 - Hydration errors fixed with proper SSR-safe patterns
 - Dev server running on port 3000, chat service on port 3003
 - Note: Login API route compilation via Turbopack is slow for bcryptjs - first request may take 60+ seconds to compile but works after that
+
+---
+Task ID: 2
+Agent: weather-client-fix
+Task: Move weather API to client-side Open-Meteo direct fetch
+
+Work Log:
+- Modified weather-widget.tsx to call Open-Meteo directly from browser
+- Added CITY_COORDINATES map at module level (shared by detectNearestCity and fetchOpenMeteo)
+- Added getWeatherCondition() function to map WMO weather codes to Spanish conditions + emoji icons
+- Added fetchOpenMeteo() async function that calls api.open-meteo.com/v1/forecast with city coords, parses response into WeatherData interface
+- Added fetchServerFallback() async function that calls /api/weather server endpoint as fallback
+- Modified fetchWeather callback: tries Open-Meteo first, falls back to /api/weather if it fails
+- Kept all UI, caching (30min localStorage), geolocation auto-detect, and forecast display intact
+- /api/weather/route.ts left completely unchanged as fallback
+- Lint: 0 errors, only pre-existing 1 warning
+
+Stage Summary:
+- Weather widget now fetches real data from Open-Meteo client-side
+- Server fallback preserved for offline/error scenarios
+- No UI changes, no interface changes, caching unchanged
+
+---
+Task ID: 3
+Agent: index-html-updater
+Task: Update GitHub Pages index.html with Hackathon Badge
+
+Work Log:
+- Added hackathon badge to hero section (gold-themed badge below "Hecho en Nicaragua" badge)
+- Updated footer description from "Hackathon Nicaragua 10ma Edición." to "Hackathon Nicaragua 2026 – 10ª Edición – Siempre más allá."
+- Added hackathon reference to footer-bottom: "🏆 Proyecto presentado en el Hackathon Nicaragua 2026"
+- Verified all links are relative (no absolute paths starting with /)
+
+Stage Summary:
+- index.html now displays Hackathon Nicaragua 2026 badge in hero
+- Footer includes updated hackathon reference and project presentation line
+- All links confirmed relative for GitHub Pages subdirectory compatibility
+
+---
+Task ID: final-stabilization
+Agent: Main Developer (Final Stabilization Session)
+Task: Final stabilization, client-side weather, hackathon badges, zero errors
+
+Work Log:
+- Read and analyzed entire project structure, all key config files, components, and API routes
+- Delegated weather widget client-side migration to subagent (completed successfully)
+- Delegated index.html hackathon badge update to subagent (completed successfully)
+- Added hackathon badge to Next.js home-feed hero section (gold-themed badge)
+- Added hackathon badge to Next.js footer (🏆 Hackathon Nicaragua 2026 – 10ª Edición)
+- Fixed lint warning: replaced `any` type with `Record<string, unknown>` in chat messages route
+- Verified lint passes with 0 errors, 0 warnings
+- Started dev server on port 3000 and chat service on port 3003
+- Verified dev server returns HTTP 200 for main page
+- Confirmed all hydration fixes are in place (useSyncExternalStore patterns in header and footer)
+- Confirmed auth system has 3-tier fallback (in-memory → localStorage → JSON)
+- Confirmed payment validation has Luhn, CVV, expiry, bank account, "sin fondos" balance check
+- Confirmed image upload uses authFetch with X-User-Id header
+- Confirmed profile save uses authFetch and refreshes from server
+
+Stage Summary:
+- Weather widget: Now calls Open-Meteo directly from browser, falls back to /api/weather
+- GitHub Pages: index.html has hackathon badge, 404.html has SPA redirect, .nojekyll exists
+- Next.js App: Hackathon badge in hero and footer
+- Lint: 0 errors, 0 warnings
+- Dev server: Running on port 3000
+- Chat service: Running on port 3003
+- All critical bugs from previous sessions remain fixed
+- Platform is hackathon-ready for live demonstration

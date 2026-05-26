@@ -35,6 +35,17 @@ const NICARAGUA_CITIES = [
   "Bluefields",
 ]
 
+const CITY_COORDINATES: Record<string, { lat: number; lon: number }> = {
+  Managua: { lat: 12.1364, lon: -86.2514 },
+  León: { lat: 12.4375, lon: -86.8833 },
+  Granada: { lat: 11.9344, lon: -85.956 },
+  Matagalpa: { lat: 12.9256, lon: -85.9175 },
+  Estelí: { lat: 13.0939, lon: -86.3552 },
+  Chinandega: { lat: 13.2878, lon: -87.1444 },
+  Masaya: { lat: 11.9744, lon: -86.0947 },
+  Bluefields: { lat: 12.0054, lon: -83.7736 },
+}
+
 const CACHE_KEY = "pc_weather_cache"
 const CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
 
@@ -69,22 +80,22 @@ function setCachedWeather(city: string, data: WeatherData) {
   }
 }
 
-function detectNearestCity(lat: number, lon: number): string {
-  const cities: Record<string, { lat: number; lon: number }> = {
-    Managua: { lat: 12.1364, lon: -86.2514 },
-    León: { lat: 12.4375, lon: -86.8833 },
-    Granada: { lat: 11.9344, lon: -85.956 },
-    Matagalpa: { lat: 12.9256, lon: -85.9175 },
-    Estelí: { lat: 13.0939, lon: -86.3552 },
-    Chinandega: { lat: 13.2878, lon: -87.1444 },
-    Masaya: { lat: 11.9744, lon: -86.0947 },
-    Bluefields: { lat: 12.0054, lon: -83.7736 },
-  }
+function getWeatherCondition(code: number): { condition: string; icon: string } {
+  if (code === 0) return { condition: "Soleado", icon: "☀️" }
+  if (code >= 1 && code <= 3) return { condition: "Parcialmente nublado", icon: "⛅" }
+  if (code >= 45 && code <= 48) return { condition: "Niebla", icon: "🌫️" }
+  if ((code >= 51 && code <= 57) || (code >= 61 && code <= 67)) return { condition: "Lluvia", icon: "🌧️" }
+  if (code >= 71 && code <= 77) return { condition: "Nieve", icon: "❄️" }
+  if (code >= 80 && code <= 82) return { condition: "Chubascos", icon: "🌦️" }
+  if (code >= 95 && code <= 99) return { condition: "Tormenta", icon: "⛈️" }
+  return { condition: "Desconocido", icon: "🌤️" }
+}
 
+function detectNearestCity(lat: number, lon: number): string {
   let nearest = "Managua"
   let minDist = Infinity
 
-  for (const [name, coords] of Object.entries(cities)) {
+  for (const [name, coords] of Object.entries(CITY_COORDINATES)) {
     const dist = Math.sqrt(
       Math.pow(lat - coords.lat, 2) + Math.pow(lon - coords.lon, 2)
     )
@@ -95,6 +106,55 @@ function detectNearestCity(lat: number, lon: number): string {
   }
 
   return nearest
+}
+
+async function fetchOpenMeteo(cityName: string): Promise<WeatherData | null> {
+  const coords = CITY_COORDINATES[cityName]
+  if (!coords) return null
+
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}` +
+    `&current=temperature_2m,relative_humidity_2m,weather_code` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+    `&timezone=America/Managua&forecast_days=3`
+
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+  if (!res.ok) return null
+
+  const json = await res.json()
+
+  const currentCond = getWeatherCondition(json.current.weather_code)
+
+  const forecast: WeatherData["forecast"] = json.daily.time.map(
+    (date: string, i: number) => {
+      const cond = getWeatherCondition(json.daily.weather_code[i])
+      return {
+        date,
+        max: json.daily.temperature_2m_max[i],
+        min: json.daily.temperature_2m_min[i],
+        condition: cond.condition,
+        icon: cond.icon,
+      }
+    }
+  )
+
+  return {
+    city: cityName,
+    current: {
+      temp: json.current.temperature_2m,
+      humidity: json.current.relative_humidity_2m,
+      condition: currentCond.condition,
+      icon: currentCond.icon,
+    },
+    forecast,
+  }
+}
+
+async function fetchServerFallback(cityName: string): Promise<WeatherData | null> {
+  const res = await fetch(`/api/weather?city=${encodeURIComponent(cityName)}`)
+  const data = await res.json()
+  if (data.success) return data.data
+  return null
 }
 
 function formatForecastDay(dateStr: string): string {
@@ -138,14 +198,28 @@ export function WeatherWidget() {
     setError(null)
 
     try {
-      const res = await fetch(`/api/weather?city=${encodeURIComponent(cityName)}`)
-      const data = await res.json()
+      // Try Open-Meteo direct fetch first
+      let data: WeatherData | null = null
+      try {
+        data = await fetchOpenMeteo(cityName)
+      } catch {
+        // Open-Meteo fetch failed, will try fallback
+      }
 
-      if (data.success) {
-        setWeather(data.data)
-        setCachedWeather(cityName, data.data)
+      // Fallback to server endpoint if Open-Meteo failed
+      if (!data) {
+        try {
+          data = await fetchServerFallback(cityName)
+        } catch {
+          // Server fallback also failed
+        }
+      }
+
+      if (data) {
+        setWeather(data)
+        setCachedWeather(cityName, data)
       } else {
-        setError(data.error || "Error al obtener clima")
+        setError("Error al obtener clima")
       }
     } catch {
       setError("Error de conexión")
