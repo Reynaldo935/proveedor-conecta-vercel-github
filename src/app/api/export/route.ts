@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { safeApiHandler } from '@/lib/api-utils'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -419,7 +420,7 @@ async function generateReportDocx(): Promise<string> {
 
 // ─── Main GET Handler ──────────────────────────────────────────────────────
 
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
     if (!user) {
@@ -606,3 +607,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Error al exportar datos' }, { status: 500 })
   }
 }
+
+export const GET = safeApiHandler(handleGet)

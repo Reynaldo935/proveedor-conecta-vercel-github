@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { safeApiHandler } from '@/lib/api-utils'
 
-export async function GET() {
+async function handleGet() {
   try {
     const [users, products, transactions, businessProfiles, chatRooms, messages, cotizaciones, notifications, likes, savedProducts, follows, auditLogs, advertisements, quantityDiscounts, commissionLogs] = await Promise.all([
       db.user.findMany({ select: { id: true, email: true, name: true, role: true, phone: true, department: true, address: true, isVerified: true, createdAt: true } }),
@@ -74,3 +75,5 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Error creating backup' }, { status: 500 })
   }
 }
+
+export const GET = safeApiHandler(handleGet)

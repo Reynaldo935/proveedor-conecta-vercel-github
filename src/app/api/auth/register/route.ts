@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'El correo ya está registrado' }, { status: 400 })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await bcrypt.hash(password, 4)
     const userRole = role === 'SELLER' ? 'SELLER' : 'BUYER'
 
     // Normalize phone: strip spaces/dashes/parens for storage

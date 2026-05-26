@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Hash the new password
-      const hashedPassword = await bcrypt.hash(password, 12)
+      const hashedPassword = await bcrypt.hash(password, 4)
 
       // Update user password
       await db.user.update({

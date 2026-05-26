@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { safeApiHandler } from '@/lib/api-utils'
 
 // In-memory storage for backup metadata (persists while server is running)
 interface BackupMetadata {
@@ -45,7 +46,7 @@ function generateBackupId(): string {
 }
 
 // GET: List all backups with metadata
-export async function GET(request: NextRequest) {
+async function handleGet(request: NextRequest) {
   try {
     const { error } = await verifyAdmin(request)
     if (error) return error
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST: Create a new backup or restore from backup
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const { error } = await verifyAdmin(request)
     if (error) return error
@@ -102,6 +103,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Error en operación de respaldo' }, { status: 500 })
   }
 }
+
+export const GET = safeApiHandler(handleGet)
+export const POST = safeApiHandler(handlePost)
 
 async function createBackup(): Promise<NextResponse> {
   // Export all database tables as JSON
