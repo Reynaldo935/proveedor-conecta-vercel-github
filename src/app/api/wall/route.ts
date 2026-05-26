@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +18,11 @@ export async function GET(request: NextRequest) {
       where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      include: {
+        likes: { select: { userId: true } },
+        comments: { include: { user: { select: { id: true, name: true, avatar: true } } }, orderBy: { createdAt: 'asc' } },
+        businessProfile: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+      },
     })
 
     const hasMore = posts.length > limit
@@ -33,22 +38,40 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    await setAuthCookie(userId)
 
     const body = await request.json()
-    const { content, imageUrl } = body
+    const { content, imageUrl, videoUrl, postType } = body
 
-    if (!content && !imageUrl) {
-      return NextResponse.json({ success: false, error: 'Contenido o imagen requerido' }, { status: 400 })
+    if (!content && !imageUrl && !videoUrl) {
+      return NextResponse.json({ success: false, error: 'Contenido, imagen o video requerido' }, { status: 400 })
     }
 
     const profile = await db.businessProfile.findUnique({ where: { userId } })
     if (!profile) return NextResponse.json({ success: false, error: 'Perfil de negocio no encontrado' }, { status: 404 })
 
+    // Determine post type automatically if not provided
+    let resolvedPostType = postType || 'text'
+    if (!postType) {
+      if (videoUrl) resolvedPostType = 'video'
+      else if (imageUrl) resolvedPostType = 'photo'
+      else resolvedPostType = 'text'
+    }
+
     const post = await db.wallPost.create({
-      data: { businessProfileId: profile.id, content: content || '', imageUrl: imageUrl || '' },
+      data: {
+        businessProfileId: profile.id,
+        content: content || '',
+        imageUrl: imageUrl || '',
+        videoUrl: videoUrl || '',
+        postType: resolvedPostType,
+      },
+      include: {
+        likes: { select: { userId: true } },
+        comments: { include: { user: { select: { id: true, name: true, avatar: true } } }, orderBy: { createdAt: 'asc' } },
+      },
     })
 
     return NextResponse.json({ success: true, data: post })
@@ -60,9 +83,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    await setAuthCookie(userId)
 
     const { searchParams } = new URL(request.url)
     const postId = searchParams.get('id')

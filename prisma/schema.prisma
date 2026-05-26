@@ -15,14 +15,17 @@ model User {
   role          String   @default("BUYER") // BUYER, SELLER, ADMIN
   helperRole    String   @default("") // DEVELOPER, MARKETING, FULLSTACK, GRAPHIC_DESIGN, COMMUNICATOR
   avatar        String   @default("")
+  coverPhoto    String   @default("")
   phone         String   @default("")
   department    String   @default("")
   address       String   @default("")
   bio           String   @default("")
+  website       String   @default("")
   isVerified    Boolean  @default(false)
   googleId      String?
   emailVerified Boolean  @default(false)
   phoneVerified Boolean  @default(false)
+  balance       Float    @default(50000) // User wallet balance in NIO
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -42,6 +45,16 @@ model User {
   followers       Follow[]      @relation("Followers")
   auditLogs       AuditLog[]
   advertisements  Advertisement[]
+  postLikes       PostLike[]
+  postComments    PostComment[]
+  loyaltyPoints   LoyaltyPoint[]
+  pointHistory    PointHistory[]
+  givenRatings    Review[] @relation("GivenRatings")
+  receivedRatings Review[] @relation("ReceivedRatings")
+  reviewVotes     ReviewVote[]
+  calendarEvents  CalendarEvent[]
+  appointments    Appointment[] @relation("BuyerAppointments")
+  sellerAppointments Appointment[] @relation("SellerAppointments")
 }
 
 model BusinessProfile {
@@ -248,9 +261,37 @@ model WallPost {
   businessProfileId String
   content          String   @default("")
   imageUrl         String   @default("")
+  videoUrl         String   @default("")
+  postType         String   @default("text") // text, photo, video
   createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  likes           PostLike[]
+  comments        PostComment[]
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post WallPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post WallPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -309,4 +350,101 @@ model CommissionLog {
   status         String   @default("PENDING") // PENDING, PAID, FAILED
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+// ─── Loyalty Points System ──────────────────────────────────────────────────
+
+model LoyaltyPoint {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(0) // Current points balance
+  totalEarned Int    @default(0) // Total lifetime points earned
+  totalRedeemed Int  @default(0) // Total lifetime points redeemed
+  expiresAt DateTime? // When all points expire (12 months of inactivity)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PointHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // EARN, REDEEM, EXPIRE, BONUS
+  amount    Int      // Positive for earn/bonus, negative for redeem/expire
+  reason    String   @default("") // Description
+  transactionId String? // Related transaction ID (for earn)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Star Rating & Trust System ─────────────────────────────────────────────
+
+model Review {
+  id          String   @id @default(cuid())
+  reviewerId  String   // Who is writing the review
+  targetId    String   // Who is being reviewed (seller or buyer)
+  transactionId String // Must be a verified completed transaction
+  rating      Int      // 1 to 5 stars
+  comment     String   @default("")
+  reviewType  String   // SELLER_REVIEW, BUYER_REVIEW
+  response    String   @default("") // Seller/buyer can respond once
+  helpfulYes  Int      @default(0) // "Helpful" votes
+  helpfulNo   Int      @default(0) // "Not helpful" votes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reviewer    User @relation("GivenRatings", fields: [reviewerId], references: [id], onDelete: Cascade)
+  target      User @relation("ReceivedRatings", fields: [targetId], references: [id], onDelete: Cascade)
+  votes       ReviewVote[]
+
+  @@unique([reviewerId, transactionId, reviewType]) // One review per transaction per type
+}
+
+model ReviewVote {
+  id        String   @id @default(cuid())
+  userId    String
+  reviewId  String
+  isHelpful Boolean  // true = helpful, false = not helpful
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewId])
+}
+
+// ─── Calendar & Agenda System ───────────────────────────────────────────────
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  userId      String   // Owner of the event
+  title       String
+  description String   @default("")
+  eventType   String   @default("other") // meeting, delivery, restock, other
+  eventDate   DateTime
+  duration    Int      @default(60) // Duration in minutes
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id          String   @id @default(cuid())
+  buyerId     String
+  sellerId    String
+  title       String
+  description String   @default("")
+  eventDate   DateTime
+  duration    Int      @default(30) // Duration in minutes
+  status      String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  buyer  User @relation("BuyerAppointments", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller User @relation("SellerAppointments", fields: [sellerId], references: [id], onDelete: Cascade)
 }

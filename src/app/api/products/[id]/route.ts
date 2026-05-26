@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
+    if (userId) await setAuthCookie(userId)
 
     const product = await db.product.findUnique({
       where: { id },
@@ -69,12 +69,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
+    await setAuthCookie(userId)
 
     const product = await db.product.findUnique({ where: { id } })
     if (!product || product.sellerId !== userId) {
@@ -131,15 +131,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
+    await setAuthCookie(userId)
 
     const product = await db.product.findUnique({ where: { id } })
     if (!product || product.sellerId !== userId) {

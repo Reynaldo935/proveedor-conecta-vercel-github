@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { createHmac } from 'crypto'
 
 const WEBHOOK_SECRET = process.env.COMMISSION_WEBHOOK_SECRET || 'proveedorconecta_commission_secret_2024'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
+    await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user || user.email !== 'rey7214935@gmail.com') {

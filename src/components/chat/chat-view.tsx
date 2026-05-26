@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
 import {
   Send, ChevronLeft, ImagePlus, Package, Wifi, WifiOff,
-  Paperclip, MapPin, Mic, Video, X, Loader2, Play, Volume2,
+  Paperclip, MapPin, Mic, Video, X, Loader2, Volume2,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -52,7 +52,7 @@ interface ChatRoomData {
 export function ChatView() {
   const { navigate } = useAppStore()
   const { user } = useAuthStore()
-  const appStore = useAppStore()
+  const selectedRoomId = useAppStore((s) => s.selectedRoomId)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMsg, setNewMsg] = useState("")
   const [chatRoom, setChatRoom] = useState<ChatRoomData | null>(null)
@@ -63,13 +63,19 @@ export function ChatView() {
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [locationLoading, setLocationLoading] = useState(false)
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(appStore.selectedRoomId || null)
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const socketRef = useRef<Socket | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const activeRoomIdRef = useRef<string | null>(null)
 
-  // Connect to Socket.IO
+  // Keep ref in sync with state
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId
+  }, [activeRoomId])
+
+  // Connect to Socket.IO once on mount
   useEffect(() => {
     const socket = io("/?XTransformPort=3003", {
       transports: ["websocket", "polling"],
@@ -92,39 +98,50 @@ export function ChatView() {
 
     // Listen for new messages
     socket.on("new-message", (message: ChatMessage) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) return prev
-        return [...prev, message]
-      })
+      // Only add if it belongs to the currently active room
+      if (message.chatRoomId === activeRoomIdRef.current) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev
+          return [...prev, message]
+        })
+      }
     })
 
     // Listen for typing indicators
     socket.on("typing", (data: { roomId: string; users: string[] }) => {
-      if (data.roomId === activeRoomId) {
-        const otherTyping = data.users.filter((u) => u !== user?.id)
+      if (data.roomId === activeRoomIdRef.current) {
+        const userId = useAuthStore.getState().user?.id
+        const otherTyping = data.users.filter((u) => u !== userId)
         setTypingUsers(otherTyping)
       }
     })
 
     // Listen for user online/offline
     socket.on("user-online", (data: { roomId: string; userId: string }) => {
-      if (data.roomId === activeRoomId && data.userId !== user?.id) {
-        setIsOtherOnline(true)
+      if (data.roomId === activeRoomIdRef.current) {
+        const userId = useAuthStore.getState().user?.id
+        if (data.userId !== userId) {
+          setIsOtherOnline(true)
+        }
       }
     })
 
     socket.on("user-offline", (data: { roomId: string; userId: string }) => {
-      if (data.roomId === activeRoomId && data.userId !== user?.id) {
-        setIsOtherOnline(false)
+      if (data.roomId === activeRoomIdRef.current) {
+        const userId = useAuthStore.getState().user?.id
+        if (data.userId !== userId) {
+          setIsOtherOnline(false)
+        }
       }
     })
 
     // Listen for read receipts
     socket.on("messages-read", (data: { roomId: string; userId: string }) => {
-      if (data.roomId === activeRoomId) {
+      if (data.roomId === activeRoomIdRef.current) {
+        const userId = useAuthStore.getState().user?.id
         setMessages((prev) =>
           prev.map((m) =>
-            m.senderId === user?.id ? { ...m, isRead: true } : m
+            m.senderId === userId ? { ...m, isRead: true } : m
           )
         )
       }
@@ -134,77 +151,123 @@ export function ChatView() {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [activeRoomId, user?.id])
+  }, [])
 
-  // Load initial chat room and messages via REST API
+  // Join/leave room via socket when activeRoomId changes
   useEffect(() => {
-    const targetRoomId = appStore.selectedRoomId || activeRoomId
+    const socket = socketRef.current
+    const prevRoomId = activeRoomIdRef.current
 
-    if (targetRoomId) {
-      // Load a specific room by ID
-      fetch(`/api/chat/rooms`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.success) {
-            const room = d.data.find((r: ChatRoomData) => r.id === targetRoomId)
-            if (room) {
-              setChatRoom(room)
-              setActiveRoomId(room.id)
-              if (socketRef.current && user) {
-                socketRef.current.emit("join-room", {
-                  roomId: room.id,
-                  userId: user.id,
-                })
-              }
-              fetch(`/api/chat/rooms/${room.id}/messages`)
-                .then((r) => r.json())
-                .then((md) => {
-                  if (md.success) setMessages(md.data)
-                })
-                .finally(() => setLoading(false))
-            } else {
-              setLoading(false)
-            }
-          } else {
-            setLoading(false)
-          }
+    if (socket && user && activeRoomId) {
+      // Leave previous room if different
+      if (prevRoomId && prevRoomId !== activeRoomId) {
+        socket.emit("leave-room", {
+          roomId: prevRoomId,
+          userId: user.id,
         })
-        .catch(() => {
-          toast.error("Error al cargar chat")
-          setLoading(false)
-        })
-      return
+      }
+
+      // Join the new room
+      socket.emit("join-room", {
+        roomId: activeRoomId,
+        userId: user.id,
+      })
     }
 
-    // No specific room ID - load first available room
-    fetch("/api/chat/rooms")
-      .then((r) => r.json())
-      .then((d) => {
+    // Reset online/typing state when switching rooms
+    setIsOtherOnline(false)
+    setTypingUsers([])
+
+    return () => {
+      // Cleanup: leave room when effect re-runs or unmounts
+      if (socket && user && activeRoomId) {
+        socket.emit("leave-room", {
+          roomId: activeRoomId,
+          userId: user.id,
+        })
+      }
+    }
+  }, [activeRoomId, user])
+
+  // Load room and messages when selectedRoomId changes or on mount
+  useEffect(() => {
+    if (!user) return
+
+    const targetRoomId = selectedRoomId
+
+    const loadRoom = async (roomId: string) => {
+      setLoading(true)
+      setMessages([])
+      setChatRoom(null)
+      try {
+        // Load all rooms to find the target
+        const roomsRes = await fetch("/api/chat/rooms")
+        const roomsData = await roomsRes.json()
+
+        if (roomsData.success) {
+          const room = roomsData.data.find((r: ChatRoomData) => r.id === roomId)
+          if (room) {
+            setChatRoom(room)
+            setActiveRoomId(room.id)
+
+            // Load messages for this room
+            const msgRes = await fetch(`/api/chat/rooms/${room.id}/messages`)
+            const msgData = await msgRes.json()
+            if (msgData.success) {
+              setMessages(msgData.data)
+            }
+          } else {
+            // Room not found in user's rooms, try loading directly
+            try {
+              const msgRes = await fetch(`/api/chat/rooms/${roomId}/messages`)
+              const msgData = await msgRes.json()
+              if (msgData.success) {
+                setMessages(msgData.data)
+                setActiveRoomId(roomId)
+              }
+            } catch {
+              // Room doesn't exist or not authorized
+            }
+          }
+        }
+      } catch {
+        toast.error("Error al cargar chat")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const loadFirstRoom = async () => {
+      setLoading(true)
+      setMessages([])
+      setChatRoom(null)
+      try {
+        const res = await fetch("/api/chat/rooms")
+        const d = await res.json()
         if (d.success && d.data.length > 0) {
           const room = d.data[0]
           setChatRoom(room)
           setActiveRoomId(room.id)
-          if (socketRef.current && user) {
-            socketRef.current.emit("join-room", {
-              roomId: room.id,
-              userId: user.id,
-            })
+
+          const msgRes = await fetch(`/api/chat/rooms/${room.id}/messages`)
+          const msgData = await msgRes.json()
+          if (msgData.success) {
+            setMessages(msgData.data)
           }
-          fetch(`/api/chat/rooms/${room.id}/messages`)
-            .then((r) => r.json())
-            .then((md) => {
-              if (md.success) setMessages(md.data)
-            })
-            .finally(() => setLoading(false))
-        } else {
-          setLoading(false)
         }
-      })
-      .catch(() => {
+      } catch {
         toast.error("Error al cargar chat")
+      } finally {
         setLoading(false)
-      })
-  }, [user])
+      }
+    }
+
+    if (targetRoomId) {
+      loadRoom(targetRoomId)
+    } else {
+      loadFirstRoom()
+    }
+  }, [selectedRoomId, user])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {

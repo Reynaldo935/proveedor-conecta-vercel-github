@@ -38,6 +38,10 @@ const DownloadsView = dynamic(() => import("@/components/downloads/downloads-vie
 const BackupView = dynamic(() => import("@/components/backup/backup-view").then(m => ({ default: m.BackupView })), { ssr: false })
 const PaymentsView = dynamic(() => import("@/components/payments/payments-view").then(m => ({ default: m.PaymentsView })), { ssr: false })
 const FeaturedView = dynamic(() => import("@/components/marketplace/featured-view").then(m => ({ default: m.FeaturedView })), { ssr: false })
+const ForgotPasswordForm = dynamic(() => import("@/components/auth/forgot-password-form").then(m => ({ default: m.ForgotPasswordForm })), { ssr: false })
+const LoyaltyDashboard = dynamic(() => import("@/components/loyalty/loyalty-dashboard").then(m => ({ default: m.LoyaltyDashboard })), { ssr: false })
+const ReviewsSection = dynamic(() => import("@/components/reviews/reviews-section").then(m => ({ default: m.ReviewsSection })), { ssr: false })
+const CalendarView = dynamic(() => import("@/components/calendar/calendar-view").then(m => ({ default: m.CalendarView })), { ssr: false })
 
 // Loading fallback
 function PageLoader() {
@@ -59,30 +63,16 @@ function PageLoader() {
 }
 
 export default function ProveedorConecta() {
-  const { currentView, navigate } = useAppStore()
-  const { setUser, isAuthenticated, user } = useAuthStore()
+  const { currentView, navigate, selectedVendorId } = useAppStore()
+  const { setUser, isAuthenticated, user, initAuth } = useAuthStore()
   const [showChatbot, setShowChatbot] = useState(false)
 
   const isSeller = isAuthenticated && user?.role === "SELLER"
 
-  // Check auth on mount
+  // Check auth on mount using robust initAuth (localStorage + cookie)
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/auth/me")
-        if (res.ok) {
-          const data = await res.json()
-          if (data.success) setUser(data.data)
-          else setUser(null)
-        } else {
-          setUser(null)
-        }
-      } catch {
-        setUser(null)
-      }
-    }
-    checkAuth()
-  }, [setUser])
+    initAuth()
+  }, [initAuth])
 
   const renderView = () => {
     switch (currentView) {
@@ -113,6 +103,10 @@ export default function ProveedorConecta() {
       case "backup": return isAuthenticated ? <BackupView /> : <LoginForm />
       case "payments": return <PaymentsView />
       case "featured": return <FeaturedView />
+      case "forgot-password": return <ForgotPasswordForm />
+      case "loyalty": return isAuthenticated ? <LoyaltyDashboard /> : <LoginForm />
+      case "reviews": return isAuthenticated ? <ReviewsSection targetId={selectedVendorId ?? user?.id ?? ""} /> : <LoginForm />
+      case "calendar": return isAuthenticated ? <CalendarView /> : <LoginForm />
       default: return <HomeFeed />
     }
   }

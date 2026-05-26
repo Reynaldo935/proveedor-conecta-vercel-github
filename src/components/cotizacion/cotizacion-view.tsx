@@ -101,7 +101,10 @@ export function CotizacionView() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     loadCotizaciones()
   }, [isAuthenticated, viewMode])
@@ -223,14 +226,12 @@ export function CotizacionView() {
               </button>
             </div>
           )}
-          {!isSeller && (
-            <Button
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => setShowForm(!showForm)}
-            >
-              <Plus className="h-4 w-4 mr-1" /> Nueva
-            </Button>
-          )}
+          <Button
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => setShowForm(!showForm)}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Nueva
+          </Button>
         </div>
       </div>
 
@@ -336,6 +337,32 @@ export function CotizacionView() {
             <Skeleton key={i} className="h-32 w-full" />
           ))}
         </div>
+      ) : !isAuthenticated ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <Card>
+            <CardContent className="p-8 text-center">
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <FileText className="h-16 w-16 mx-auto text-primary/20 mb-4" />
+              </motion.div>
+              <p className="font-medium text-lg">Inicia sesión</p>
+              <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                Debes iniciar sesión para ver y crear cotizaciones
+              </p>
+              <Button
+                className="mt-4 bg-primary hover:bg-primary/90"
+                onClick={() => navigate("login")}
+              >
+                Iniciar Sesión
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       ) : cotizaciones.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
@@ -355,14 +382,12 @@ export function CotizacionView() {
                   ? "No hay solicitudes de cotización para responder aún"
                   : "Crea una solicitud para que los vendedores te envíen ofertas"}
               </p>
-              {!isSeller && (
-                <Button
-                  className="mt-4 bg-primary hover:bg-primary/90"
-                  onClick={() => setShowForm(true)}
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Crear Cotización
-                </Button>
-              )}
+              <Button
+                className="mt-4 bg-primary hover:bg-primary/90"
+                onClick={() => setShowForm(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" /> Crear Cotización
+              </Button>
             </CardContent>
           </Card>
         </motion.div>

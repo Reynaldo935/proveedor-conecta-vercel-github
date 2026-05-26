@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
 import { PRODUCT_CATEGORIES } from "@/lib/validators"
+import { authFetch } from "@/lib/client-auth"
 import {
   Upload,
   X,
@@ -143,7 +144,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
         setUploadProgress((prev) => Math.min(prev + 15, 90))
       }, 200)
 
-      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const res = await authFetch("/api/upload", { method: "POST", body: fd })
       clearInterval(progressInterval)
       setUploadProgress(100)
 
@@ -208,7 +209,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
         ? `/api/products/${editProductId}`
         : "/api/products"
       const method = editMode ? "PUT" : "POST"
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

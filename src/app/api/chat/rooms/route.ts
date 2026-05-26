@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
+    await setAuthCookie(userId)
 
     const rooms = await db.chatRoom.findMany({
       where: { OR: [{ buyerId: userId }, { sellerId: userId }] },
@@ -49,12 +49,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
+    await setAuthCookie(userId)
 
     const body = await request.json()
     const { sellerId, productId, message } = body

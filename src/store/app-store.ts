@@ -30,6 +30,10 @@ export type AppView =
   | 'featured'
   | 'downloads'
   | 'backup'
+  | 'forgot-password'
+  | 'loyalty'
+  | 'reviews'
+  | 'calendar'
 
 interface AppState {
   currentView: AppView

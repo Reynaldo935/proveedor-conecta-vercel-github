@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
 import { Prisma } from '@prisma/client'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,8 +15,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const sellerId = searchParams.get('sellerId') || ''
 
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     const where: Prisma.ProductWhereInput = {
       status: 'ACTIVE',
@@ -87,12 +86,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
+
+    // Re-set auth cookie
+    await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user || user.role !== 'SELLER') {

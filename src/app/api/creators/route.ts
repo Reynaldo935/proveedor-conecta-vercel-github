@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { readFileSync, existsSync } from 'fs'
 import path from 'path'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
 const FALLBACK_CREATORS = [
   {
@@ -69,13 +70,12 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const { writeFile, mkdir } = await import('fs/promises')
-    const { cookies } = await import('next/headers')
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
+    await setAuthCookie(userId)
 
     // Only admin (rey7214935@gmail.com) can update creators
     const { db } = await import('@/lib/db')

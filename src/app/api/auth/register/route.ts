@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { validatePhoneNicaragua, validateEmail, NICARAGUA_DEPARTMENTS } from '@/lib/validators'
@@ -76,7 +75,7 @@ export async function POST(request: NextRequest) {
         department,
         address: address.trim(),
         isVerified: false,
-        emailVerified: false,
+        emailVerified: true, // Auto-verify for demo/hackathon
         phoneVerified: false,
       },
     })
@@ -87,7 +86,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate verification token
+    // Auto-verified for demo/hackathon - still generate token for audit
     const token = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
@@ -99,32 +98,22 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Simulated verification link
-    const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/verify?token=${token}`
-
-    // Simulate email sending
-    console.log(`[EMAIL SIMULATION] Registration verification email for ${email}`)
-    console.log(`[EMAIL SIMULATION] Link: ${verificationLink}`)
-
-    // Set cookie so user can access verification page
-    const cookieStore = await cookies()
-    cookieStore.set('pc_user_id', user.id, {
+    const { password: _, ...safeUser } = user
+    const response = NextResponse.json({
+      success: true,
+      data: {
+        ...safeUser,
+        requiresVerification: false,
+      },
+    })
+    response.cookies.set('pc_user_id', user.id, {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30, // 30 days
       path: '/',
     })
-
-    const { password: _, ...safeUser } = user
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...safeUser,
-        verificationLink,
-        verificationToken: token,
-      },
-    })
+    return response
   } catch (error) {
     console.error('Register error:', error)
     return NextResponse.json({ success: false, error: 'Error al registrar usuario' }, { status: 500 })

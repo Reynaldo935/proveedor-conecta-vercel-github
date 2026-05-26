@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 // In-memory storage for backup metadata (persists while server is running)
@@ -15,20 +15,21 @@ interface BackupMetadata {
 
 const backupStore: BackupMetadata[] = []
 
-async function verifyAdmin() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('pc_user_id')?.value
+async function verifyAdmin(request?: Request) {
+  const userId = await getAuthenticatedUserId(request)
 
   if (!userId) {
-    return { error: NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 }), user: null }
+    return { error: NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 }), user: null, userId: null }
   }
+
+  await setAuthCookie(userId)
 
   const user = await db.user.findUnique({ where: { id: userId } })
   if (!user || user.email !== 'rey7214935@gmail.com') {
-    return { error: NextResponse.json({ success: false, error: 'Acceso denegado - Solo administrador' }, { status: 403 }), user: null }
+    return { error: NextResponse.json({ success: false, error: 'Acceso denegado - Solo administrador' }, { status: 403 }), user: null, userId: null }
   }
 
-  return { error: null, user }
+  return { error: null, user, userId }
 }
 
 function formatBytes(bytes: number): string {
@@ -44,9 +45,9 @@ function generateBackupId(): string {
 }
 
 // GET: List all backups with metadata
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { error } = await verifyAdmin()
+    const { error } = await verifyAdmin(request)
     if (error) return error
 
     // Sort backups by date descending
@@ -78,7 +79,7 @@ export async function GET() {
 // POST: Create a new backup or restore from backup
 export async function POST(request: NextRequest) {
   try {
-    const { error } = await verifyAdmin()
+    const { error } = await verifyAdmin(request)
     if (error) return error
 
     const body = await request.json()

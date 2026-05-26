@@ -54,9 +54,6 @@ export function LoginForm() {
         setUser(data.data)
         toast.success("¡Bienvenido de vuelta!")
         navigate("home")
-      } else if (data.requiresVerification) {
-        toast.error(data.error)
-        setUnverifiedEmail(email)
       } else {
         toast.error(data.error || "Error al iniciar sesión")
       }
@@ -83,9 +80,6 @@ export function LoginForm() {
         setUser(data.data)
         toast.success(`¡Bienvenido! (${demoEmail})`)
         navigate("home")
-      } else if (data.requiresVerification) {
-        toast.error(data.error)
-        setUnverifiedEmail(demoEmail)
       } else {
         toast.error(data.error || "Cuenta demo no disponible")
       }
@@ -150,13 +144,8 @@ export function LoginForm() {
       const data = await res.json()
       if (data.success) {
         setUser(data.data)
-        if (data.data.requiresVerification) {
-          toast.success("¡Registro con Google exitoso! Verifica tu correo electrónico.")
-          setUnverifiedEmail(googleEmail)
-        } else {
-          toast.success("¡Bienvenido de vuelta!")
-          navigate("home")
-        }
+        toast.success("¡Bienvenido con Google!")
+        navigate("home")
       } else {
         toast.error(data.error)
       }
@@ -370,6 +359,18 @@ export function LoginForm() {
                 Continuar con Google
               </Button>
             </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.35 }}
+              className="text-center text-sm text-muted-foreground"
+            >
+              ¿Olvidaste tu contraseña?{" "}
+              <button onClick={() => navigate("forgot-password")} className="text-primary hover:underline font-medium">
+                Recuperar contraseña
+              </button>
+            </motion.p>
 
             <motion.p
               initial={{ opacity: 0 }}

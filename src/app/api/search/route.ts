@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
     if (sort === 'price_asc') orderBy = { price: 'asc' }
     else if (sort === 'price_desc') orderBy = { price: 'desc' }
 
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
+    if (userId) await setAuthCookie(userId)
 
     const products = await db.product.findMany({
       where,

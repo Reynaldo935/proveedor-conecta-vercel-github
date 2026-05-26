@@ -1,32 +1,23 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUser, setAuthCookie } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const user = await getAuthenticatedUser(request)
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
 
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      include: { businessProfile: true },
-    })
+    // Re-set the auth cookie to ensure it persists
+    await setAuthCookie(user.id as string)
 
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
-    }
-
-    const { password: _, ...safeUser } = user
-    // Ensure phoneVerified is explicitly included in response
     return NextResponse.json({
       success: true,
       data: {
-        ...safeUser,
-        phoneVerified: user.phoneVerified,
+        ...user,
+        phoneVerified: (user as Record<string, unknown>).phoneVerified,
       },
     })
   } catch (error) {
@@ -35,17 +26,17 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const user = await getAuthenticatedUser(request)
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
 
+    const userId = user.id as string
     const body = await request.json()
-    const { name, phone, department, address, bio, avatar } = body
+    const { name, phone, department, address, bio, avatar, coverPhoto, website } = body
 
     const updateData: Record<string, unknown> = {}
     if (name !== undefined) updateData.name = name
@@ -54,19 +45,24 @@ export async function PUT(request: Request) {
     if (address !== undefined) updateData.address = address
     if (bio !== undefined) updateData.bio = bio
     if (avatar !== undefined) updateData.avatar = avatar
+    if (coverPhoto !== undefined) updateData.coverPhoto = coverPhoto
+    if (website !== undefined) updateData.website = website
 
-    const user = await db.user.update({
+    const updatedUser = await db.user.update({
       where: { id: userId },
       data: updateData,
       include: { businessProfile: true },
     })
 
-    const { password: _, ...safeUser } = user
+    // Re-set the auth cookie
+    await setAuthCookie(userId)
+
+    const { password: _, ...safeUser } = updatedUser
     return NextResponse.json({
       success: true,
       data: {
         ...safeUser,
-        phoneVerified: user.phoneVerified,
+        phoneVerified: updatedUser.phoneVerified,
       },
     })
   } catch (error) {

@@ -21,6 +21,7 @@ interface ChatRoom {
   productId: string | null
   lastMessage: string
   lastMessageAt: string
+  unreadCount: number
   buyer: { id: string; name: string; avatar: string; businessProfile?: { businessName: string; logo: string } }
   seller: {
     id: string
@@ -30,7 +31,6 @@ interface ChatRoom {
   }
   product?: { id: string; title: string; images: string[]; price: number } | null
   messages?: { id: string; content: string; senderId: string; isRead: boolean; createdAt: string }[]
-  _count?: { messages: number }
 }
 
 export function ChatList() {
@@ -66,21 +66,26 @@ export function ChatList() {
 
     // Listen for room updates (new messages in any room)
     socket.on("room-updated", (data: { roomId: string; lastMessage: string; lastMessageAt: string; senderId: string; otherUserId: string }) => {
-      setRooms((prev) =>
-        prev.map((room) =>
-          room.id === data.roomId
-            ? { ...room, lastMessage: data.lastMessage, lastMessageAt: data.lastMessageAt }
-            : room
-        )
-      )
-      // Re-sort rooms by lastMessageAt
-      setRooms((prev) =>
-        [...prev].sort(
+      setRooms((prev) => {
+        const updated = prev.map((room) => {
+          if (room.id === data.roomId) {
+            const isFromOther = data.senderId !== user?.id
+            return {
+              ...room,
+              lastMessage: data.lastMessage,
+              lastMessageAt: data.lastMessageAt,
+              unreadCount: isFromOther ? (room.unreadCount || 0) + 1 : room.unreadCount,
+            }
+          }
+          return room
+        })
+        // Re-sort rooms by lastMessageAt
+        return [...updated].sort(
           (a, b) =>
             new Date(b.lastMessageAt).getTime() -
             new Date(a.lastMessageAt).getTime()
         )
-      )
+      })
     })
 
     // Listen for typing indicators across all rooms
@@ -131,12 +136,9 @@ export function ChatList() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Count unread messages per room
+  // Get unread count for a room (provided by API)
   const getUnreadCount = (room: ChatRoom) => {
-    if (!room.messages) return 0
-    return room.messages.filter(
-      (m) => !m.isRead && m.senderId !== user?.id
-    ).length
+    return room.unreadCount || 0
   }
 
   // Format relative time

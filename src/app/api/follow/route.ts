@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
 // GET /api/follow?userId=xxx&type=followers|following — list followers or following
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const currentUserId = cookieStore.get('pc_user_id')?.value
+    const currentUserId = await getAuthenticatedUserId(request)
+    if (currentUserId) await setAuthCookie(currentUserId)
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId') || currentUserId
@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
 // POST /api/follow — toggle follow/unfollow
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    await setAuthCookie(userId)
 
     const body = await request.json()
     const { followingId } = body

@@ -3,6 +3,7 @@ import { Poppins, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { FetchInterceptor } from "@/components/layout/fetch-interceptor";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -55,6 +56,7 @@ export default function RootLayout({
           enableSystem={false}
           storageKey="pc-theme"
         >
+          <FetchInterceptor />
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

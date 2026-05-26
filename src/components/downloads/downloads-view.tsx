@@ -144,11 +144,7 @@ export function DownloadsView() {
 
     try {
       if (item.id === "voucher-pdf") {
-        // Open voucher in new tab for PDF
-        window.open(`/api/voucher?transactionId=${transactionId.trim()}`, "_blank")
-        toast.success("Comprobante abierto en nueva pestaña")
-      } else if (item.id === "voucher-image") {
-        // Fetch voucher HTML and create image
+        // Fetch voucher HTML and trigger download as file
         const res = await fetch(`/api/voucher?transactionId=${transactionId.trim()}`)
         if (res.ok) {
           const html = await res.text()
@@ -156,16 +152,29 @@ export function DownloadsView() {
           const url = URL.createObjectURL(blob)
           const link = document.createElement("a")
           link.href = url
-          link.download = `voucher-${transactionId.trim().slice(-8)}.html`
+          link.download = `comprobante-${transactionId.trim().slice(-8)}.html`
+          document.body.appendChild(link)
           link.click()
+          document.body.removeChild(link)
           URL.revokeObjectURL(url)
-          toast.success("Comprobante descargado como imagen")
+          toast.success("Comprobante descargado — ábrelo en tu navegador e imprime como PDF")
         } else {
-          toast.error("No se pudo generar el comprobante")
+          const errData = await res.json().catch(() => null)
+          toast.error(errData?.error || "No se pudo generar el comprobante")
         }
+      } else if (item.id === "voucher-image") {
+        // Open voucher in new tab for screenshot/image save
+        const voucherUrl = `/api/voucher?transactionId=${transactionId.trim()}`
+        window.open(voucherUrl, "_blank")
+        toast.success("Comprobante abierto — haz clic derecho → Guardar como imagen")
       } else {
         // Standard file download
-        window.open(item.endpoint, "_blank")
+        const link = document.createElement("a")
+        link.href = item.endpoint
+        link.download = ""
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
         toast.success(`Descargando ${item.title}...`)
       }
 

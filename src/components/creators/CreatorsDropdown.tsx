@@ -2,7 +2,7 @@
 
 import { useCreators } from "@/hooks/useCreators"
 import { useAuthStore } from "@/store/auth-store"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -65,14 +65,7 @@ export function CreatorsDropdown() {
                   className="flex flex-col items-center p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-all cursor-default group hover:shadow-sm"
                 >
                   <Avatar className="h-16 w-16 border-2 shadow-sm" style={{ borderColor: creator.color }}>
-                    {creator.photo ? (
-                      <img 
-                        src={creator.photo} 
-                        alt={creator.name} 
-                        className="h-full w-full object-cover rounded-full" 
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }}
-                      />
-                    ) : null}
+                    <AvatarImage src={creator.photo || undefined} alt={creator.name} />
                     <AvatarFallback
                       className="text-white font-bold text-lg"
                       style={{ backgroundColor: creator.color }}

@@ -238,13 +238,8 @@ export function RegisterForm() {
       const data = await res.json()
       if (data.success) {
         setUser(data.data)
-        toast.success("¡Cuenta creada! Verifica tu correo electrónico.")
-        setVerificationState({
-          show: true,
-          email: form.email,
-          token: data.data.verificationToken,
-          link: data.data.verificationLink,
-        })
+        toast.success("¡Cuenta creada exitosamente! Bienvenido a ProveedorConecta.")
+        navigate("home")
       } else {
         toast.error(data.error || "Error al registrarse")
       }
@@ -316,18 +311,8 @@ export function RegisterForm() {
       const data = await res.json()
       if (data.success) {
         setUser(data.data)
-        if (data.data.requiresVerification) {
-          toast.success("¡Registro con Google exitoso! Verifica tu correo electrónico.")
-          setVerificationState({
-            show: true,
-            email: googleEmail,
-            token: data.data.verificationToken,
-            link: data.data.verificationLink,
-          })
-        } else {
-          toast.success("¡Registro con Google exitoso!")
-          navigate("home")
-        }
+        toast.success("¡Registro con Google exitoso! Bienvenido a ProveedorConecta.")
+        navigate("home")
       } else {
         toast.error(data.error)
       }

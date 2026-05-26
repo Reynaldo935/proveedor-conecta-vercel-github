@@ -68,18 +68,48 @@ function ThemeToggleButton({
   setTheme: (theme: string) => void
   className?: string
 }) {
+  // Read dark state from DOM only during event handlers, not in effects
+  const getIsDark = useCallback(() => {
+    if (typeof document === 'undefined') return false
+    return document.documentElement.classList.contains("dark")
+  }, [])
+
+  const [isDark, setIsDark] = useState(false)
+
+  // Use requestAnimationFrame to defer state update out of effect body
+  useEffect(() => {
+    if (mounted) {
+      requestAnimationFrame(() => {
+        setIsDark(getIsDark())
+      })
+    }
+  }, [mounted, getIsDark])
+
+  // Also listen for theme changes from external sources
+  useEffect(() => {
+    if (!mounted) return
+    const observer = new MutationObserver(() => {
+      setIsDark(getIsDark())
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [mounted, getIsDark])
+
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={() => {
-        const current = document.documentElement.classList.contains("dark") ? "dark" : "light"
-        setTheme(current === "dark" ? "light" : "dark")
+        const current = getIsDark() ? "dark" : "light"
+        const next = current === "dark" ? "light" : "dark"
+        setTheme(next)
+        setIsDark(next === "dark")
       }}
       className={className || "h-9 w-9"}
+      suppressHydrationWarning
     >
       {mounted ? (
-        document.documentElement.classList.contains("dark") ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />
+        isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />
       ) : (
         <Moon className="h-4 w-4" />
       )}
@@ -364,6 +394,16 @@ export function Header() {
                     <div className="flex flex-col space-y-0.5">
                       <span className="text-sm font-medium">{user.name}</span>
                       <span className="text-xs text-muted-foreground truncate max-w-[160px]">{user.email}</span>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Wallet className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-muted-foreground">Saldo:</span>
+                      <span className="font-semibold text-primary">
+                        {new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(user?.balance ?? 50000)}
+                      </span>
                     </div>
                   </div>
                   <DropdownMenuSeparator />

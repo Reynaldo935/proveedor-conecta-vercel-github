@@ -4,7 +4,7 @@
     "name": "Apolonio",
     "role": "Desarrollador Frontend",
     "bio": "Especialista en React, CSS y diseño de interfaces. Constructor de la experiencia visual e interactiva del proyecto.",
-    "photo": "https://estunanleonedu-my.sharepoint.com/:i:/g/personal/reynaldo_lozano24_est_unanleon_edu_ni/IQAheKoz315MS590nE10ozWsAS5Q-V_90AJ_AjHqX11Wltg?e=WkLqEV",
+    "photo": "/uploads/team/apolonio.png",
     "email": "vivasromerooo@gmail.com",
     "color": "#1A5276"
   },
@@ -13,7 +13,7 @@
     "name": "Arbela",
     "role": "Diseño Gráfico",
     "bio": "Diseñadora gráfica con ojo para el detalle. Creadora de la identidad visual, materiales gráficos y experiencia de usuario.",
-    "photo": "https://estunanleonedu-my.sharepoint.com/:i:/g/personal/reynaldo_lozano24_est_unanleon_edu_ni/IQDfBb7SyB1ETpuQHleN68dIASDX8TeskVcA1_AjvYMy5Mc?e=KglfjL",
+    "photo": "/uploads/team/arbela.png",
     "email": "arbelaspacheco@gmail.com",
     "color": "#2E86C1"
   },
@@ -22,7 +22,7 @@
     "name": "Mychael",
     "role": "Marketing",
     "bio": "Experto en estrategia de mercado y posicionamiento de marca. Lidera las campañas publicitarias y comunicación digital.",
-    "photo": "https://estunanleonedu-my.sharepoint.com/:i:/g/personal/reynaldo_lozano24_est_unanleon_edu_ni/IQB6U_Ed_3baQ4UZTpZCmxTPAd6XwOQ8einLdwZb8j2TaB0?e=jiJQYA",
+    "photo": "/uploads/team/mychael.png",
     "email": "Mychaelcanales336@gmail.com",
     "color": "#1E8449"
   },
@@ -31,7 +31,7 @@
     "name": "Pedro",
     "role": "Comunicador",
     "bio": "Comunicador estratégico y gestor de relaciones. Conexión con proveedores nicaragüenses y administración general.",
-    "photo": "https://estunanleonedu-my.sharepoint.com/:i:/g/personal/reynaldo_lozano24_est_unanleon_edu_ni/IQCdy-kHipplRricV2I3NQ5oATPoU6hkYh1oYH4sMeBwmN8?e=z1TX5h",
+    "photo": "/uploads/team/pedro.png",
     "email": "Pedripointer2007@gmail.com",
     "color": "#F4D03F"
   },
@@ -39,8 +39,8 @@
     "id": "5",
     "name": "Reynaldo",
     "role": "Desarrollador Fullstack",
-    "bio": "Dominio completo de React, Node.js y TypeScript. Constructor del frontend y las APIs en tiempo real.DATABASE, CIBER SEGURIDAD, FRONTEND, BACKEND, APIS.",
-    "photo": "https://estunanleonedu-my.sharepoint.com/:i:/g/personal/reynaldo_lozano24_est_unanleon_edu_ni/IQDzHntfPKpzT5pLNXS4q-fIAbLJK8qqTwKi9nfo8Q-8rO0?e=W5f03P",
+    "bio": "Dominio completo de React, Node.js y TypeScript. DATABASE, CIBER SEGURIDAD, FRONTEND, BACKEND, APIS.",
+    "photo": "/uploads/team/reynaldo.png",
     "email": "rey7214935@gmail.com",
     "color": "#C0392B"
   }

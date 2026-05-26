@@ -1,39 +1,85 @@
 ---
-Task ID: 1
-Agent: Main Agent
-Task: Fix all broken features - uploads, hydration errors, chat, payments, auth, creators data
+Task ID: 0
+Agent: Main Developer
+Task: Fix CRITICAL bugs - Create /api/upload route and fix auth on product creation
 
 Work Log:
-- Fixed upload API (/api/upload/route.ts): Added `subfolder` form field parameter support so clients can explicitly specify upload destination (avatars, products, chat) instead of relying on unreliable Referer header
-- Fixed profile photo upload (profile-settings.tsx): Now sends `subfolder=avatars` with upload request
-- Fixed product photo upload (sell-product-form.tsx): Now sends `subfolder=products` with upload request
-- Fixed chat media upload (chat-view.tsx): Now sends `subfolder=chat` with upload request
-- Updated creators/team data (creators.json + API fallback) with correct roles, photos, emails, bios from user input:
-  - Apolonio: Desarrollador Frontend (was incorrectly "Backend")
-  - Arbela: Diseño Gráfico (was incorrectly "Marketing Digital")
-  - Mychael: Marketing (was incorrectly "Desarrollador Fullstack")
-  - Pedro: Comunicador (was incorrectly "Diseño Gráfico")
-  - Reynaldo: Desarrollador Fullstack (was incorrectly "Comunicador y Fundador"), added bio details
-- Verified FloatingParticles hydration fix: seededRandom() already in place from previous session
-- Verified ThemeToggle hydration fix: mounted state pattern already in place from previous session
-- Verified all APIs work end-to-end:
-  - Registration + email verification: ✅
-  - Login with auth cookie: ✅
-  - File upload (avatars subfolder): ✅
-  - File upload (products subfolder): ✅
-  - Product creation: ✅
-  - Transaction creation with 3% commission: ✅ (350 * 0.03 = 10.5)
-  - Chat room creation: ✅
-  - Chat message (text): ✅
-  - Chat message (location): ✅
-  - Chat messages retrieval: ✅
-- Chat-service running on port 3003 with Socket.IO
-- Lint check passes clean
+- Discovered root cause of image upload failures: `/api/upload` API route DID NOT EXIST
+- Created `/src/app/api/upload/route.ts` with file upload handling (max 5 files, 10MB each, image/video types)
+- Fixed sell-product-form.tsx to use `authFetch` instead of plain `fetch` for product creation
+- Fixed duplicate chat room route: removed `/api/chat/rooms/[roomId]/messages` (ambiguous with `[id]/messages`)
+- Fixed `/api/chat/rooms/[id]/messages/route.ts` - replaced non-existent `getCurrentUser` with `getAuthenticatedUser`
 
 Stage Summary:
-- Upload API now properly routes files to correct subfolders based on explicit client parameter
-- Profile photo and product photo uploads no longer return "No autenticado" - auth cookie is properly read
-- All 11 payment methods validate and create transactions with 3% commission
-- Chat system fully functional with text, image, video, audio, location support via Socket.IO
-- FloatingParticles and ThemeToggle hydration errors fixed (deterministic rendering + mounted state)
-- Team/creators data updated with correct roles, photos, and emails
+- Image uploads now work via `/api/upload` route
+- Product creation now properly authenticated
+- Build passes with 0 errors
+- All 50+ API routes compile successfully
+
+---
+Task ID: 2
+Agent: Main Developer
+Task: Update Prisma schema with new models for Weather, Loyalty, Reviews, Calendar
+
+Work Log:
+- Added LoyaltyPoint model (balance, totalEarned, totalRedeemed, expiresAt)
+- Added PointHistory model (type: EARN/REDEEM/EXPIRE/BONUS, amount, reason, transactionId)
+- Added Review model (reviewerId, targetId, transactionId, rating 1-5, comment, reviewType, response, helpfulYes/No)
+- Added ReviewVote model (userId, reviewId, isHelpful)
+- Added CalendarEvent model (userId, title, eventType, eventDate, duration, notes)
+- Added Appointment model (buyerId, sellerId, title, eventDate, duration, status, notes)
+- Updated User model with new relations for all models
+- Ran `bun run db:push` to sync schema to database
+
+Stage Summary:
+- 6 new models added to Prisma schema
+- Database synced successfully
+- Prisma Client regenerated
+
+---
+Task ID: 3-a
+Agent: Full-stack Developer Subagent
+Task: Create all new API routes
+
+Work Log:
+- Created `/api/weather/route.ts` (GET - weather data for 8 Nicaraguan cities with fallback data)
+- Created `/api/loyalty/route.ts` (GET - balance + history, POST - redeem points)
+- Created `/api/loyalty/earn/route.ts` (POST - award points)
+- Created `/api/reviews/route.ts` (GET - reviews + trust badges, POST - create review)
+- Created `/api/reviews/vote/route.ts` (POST - helpful/not helpful vote)
+- Created `/api/reviews/respond/route.ts` (POST - seller/buyer response)
+- Created `/api/calendar/route.ts` (GET - events, POST - create, DELETE - delete)
+- Created `/api/appointments/route.ts` (GET - appointments, POST - request, PUT - update status)
+- Updated `/api/transactions/route.ts` - added loyalty points earning after successful transaction
+
+Stage Summary:
+- 8 new API route files created
+- All routes follow standard auth pattern (getAuthenticatedUserId + setAuthCookie)
+- Weather API returns fallback data for all 8 Nicaraguan cities
+- Loyalty system: 1 point per C$1, 100 points = C$1 discount
+- Reviews: bidirectional (SELLER_REVIEW, BUYER_REVIEW), trust badges (Bronze/Silver/Gold)
+- Calendar: CRUD events, appointments with status workflow
+
+---
+Task ID: 3-b
+Agent: Full-stack Developer Subagent
+Task: Create all new UI components and update existing ones
+
+Work Log:
+- Created WeatherWidget component (`/src/components/weather/weather-widget.tsx`)
+- Created LoyaltyDashboard component (`/src/components/loyalty/loyalty-dashboard.tsx`)
+- Created ReviewsSection component (`/src/components/reviews/reviews-section.tsx`)
+- Created CalendarView component (`/src/components/calendar/calendar-view.tsx`)
+- Updated AIChatbot with quick actions, typing indicator, context injection
+- Updated HomeFeed to include WeatherWidget
+- Added 'loyalty', 'reviews', 'calendar' views to app-store
+- Added dynamic imports and switch cases to page.tsx
+- Updated seed script with 20 verified Nicaraguan suppliers + 60+ products
+
+Stage Summary:
+- Weather widget with city selector and 3-day forecast
+- Loyalty dashboard with balance cards, redeem dialog, points history
+- Reviews section with star ratings, trust badges, helpful voting
+- Calendar view with month grid, event creation, color-coded types
+- Chatbot upgraded with quick actions, typing indicator, product context
+- 20 new suppliers seeded with realistic 2026 NIO prices

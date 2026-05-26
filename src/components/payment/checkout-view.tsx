@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/client-auth"
 import {
   validateCedula,
   validateCardNumber,
@@ -24,6 +24,11 @@ import {
   formatCedula,
   formatCardNumber,
   formatPhoneNicaragua,
+  formatCardExpiry,
+  formatCVV,
+  maskCardNumber,
+  maskAccountNumber,
+  maskPhone,
   PAYMENT_METHODS,
 } from "@/lib/validators"
 import {
@@ -34,12 +39,17 @@ import {
   Check,
   AlertCircle,
   Loader2,
-  Shield,
   Lock,
   Package,
   PartyPopper,
+  Wallet,
+  ArrowRight,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+
+// ─── Types ───────────────────────────────────────────────────────────
 
 interface ProductData {
   id: string
@@ -49,24 +59,160 @@ interface ProductData {
   images: string[]
 }
 
+interface FormState {
+  fullName: string
+  cedula: string
+  cardNumber: string
+  cardExpiry: string
+  cardCVV: string
+  accountNumber: string
+  paypalEmail: string
+  phone: string
+  westernRef: string
+}
+
+type FieldKey = keyof FormState
+
+// ─── Helpers ─────────────────────────────────────────────────────────
+
+const CARD_METHODS = new Set(["BAC", "PIXELPAY", "PAGADITO"])
+const BANK_METHODS = new Set(["BANPRO", "LAFISE"])
+const WALLET_METHODS = new Set(["BILLETERA", "BANPRO_BILLETERA", "KASH"])
+const DIGITAL_METHODS = new Set(["PAYPAL", "GOOGLE_PAY"])
+
+function needsName(m: string) {
+  return (
+    BANK_METHODS.has(m) ||
+    WALLET_METHODS.has(m) ||
+    CARD_METHODS.has(m) ||
+    m === "WESTERN_UNION"
+  )
+}
+function needsCedula(m: string) {
+  return needsName(m)
+}
+function needsCard(m: string) {
+  return CARD_METHODS.has(m)
+}
+function needsBankAccount(m: string) {
+  return BANK_METHODS.has(m)
+}
+function needsPhone(m: string) {
+  return WALLET_METHODS.has(m)
+}
+function needsEmail(m: string) {
+  return DIGITAL_METHODS.has(m)
+}
+
+// ─── Confetti Particle ───────────────────────────────────────────────
+
+function ConfettiParticle({ delay, color }: { delay: number; color: string }) {
+  const x = Math.random() * 400 - 200
+  const y = -(Math.random() * 600 + 200)
+  const r = Math.random() * 360
+
+  return (
+    <motion.div
+      className="absolute w-2 h-2 rounded-full"
+      style={{ backgroundColor: color, left: "50%", top: "50%" }}
+      initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
+      animate={{ x, y, rotate: r, opacity: 0 }}
+      transition={{ duration: 2 + Math.random(), delay, ease: "easeOut" }}
+    />
+  )
+}
+
+const CONFETTI_COLORS = [
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+  "#f97316",
+]
+
+function ConfettiBurst() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: 50 }).map((_, i) => (
+        <ConfettiParticle
+          key={i}
+          delay={i * 0.03}
+          color={CONFETTI_COLORS[i % CONFETTI_COLORS.length]}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ─── Validation Field Helper ─────────────────────────────────────────
+
+function ValidationMessage({
+  error,
+  valid,
+}: {
+  error?: string
+  valid?: boolean
+}) {
+  if (!error && valid === undefined) return null
+  if (valid && !error) {
+    return (
+      <motion.p
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 mt-1"
+      >
+        <Check className="h-3 w-3" /> Válido
+      </motion.p>
+    )
+  }
+  if (error) {
+    return (
+      <motion.p
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-xs text-destructive flex items-center gap-1 mt-1"
+      >
+        <AlertCircle className="h-3 w-3" /> {error}
+      </motion.p>
+    )
+  }
+  return null
+}
+
+// ─── Main Component ──────────────────────────────────────────────────
+
 export function CheckoutView() {
   const { selectedProductId, navigate } = useAppStore()
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
+
   const [product, setProduct] = useState<ProductData | null>(null)
   const [paymentMethod, setPaymentMethod] = useState("")
   const [processing, setProcessing] = useState(false)
   const [completed, setCompleted] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [formData, setFormData] = useState({
-    cedula: "",
+  const [showCVV, setShowCVV] = useState(false)
+  const [touched, setTouched] = useState<Set<FieldKey>>(new Set())
+  const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>(
+    {}
+  )
+  const [fieldValid, setFieldValid] = useState<
+    Partial<Record<FieldKey, boolean>>
+  >({})
+  const [formData, setFormData] = useState<FormState>({
     fullName: user?.name || "",
+    cedula: "",
     cardNumber: "",
     cardExpiry: "",
     cardCVV: "",
     accountNumber: "",
     paypalEmail: "",
     phone: "",
+    westernRef: "",
   })
+
+  // ── Load product ─────────────────────────────────────────────────
 
   useEffect(() => {
     if (!selectedProductId) return
@@ -78,78 +224,334 @@ export function CheckoutView() {
       .catch(() => toast.error("Error al cargar producto"))
   }, [selectedProductId])
 
-  const formatPrice = (p: number) =>
-    new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(p)
-  const amount = product ? product.discountPrice || product.price : 0
+  // ── Price formatting ─────────────────────────────────────────────
 
-  const validateForm = (): boolean => {
-    const errs: Record<string, string> = {}
+  const formatPrice = (p: number) =>
+    new Intl.NumberFormat("es-NI", {
+      style: "currency",
+      currency: "NIO",
+    }).format(p)
+
+  const amount = product ? product.discountPrice || product.price : 0
+  const userBalance = user?.balance ?? 50000
+  const hasSufficientFunds = userBalance >= amount
+
+  // ── Card type detection ──────────────────────────────────────────
+
+  const cardType = useMemo(() => {
+    if (!formData.cardNumber) return null
+    const cleaned = formData.cardNumber.replace(/\D/g, "")
+    if (cleaned.length < 1) return null
+    return identifyCardType(formData.cardNumber)
+  }, [formData.cardNumber])
+
+  // ── Real-time field validation ───────────────────────────────────
+
+  const validateField = useCallback(
+    (field: FieldKey, value: string, method: string) => {
+      let error = ""
+      let valid = false
+
+      switch (field) {
+        case "fullName":
+          if (!value.trim()) {
+            error = "Nombre completo requerido"
+          } else {
+            valid = true
+          }
+          break
+
+        case "cedula": {
+          if (!value.trim()) {
+            error = "Cédula requerida"
+          } else {
+            const check = validateCedula(value)
+            if (!check.valid) error = check.message
+            else valid = true
+          }
+          break
+        }
+
+        case "cardNumber": {
+          if (!value.trim()) {
+            error = "Número de tarjeta requerido"
+          } else {
+            const cleaned = value.replace(/\D/g, "")
+            if (cleaned.length < 16) {
+              error = `Faltan ${16 - cleaned.length} dígitos`
+            } else {
+              const check = validateCardNumber(value)
+              if (!check.valid) error = check.message
+              else valid = true
+            }
+          }
+          break
+        }
+
+        case "cardExpiry": {
+          if (!value.trim()) {
+            error = "Fecha requerida"
+          } else {
+            const check = validateCardExpiry(value)
+            if (!check.valid) error = check.message
+            else valid = true
+          }
+          break
+        }
+
+        case "cardCVV": {
+          if (!value.trim()) {
+            error = "CVV requerido"
+          } else {
+            const check = validateCVV(value)
+            if (!check.valid) error = check.message
+            else valid = true
+          }
+          break
+        }
+
+        case "accountNumber": {
+          if (method === "WESTERN_UNION") {
+            // Not used for WU — use westernRef instead
+            break
+          }
+          if (!value.trim()) {
+            error = "Número de cuenta requerido"
+          } else {
+            const check = validateBankAccountByBank(value, method)
+            if (!check.valid) error = check.message
+            else valid = true
+          }
+          break
+        }
+
+        case "paypalEmail": {
+          if (!value.trim()) {
+            error = "Email requerido"
+          } else if (
+            !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)
+          ) {
+            error = "Email inválido"
+          } else {
+            valid = true
+          }
+          break
+        }
+
+        case "phone": {
+          if (!value.trim()) {
+            error = "Teléfono requerido"
+          } else {
+            const check =
+              method === "KASH"
+                ? validateKashPhone(value)
+                : validateBilleteraMovil(value)
+            if (!check.valid) error = check.message
+            else valid = true
+          }
+          break
+        }
+
+        case "westernRef": {
+          if (!value.trim()) {
+            error = "Número de referencia requerido"
+          } else {
+            const check = validateWesternUnionRef(value)
+            if (!check.valid) error = check.message
+            else valid = true
+          }
+          break
+        }
+      }
+
+      return { error, valid }
+    },
+    []
+  )
+
+  // ── Update field with validation ─────────────────────────────────
+
+  const updateField = useCallback(
+    (field: FieldKey, rawValue: string, formattedValue?: string) => {
+      const val = formattedValue ?? rawValue
+      setFormData((prev) => ({ ...prev, [field]: val }))
+
+      if (touched.has(field)) {
+        const { error, valid } = validateField(field, val, paymentMethod)
+        setErrors((prev) => ({ ...prev, [field]: error }))
+        setFieldValid((prev) => ({ ...prev, [field]: valid }))
+      }
+    },
+    [touched, paymentMethod, validateField]
+  )
+
+  // ── Blur handler — mark as touched and validate ──────────────────
+
+  const handleBlur = useCallback(
+    (field: FieldKey) => {
+      setTouched((prev) => new Set(prev).add(field))
+      const { error, valid } = validateField(
+        field,
+        formData[field],
+        paymentMethod
+      )
+      setErrors((prev) => ({ ...prev, [field]: error }))
+      setFieldValid((prev) => ({ ...prev, [field]: valid }))
+    },
+    [formData, paymentMethod, validateField]
+  )
+
+  // ── Reset form on method change ──────────────────────────────────
+
+  const handleMethodChange = useCallback(
+    (method: string) => {
+      setPaymentMethod(method)
+      setErrors({})
+      setFieldValid({})
+      setTouched(new Set())
+    },
+    []
+  )
+
+  // ── Full form validation ─────────────────────────────────────────
+
+  const validateForm = useCallback((): boolean => {
+    const errs: Partial<Record<FieldKey, string>> = {}
+    const valids: Partial<Record<FieldKey, boolean>> = {}
+    const allTouched = new Set(touched)
+
     if (!paymentMethod) {
-      errs.method = "Selecciona un método de pago"
-      setErrors(errs)
+      toast.error("Selecciona un método de pago")
       return false
     }
 
-    if (["BANPRO", "BAC", "LAFISE", "BILLETERA", "PIXELPAY", "PAGADITO", "BANPRO_BILLETERA", "KASH", "WESTERN_UNION"].includes(paymentMethod)) {
-      if (!formData.fullName.trim()) errs.fullName = "Nombre requerido"
-      const cedulaCheck = validateCedula(formData.cedula)
-      if (!cedulaCheck.valid) errs.cedula = cedulaCheck.message
+    // Full name
+    if (needsName(paymentMethod)) {
+      allTouched.add("fullName")
+      const r = validateField("fullName", formData.fullName, paymentMethod)
+      if (r.error) errs.fullName = r.error
+      else valids.fullName = true
     }
 
-    if (["BAC", "LAFISE", "PIXELPAY", "PAGADITO"].includes(paymentMethod)) {
-      const cardCheck = validateCardNumber(formData.cardNumber)
-      if (!cardCheck.valid) errs.cardNumber = cardCheck.message
-      const expiryCheck = validateCardExpiry(formData.cardExpiry)
-      if (!expiryCheck.valid) errs.cardExpiry = expiryCheck.message
-      const cvvCheck = validateCVV(formData.cardCVV)
-      if (!cvvCheck.valid) errs.cardCVV = cvvCheck.message
+    // Cédula
+    if (needsCedula(paymentMethod)) {
+      allTouched.add("cedula")
+      const r = validateField("cedula", formData.cedula, paymentMethod)
+      if (r.error) errs.cedula = r.error
+      else valids.cedula = true
     }
 
-    if (["BANPRO", "LAFISE"].includes(paymentMethod)) {
-      if (!formData.accountNumber)
-        errs.accountNumber = "Número de cuenta requerido"
-      else {
-        const acctCheck = validateBankAccountByBank(formData.accountNumber, paymentMethod)
-        if (!acctCheck.valid) errs.accountNumber = acctCheck.message
-      }
+    // Card fields
+    if (needsCard(paymentMethod)) {
+      allTouched.add("cardNumber")
+      const cn = validateField("cardNumber", formData.cardNumber, paymentMethod)
+      if (cn.error) errs.cardNumber = cn.error
+      else valids.cardNumber = true
+
+      allTouched.add("cardExpiry")
+      const ce = validateField(
+        "cardExpiry",
+        formData.cardExpiry,
+        paymentMethod
+      )
+      if (ce.error) errs.cardExpiry = ce.error
+      else valids.cardExpiry = true
+
+      allTouched.add("cardCVV")
+      const cv = validateField("cardCVV", formData.cardCVV, paymentMethod)
+      if (cv.error) errs.cardCVV = cv.error
+      else valids.cardCVV = true
     }
 
-    if (paymentMethod === "PAYPAL" || paymentMethod === "GOOGLE_PAY") {
-      if (!formData.paypalEmail.trim())
-        errs.paypalEmail = paymentMethod === "PAYPAL" ? "Email de PayPal requerido" : "Email de Google Pay requerido"
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.paypalEmail))
-        errs.paypalEmail = "Email inválido"
+    // Bank account
+    if (needsBankAccount(paymentMethod)) {
+      allTouched.add("accountNumber")
+      const r = validateField(
+        "accountNumber",
+        formData.accountNumber,
+        paymentMethod
+      )
+      if (r.error) errs.accountNumber = r.error
+      else valids.accountNumber = true
     }
 
-    if (paymentMethod === "BILLETERA") {
-      const phoneCheck = validateBilleteraMovil(formData.phone)
-      if (!phoneCheck.valid) errs.phone = phoneCheck.message
+    // Phone (wallets)
+    if (needsPhone(paymentMethod)) {
+      allTouched.add("phone")
+      const r = validateField("phone", formData.phone, paymentMethod)
+      if (r.error) errs.phone = r.error
+      else valids.phone = true
     }
 
-    if (paymentMethod === "BANPRO_BILLETERA" || paymentMethod === "KASH") {
-      const phoneCheck = paymentMethod === "KASH" ? validateKashPhone(formData.phone) : validateBilleteraMovil(formData.phone)
-      if (!phoneCheck.valid) errs.phone = phoneCheck.message
+    // Email (digital wallets)
+    if (needsEmail(paymentMethod)) {
+      allTouched.add("paypalEmail")
+      const r = validateField(
+        "paypalEmail",
+        formData.paypalEmail,
+        paymentMethod
+      )
+      if (r.error) errs.paypalEmail = r.error
+      else valids.paypalEmail = true
     }
 
+    // Western Union reference
     if (paymentMethod === "WESTERN_UNION") {
-      const refCheck = validateWesternUnionRef(formData.accountNumber)
-      if (!refCheck.valid) errs.accountNumber = refCheck.message
+      allTouched.add("fullName")
+      const fn = validateField("fullName", formData.fullName, paymentMethod)
+      if (fn.error) errs.fullName = fn.error
+      else valids.fullName = true
+
+      allTouched.add("cedula")
+      const cd = validateField("cedula", formData.cedula, paymentMethod)
+      if (cd.error) errs.cedula = cd.error
+      else valids.cedula = true
+
+      allTouched.add("westernRef")
+      const wr = validateField(
+        "westernRef",
+        formData.westernRef,
+        paymentMethod
+      )
+      if (wr.error) errs.westernRef = wr.error
+      else valids.westernRef = true
     }
 
+    setTouched(allTouched)
     setErrors(errs)
+    setFieldValid(valids)
     return Object.keys(errs).length === 0
-  }
+  }, [paymentMethod, formData, touched, validateField])
 
-  const handlePayment = async () => {
+  // ── Handle payment submission ────────────────────────────────────
+
+  const handlePayment = useCallback(async () => {
     if (!validateForm()) return
+
+    if (!hasSufficientFunds) {
+      toast.error(
+        "💸 Sin fondos — Tu saldo es de " +
+          formatPrice(userBalance) +
+          " y necesitas " +
+          formatPrice(amount) +
+          ". Recarga tu cuenta desde Mi Perfil.",
+        { duration: 6000 }
+      )
+      return
+    }
+
     setProcessing(true)
 
     const cardLast4 = formData.cardNumber
       ? formData.cardNumber.replace(/\D/g, "").slice(-4)
-      : ""
+      : formData.accountNumber
+        ? formData.accountNumber.replace(/\D/g, "").slice(-4)
+        : formData.phone
+          ? formData.phone.replace(/\D/g, "").slice(-4)
+          : ""
 
     try {
-      const res = await fetch("/api/transactions", {
+      const res = await authFetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,22 +563,64 @@ export function CheckoutView() {
           paymentDetails: JSON.stringify({
             fullName: formData.fullName,
             method: paymentMethod,
+            maskedCard:
+              needsCard(paymentMethod) && formData.cardNumber
+                ? maskCardNumber(formData.cardNumber)
+                : needsBankAccount(paymentMethod) && formData.accountNumber
+                  ? maskAccountNumber(formData.accountNumber)
+                  : needsPhone(paymentMethod) && formData.phone
+                    ? maskPhone(formData.phone)
+                    : undefined,
           }),
         }),
       })
       const data = await res.json()
+
       if (data.success) {
+        // Update user balance in store if returned
+        if (data.data && user) {
+          const newBalance = userBalance - amount
+          setUser({ ...user, balance: newBalance })
+        }
         setCompleted(true)
         toast.success("¡Pago procesado exitosamente!")
       } else {
-        toast.error(data.error || "Error al procesar pago")
+        if (data.errorCode === "INSUFFICIENT_FUNDS") {
+          toast.error(
+            "💸 Sin fondos — Dinero insuficiente en tu cuenta. Recarga o intenta con otro método de pago.",
+            { duration: 6000 }
+          )
+        } else if (data.errorCode === "BANK_DECLINED") {
+          toast.error(
+            "🏦 Transacción rechazada por el banco. Verifica tus datos e intenta de nuevo.",
+            { duration: 6000 }
+          )
+        } else {
+          toast.error(data.error || "Error al procesar pago")
+        }
       }
     } catch {
       toast.error("Error de conexión al procesar pago")
     } finally {
       setProcessing(false)
     }
-  }
+  }, [
+    validateForm,
+    hasSufficientFunds,
+    userBalance,
+    amount,
+    formatPrice,
+    formData,
+    paymentMethod,
+    product,
+    user,
+    setUser,
+    needsCard,
+    needsBankAccount,
+    needsPhone,
+  ])
+
+  // ── Loading state ────────────────────────────────────────────────
 
   if (!product)
     return (
@@ -185,10 +629,13 @@ export function CheckoutView() {
       </div>
     )
 
-  // Completed state
+  // ── Success state ────────────────────────────────────────────────
+
   if (completed)
     return (
-      <div className="max-w-md mx-auto text-center py-16 space-y-4">
+      <div className="max-w-md mx-auto text-center py-16 space-y-4 relative">
+        <ConfettiBurst />
+
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -207,6 +654,9 @@ export function CheckoutView() {
           <h2 className="text-2xl font-bold font-[family-name:var(--font-poppins)] flex items-center justify-center gap-2">
             ¡Pago Exitoso! <PartyPopper className="h-6 w-6" />
           </h2>
+          <p className="text-muted-foreground mt-1">
+            Tu transacción ha sido procesada correctamente
+          </p>
         </motion.div>
 
         <motion.div
@@ -215,26 +665,42 @@ export function CheckoutView() {
           transition={{ delay: 0.5 }}
         >
           <Card className="mt-4">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                   {product.images?.[0] ? (
                     <img
                       src={product.images[0]}
-                      alt=""
+                      alt={product.title}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="h-5 w-5 text-muted-foreground" />
+                      <Package className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
                 </div>
-                <div className="text-left">
-                  <p className="font-medium text-sm">{product.title}</p>
-                  <p className="text-lg font-bold text-primary">
+                <div className="text-left flex-1">
+                  <p className="font-semibold">{product.title}</p>
+                  <p className="text-2xl font-bold text-primary">
                     {formatPrice(amount)}
                   </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Método de pago</span>
+                  <span className="font-medium">
+                    {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.name ||
+                      paymentMethod}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Saldo restante</span>
+                  <span className="font-medium">
+                    {formatPrice(Math.max(0, userBalance - amount))}
+                  </span>
                 </div>
               </div>
               <Separator />
@@ -249,7 +715,7 @@ export function CheckoutView() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="flex gap-3 justify-center mt-4"
+          className="flex gap-3 justify-center mt-6"
         >
           <Button variant="outline" onClick={() => navigate("buyer-dashboard")}>
             Mis Compras
@@ -264,7 +730,8 @@ export function CheckoutView() {
       </div>
     )
 
-  // Payment processing overlay
+  // ── Processing overlay ───────────────────────────────────────────
+
   const ProcessingOverlay = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -289,8 +756,8 @@ export function CheckoutView() {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: "100%" }}
-            transition={{ duration: 2, ease: "linear" }}
-            className="h-1 bg-primary rounded-full"
+            transition={{ duration: 2.5, ease: "linear" }}
+            className="h-1.5 bg-gradient-to-r from-primary to-primary/60 rounded-full"
           />
         </div>
         <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
@@ -300,12 +767,503 @@ export function CheckoutView() {
     </motion.div>
   )
 
+  // ── Shared field input helper ────────────────────────────────────
+
+  const FieldInput = ({
+    field,
+    label,
+    placeholder,
+    type = "text",
+    maxLength,
+    icon,
+    formatValue,
+    rightElement,
+  }: {
+    field: FieldKey
+    label: string
+    placeholder: string
+    type?: string
+    maxLength?: number
+    icon?: React.ReactNode
+    formatValue?: (v: string) => string
+    rightElement?: React.ReactNode
+  }) => (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium">
+        {icon ? (
+          <span className="inline-flex items-center gap-1.5">
+            {icon} {label}
+          </span>
+        ) : (
+          label
+        )}
+      </Label>
+      <div className="relative">
+        <Input
+          type={type}
+          placeholder={placeholder}
+          value={formData[field]}
+          maxLength={maxLength}
+          onChange={(e) => {
+            const formatted = formatValue
+              ? formatValue(e.target.value)
+              : e.target.value
+            updateField(field, e.target.value, formatted)
+          }}
+          onBlur={() => handleBlur(field)}
+          className={
+            errors[field]
+              ? "border-destructive focus-visible:ring-destructive"
+              : fieldValid[field]
+                ? "border-green-500 focus-visible:ring-green-500"
+                : ""
+          }
+        />
+        {rightElement && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            {rightElement}
+          </div>
+        )}
+      </div>
+      <ValidationMessage error={errors[field]} valid={fieldValid[field]} />
+    </div>
+  )
+
+  // ── Dynamic payment form ─────────────────────────────────────────
+
+  const renderPaymentForm = () => {
+    if (!paymentMethod) return null
+
+    const methodMeta = PAYMENT_METHODS.find((m) => m.id === paymentMethod)
+
+    const formContent = (
+      <div className="space-y-4">
+        {/* Full name */}
+        {needsName(paymentMethod) && (
+          <FieldInput
+            field="fullName"
+            label="Nombre completo del titular"
+            placeholder="Juan Pérez"
+          />
+        )}
+
+        {/* Cédula */}
+        {needsCedula(paymentMethod) && (
+          <FieldInput
+            field="cedula"
+            label="Cédula de identidad"
+            placeholder="001-251285-0001U"
+            formatValue={formatCedula}
+            icon={<Badge variant="outline" className="text-[10px] px-1 py-0">NI</Badge>}
+          />
+        )}
+
+        {/* Card number — for card methods */}
+        {needsCard(paymentMethod) && (
+          <>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                Número de tarjeta
+                {cardType && cardType.type !== "UNKNOWN" && (
+                  <motion.span
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <Badge
+                      className={`text-[10px] ${
+                        cardType.type === "VISA"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : cardType.type === "MASTERCARD"
+                            ? "bg-orange-500 hover:bg-orange-600 text-white"
+                            : cardType.type === "AMEX"
+                              ? "bg-blue-400 hover:bg-blue-500 text-white"
+                              : "bg-gray-500 hover:bg-gray-600 text-white"
+                      }`}
+                    >
+                      {cardType.brand}
+                    </Badge>
+                  </motion.span>
+                )}
+              </Label>
+              <div className="relative">
+                <Input
+                  placeholder="4242 4242 4242 4242"
+                  value={formData.cardNumber}
+                  maxLength={19}
+                  onChange={(e) => {
+                    const formatted = formatCardNumber(e.target.value)
+                    updateField("cardNumber", e.target.value, formatted)
+                  }}
+                  onBlur={() => handleBlur("cardNumber")}
+                  className={
+                    errors.cardNumber
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : fieldValid.cardNumber
+                        ? "border-green-500 focus-visible:ring-green-500"
+                        : ""
+                  }
+                />
+                {fieldValid.cardNumber && formData.cardNumber && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <Badge variant="secondary" className="text-[10px] font-mono">
+                      {maskCardNumber(formData.cardNumber)}
+                    </Badge>
+                  </motion.div>
+                )}
+              </div>
+              <ValidationMessage
+                error={errors.cardNumber}
+                valid={fieldValid.cardNumber}
+              />
+            </div>
+
+            {/* Expiry + CVV row */}
+            <div className="grid grid-cols-2 gap-4">
+              <FieldInput
+                field="cardExpiry"
+                label="Fecha de expiración"
+                placeholder="MM/AA"
+                maxLength={5}
+                formatValue={formatCardExpiry}
+              />
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">CVV</Label>
+                <div className="relative">
+                  <Input
+                    type={showCVV ? "text" : "password"}
+                    placeholder="123"
+                    value={formData.cardCVV}
+                    maxLength={3}
+                    onChange={(e) => {
+                      const formatted = formatCVV(e.target.value)
+                      updateField("cardCVV", e.target.value, formatted)
+                    }}
+                    onBlur={() => handleBlur("cardCVV")}
+                    className={
+                      errors.cardCVV
+                        ? "border-destructive focus-visible:ring-destructive pr-10"
+                        : fieldValid.cardCVV
+                          ? "border-green-500 focus-visible:ring-green-500 pr-10"
+                          : "pr-10"
+                    }
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowCVV((v) => !v)}
+                    aria-label={showCVV ? "Ocultar CVV" : "Mostrar CVV"}
+                  >
+                    {showCVV ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <ValidationMessage
+                  error={errors.cardCVV}
+                  valid={fieldValid.cardCVV}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Bank account — for bank transfer methods */}
+        {needsBankAccount(paymentMethod) && (
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">
+              Número de cuenta {paymentMethod === "BANPRO" ? "Banpro" : "LAFISE"}
+            </Label>
+            <div className="relative">
+              <Input
+                placeholder="Ej: 100234567"
+                value={formData.accountNumber}
+                onChange={(e) =>
+                  updateField("accountNumber", e.target.value)
+                }
+                onBlur={() => handleBlur("accountNumber")}
+                className={
+                  errors.accountNumber
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : fieldValid.accountNumber
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }
+              />
+              {fieldValid.accountNumber && formData.accountNumber && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <Badge variant="secondary" className="text-[10px] font-mono">
+                    {maskAccountNumber(formData.accountNumber)}
+                  </Badge>
+                </motion.div>
+              )}
+            </div>
+            <ValidationMessage
+              error={errors.accountNumber}
+              valid={fieldValid.accountNumber}
+            />
+          </div>
+        )}
+
+        {/* LAFISE also shows card fields */}
+        {paymentMethod === "LAFISE" && (
+          <>
+            <Separator className="my-2" />
+            <p className="text-xs text-muted-foreground">
+              También puedes pagar con tarjeta Lafise:
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                Número de tarjeta
+                {cardType && cardType.type !== "UNKNOWN" && (
+                  <motion.span
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20,
+                    }}
+                  >
+                    <Badge
+                      className={`text-[10px] ${
+                        cardType.type === "VISA"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : cardType.type === "MASTERCARD"
+                            ? "bg-orange-500 hover:bg-orange-600 text-white"
+                            : "bg-gray-500 hover:bg-gray-600 text-white"
+                      }`}
+                    >
+                      {cardType.brand}
+                    </Badge>
+                  </motion.span>
+                )}
+              </Label>
+              <div className="relative">
+                <Input
+                  placeholder="4242 4242 4242 4242"
+                  value={formData.cardNumber}
+                  maxLength={19}
+                  onChange={(e) => {
+                    const formatted = formatCardNumber(e.target.value)
+                    updateField("cardNumber", e.target.value, formatted)
+                  }}
+                  onBlur={() => handleBlur("cardNumber")}
+                  className={
+                    errors.cardNumber
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : fieldValid.cardNumber
+                        ? "border-green-500 focus-visible:ring-green-500"
+                        : ""
+                  }
+                />
+                {fieldValid.cardNumber && formData.cardNumber && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] font-mono"
+                    >
+                      {maskCardNumber(formData.cardNumber)}
+                    </Badge>
+                  </motion.div>
+                )}
+              </div>
+              <ValidationMessage
+                error={errors.cardNumber}
+                valid={fieldValid.cardNumber}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FieldInput
+                field="cardExpiry"
+                label="Fecha de expiración"
+                placeholder="MM/AA"
+                maxLength={5}
+                formatValue={formatCardExpiry}
+              />
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">CVV</Label>
+                <div className="relative">
+                  <Input
+                    type={showCVV ? "text" : "password"}
+                    placeholder="123"
+                    value={formData.cardCVV}
+                    maxLength={3}
+                    onChange={(e) => {
+                      const formatted = formatCVV(e.target.value)
+                      updateField("cardCVV", e.target.value, formatted)
+                    }}
+                    onBlur={() => handleBlur("cardCVV")}
+                    className={
+                      errors.cardCVV
+                        ? "border-destructive focus-visible:ring-destructive pr-10"
+                        : fieldValid.cardCVV
+                          ? "border-green-500 focus-visible:ring-green-500 pr-10"
+                          : "pr-10"
+                    }
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowCVV((v) => !v)}
+                    aria-label={showCVV ? "Ocultar CVV" : "Mostrar CVV"}
+                  >
+                    {showCVV ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <ValidationMessage
+                  error={errors.cardCVV}
+                  valid={fieldValid.cardCVV}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Phone — for wallet methods */}
+        {needsPhone(paymentMethod) && (
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">
+              Número de teléfono móvil
+            </Label>
+            <div className="relative">
+              <Input
+                placeholder="8XXX-XXXX"
+                value={formData.phone}
+                maxLength={9}
+                onChange={(e) => {
+                  const formatted = formatPhoneNicaragua(e.target.value)
+                  updateField("phone", e.target.value, formatted)
+                }}
+                onBlur={() => handleBlur("phone")}
+                className={
+                  errors.phone
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : fieldValid.phone
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }
+              />
+              {fieldValid.phone && formData.phone && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <Badge variant="secondary" className="text-[10px] font-mono">
+                    {maskPhone(formData.phone)}
+                  </Badge>
+                </motion.div>
+              )}
+            </div>
+            <ValidationMessage error={errors.phone} valid={fieldValid.phone} />
+          </div>
+        )}
+
+        {/* Email — for digital methods */}
+        {needsEmail(paymentMethod) && (
+          <FieldInput
+            field="paypalEmail"
+            label={
+              paymentMethod === "PAYPAL"
+                ? "Email de PayPal"
+                : "Email de Google Pay"
+            }
+            placeholder={
+              paymentMethod === "PAYPAL" ? "tu@paypal.com" : "tu@gmail.com"
+            }
+            type="email"
+          />
+        )}
+
+        {/* Western Union reference */}
+        {paymentMethod === "WESTERN_UNION" && (
+          <FieldInput
+            field="westernRef"
+            label="Número de referencia"
+            placeholder="Ej: 1234567890"
+          />
+        )}
+
+        {/* Extra info for specific methods */}
+        {paymentMethod === "GOOGLE_PAY" && (
+          <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+            Se abrirá Google Pay para confirmar el pago de forma segura.
+          </p>
+        )}
+        {paymentMethod === "WESTERN_UNION" && (
+          <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+            Ingresa el número de referencia que recibiste al realizar el giro
+            por Western Union.
+          </p>
+        )}
+      </div>
+    )
+
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={paymentMethod}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25 }}
+          className="mt-4 p-4 sm:p-5 rounded-xl bg-muted/30 border space-y-1"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">{methodMeta?.icon}</span>
+            <h4 className="font-semibold text-sm">{methodMeta?.name}</h4>
+            <Badge
+              variant="outline"
+              className="text-[10px] capitalize ml-auto"
+            >
+              {methodMeta?.type === "card"
+                ? "Tarjeta"
+                : methodMeta?.type === "bank"
+                  ? "Transferencia"
+                  : methodMeta?.type === "wallet"
+                    ? "Billetera"
+                    : methodMeta?.type === "digital"
+                      ? "Digital"
+                      : "Giro"}
+            </Badge>
+          </div>
+          {formContent}
+        </motion.div>
+      </AnimatePresence>
+    )
+  }
+
+  // ── Main render ──────────────────────────────────────────────────
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {processing && <ProcessingOverlay />}
 
+      {/* Back button */}
       <Button
         variant="ghost"
+        size="sm"
         onClick={() =>
           navigate("product-detail", { productId: product.id })
         }
@@ -317,7 +1275,7 @@ export function CheckoutView() {
         Checkout
       </h1>
 
-      {/* Order Summary */}
+      {/* ─── Order Summary Card ──────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -339,26 +1297,35 @@ export function CheckoutView() {
                 {product.images?.[0] ? (
                   <img
                     src={product.images[0]}
-                    alt=""
+                    alt={product.title}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    📦
+                    <Package className="h-8 w-8 text-muted-foreground" />
                   </div>
                 )}
               </motion.div>
-              <div className="flex-1">
-                <h3 className="font-medium">{product.title}</h3>
-                <div className="flex items-baseline gap-2 mt-1">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium truncate">{product.title}</h3>
+                <div className="flex items-baseline gap-2 mt-1 flex-wrap">
                   {product.discountPrice ? (
                     <>
-                      <span className="text-xl font-bold text-volcan">
+                      <span className="text-xl font-bold text-primary">
                         {formatPrice(product.discountPrice)}
                       </span>
                       <span className="line-through text-muted-foreground text-sm">
                         {formatPrice(product.price)}
                       </span>
+                      <Badge className="bg-green-600 text-[10px]">
+                        -
+                        {Math.round(
+                          ((product.price - product.discountPrice) /
+                            product.price) *
+                            100
+                        )}
+                        %
+                      </Badge>
                     </>
                   ) : (
                     <span className="text-xl font-bold text-primary">
@@ -368,7 +1335,9 @@ export function CheckoutView() {
                 </div>
               </div>
             </div>
-            <Separator className="my-3" />
+
+            <Separator className="my-4" />
+
             <div className="flex items-center justify-between">
               <span className="font-medium">Total a pagar</span>
               <motion.span
@@ -380,11 +1349,37 @@ export function CheckoutView() {
                 {formatPrice(amount)}
               </motion.span>
             </div>
+
+            {/* ─── Balance Check ────────────────────────────────── */}
+            <div
+              className={`mt-3 p-3 rounded-lg text-sm flex items-center gap-2 ${
+                hasSufficientFunds
+                  ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+                  : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+              }`}
+            >
+              <Wallet className="h-4 w-4 flex-shrink-0" />
+              <span>
+                Tu saldo:{" "}
+                <strong>{formatPrice(userBalance)}</strong>
+              </span>
+              {!hasSufficientFunds && (
+                <span className="ml-auto font-semibold text-right">
+                  💸 Sin fondos — Dinero insuficiente
+                </span>
+              )}
+              {hasSufficientFunds && (
+                <span className="ml-auto text-xs">
+                  Saldo después:{" "}
+                  <strong>{formatPrice(userBalance - amount)}</strong>
+                </span>
+              )}
+            </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Payment Method Selection */}
+      {/* ─── Payment Method Selection ────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -398,620 +1393,134 @@ export function CheckoutView() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PAYMENT_METHODS.map((m) => (
-                  <motion.div
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {PAYMENT_METHODS.map((m) => {
+                const isSelected = paymentMethod === m.id
+                return (
+                  <motion.button
                     key={m.id}
+                    type="button"
                     whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handleMethodChange(m.id)}
+                    className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all text-center ${
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-muted hover:border-muted-foreground/30 hover:bg-muted/30"
+                    }`}
+                    aria-label={`Método de pago: ${m.name}`}
                   >
-                    <div>
-                      <RadioGroupItem
-                        value={m.id}
-                        id={m.id}
-                        className="peer sr-only"
-                      />
-                      <Label
-                        htmlFor={m.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                          paymentMethod === m.id
-                            ? "border-primary bg-primary/5"
-                            : "border-muted hover:bg-muted/50"
-                        }`}
+                    <span className="text-2xl">{m.icon}</span>
+                    <span className="font-medium text-xs leading-tight">
+                      {m.name}
+                    </span>
+                    <Badge
+                      className={`text-[8px] bg-gradient-to-r ${m.color} text-white border-0 px-1.5 py-0`}
+                    >
+                      {m.type === "card"
+                        ? "Tarjeta"
+                        : m.type === "bank"
+                          ? "Banco"
+                          : m.type === "wallet"
+                            ? "Móvil"
+                            : m.type === "digital"
+                              ? "Digital"
+                              : "Giro"}
+                    </Badge>
+                    {isSelected && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
                       >
-                        <span className="text-xl">{m.icon}</span>
-                        <span className="font-medium text-sm">{m.name}</span>
-                        {paymentMethod === m.id && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="ml-auto"
-                          >
-                            <Check className="h-4 w-4 text-primary" />
-                          </motion.div>
-                        )}
-                      </Label>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </RadioGroup>
-            {errors.method && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.method}
-              </p>
-            )}
+                        <Check className="h-3 w-3 text-primary-foreground" />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                )
+              })}
+            </div>
 
-            {/* PayPal Form */}
-            <AnimatePresence mode="wait">
-              {paymentMethod === "PAYPAL" && (
-                <motion.div
-                  key="paypal"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" /> Datos de PayPal
-                    </h4>
-                    <div className="space-y-2">
-                      <Label>Email de PayPal</Label>
-                      <Input
-                        type="email"
-                        placeholder="tu@paypal.com"
-                        value={formData.paypalEmail}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            paypalEmail: e.target.value,
-                          }))
-                        }
-                      />
-                      {errors.paypalEmail && (
-                        <p className="text-xs text-destructive">
-                          {errors.paypalEmail}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Banpro Form */}
-              {paymentMethod === "BANPRO" && (
-                <motion.div
-                  key="banpro"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Building2 className="h-4 w-4" /> Datos de Cuenta Banpro
-                    </h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo del titular</Label>
-                      <Input
-                        value={formData.fullName}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            fullName: e.target.value,
-                          }))
-                        }
-                        placeholder="Juan Pérez"
-                      />
-                      {errors.fullName && (
-                        <p className="text-xs text-destructive">
-                          {errors.fullName}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input
-                        value={formData.cedula}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            cedula: formatCedula(e.target.value),
-                          }))
-                        }
-                        placeholder="001-251285-0001U"
-                      />
-                      {errors.cedula && (
-                        <p className="text-xs text-destructive">
-                          {errors.cedula}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de cuenta Banpro</Label>
-                      <Input
-                        value={formData.accountNumber}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            accountNumber: e.target.value,
-                          }))
-                        }
-                        placeholder="100234567890"
-                      />
-                      {errors.accountNumber && (
-                        <p className="text-xs text-destructive">
-                          {errors.accountNumber}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* BAC Form */}
-              {paymentMethod === "BAC" && (
-                <motion.div
-                  key="bac"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" /> Datos de Tarjeta BAC
-                      Credomatic
-                    </h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo</Label>
-                      <Input
-                        value={formData.fullName}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            fullName: e.target.value,
-                          }))
-                        }
-                        placeholder="Juan Pérez"
-                      />
-                      {errors.fullName && (
-                        <p className="text-xs text-destructive">
-                          {errors.fullName}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input
-                        value={formData.cedula}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            cedula: formatCedula(e.target.value),
-                          }))
-                        }
-                        placeholder="001-251285-0001U"
-                      />
-                      {errors.cedula && (
-                        <p className="text-xs text-destructive">
-                          {errors.cedula}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de tarjeta</Label>
-                      <Input
-                        value={formData.cardNumber}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            cardNumber: formatCardNumber(e.target.value),
-                          }))
-                        }
-                        placeholder="4242 4242 4242 4242"
-                        maxLength={19}
-                      />
-                      {errors.cardNumber && (
-                        <p className="text-xs text-destructive">
-                          {errors.cardNumber}
-                        </p>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label>Fecha de expiración</Label>
-                        <Input
-                          value={formData.cardExpiry}
-                          onChange={(e) =>
-                            setFormData((f) => ({
-                              ...f,
-                              cardExpiry: e.target.value,
-                            }))
-                          }
-                          placeholder="MM/AA"
-                          maxLength={5}
-                        />
-                        {errors.cardExpiry && (
-                          <p className="text-xs text-destructive">
-                            {errors.cardExpiry}
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label>CVV</Label>
-                        <Input
-                          type="password"
-                          value={formData.cardCVV}
-                          onChange={(e) =>
-                            setFormData((f) => ({
-                              ...f,
-                              cardCVV: e.target.value,
-                            }))
-                          }
-                          placeholder="123"
-                          maxLength={4}
-                        />
-                        {errors.cardCVV && (
-                          <p className="text-xs text-destructive">
-                            {errors.cardCVV}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Lafise Form */}
-              {paymentMethod === "LAFISE" && (
-                <motion.div
-                  key="lafise"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Building2 className="h-4 w-4" /> Datos de
-                      Cuenta/Tarjeta Lafise
-                    </h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo</Label>
-                      <Input
-                        value={formData.fullName}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            fullName: e.target.value,
-                          }))
-                        }
-                        placeholder="Juan Pérez"
-                      />
-                      {errors.fullName && (
-                        <p className="text-xs text-destructive">
-                          {errors.fullName}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input
-                        value={formData.cedula}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            cedula: formatCedula(e.target.value),
-                          }))
-                        }
-                        placeholder="001-251285-0001U"
-                      />
-                      {errors.cedula && (
-                        <p className="text-xs text-destructive">
-                          {errors.cedula}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de tarjeta o cuenta</Label>
-                      <Input
-                        value={formData.cardNumber || formData.accountNumber}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            cardNumber: e.target.value,
-                            accountNumber: e.target.value,
-                          }))
-                        }
-                        placeholder="Tarjeta o número de cuenta"
-                      />
-                      {(errors.cardNumber || errors.accountNumber) && (
-                        <p className="text-xs text-destructive">
-                          {errors.cardNumber || errors.accountNumber}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Billetera Móvil Form */}
-              {paymentMethod === "BILLETERA" && (
-                <motion.div
-                  key="billetera"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" /> Datos de Billetera
-                      Móvil
-                    </h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo</Label>
-                      <Input
-                        value={formData.fullName}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            fullName: e.target.value,
-                          }))
-                        }
-                        placeholder="Juan Pérez"
-                      />
-                      {errors.fullName && (
-                        <p className="text-xs text-destructive">
-                          {errors.fullName}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input
-                        value={formData.cedula}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            cedula: formatCedula(e.target.value),
-                          }))
-                        }
-                        placeholder="001-251285-0001U"
-                      />
-                      {errors.cedula && (
-                        <p className="text-xs text-destructive">
-                          {errors.cedula}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de teléfono móvil</Label>
-                      <Input
-                        value={formData.phone}
-                        onChange={(e) =>
-                          setFormData((f) => ({
-                            ...f,
-                            phone: formatPhoneNicaragua(e.target.value),
-                          }))
-                        }
-                        placeholder="8XXX-XXXX"
-                      />
-                      {errors.phone && (
-                        <p className="text-xs text-destructive">
-                          {errors.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* PixelPay Form */}
-              {paymentMethod === "PIXELPAY" && (
-                <motion.div key="pixelpay" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2"><CreditCard className="h-4 w-4" /> Datos de PixelPay</h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo</Label>
-                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
-                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
-                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de tarjeta</Label>
-                      <Input value={formData.cardNumber} onChange={(e) => setFormData((f) => ({ ...f, cardNumber: formatCardNumber(e.target.value) }))} placeholder="4242 4242 4242 4242" maxLength={19} />
-                      {errors.cardNumber && <p className="text-xs text-destructive">{errors.cardNumber}</p>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label>Fecha de expiración</Label>
-                        <Input value={formData.cardExpiry} onChange={(e) => setFormData((f) => ({ ...f, cardExpiry: e.target.value }))} placeholder="MM/AA" maxLength={5} />
-                        {errors.cardExpiry && <p className="text-xs text-destructive">{errors.cardExpiry}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label>CVV</Label>
-                        <Input type="password" value={formData.cardCVV} onChange={(e) => setFormData((f) => ({ ...f, cardCVV: e.target.value }))} placeholder="123" maxLength={4} />
-                        {errors.cardCVV && <p className="text-xs text-destructive">{errors.cardCVV}</p>}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Pagadito Form */}
-              {paymentMethod === "PAGADITO" && (
-                <motion.div key="pagadito" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2"><CreditCard className="h-4 w-4" /> Datos de Pagadito</h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo</Label>
-                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
-                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
-                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de tarjeta</Label>
-                      <Input value={formData.cardNumber} onChange={(e) => setFormData((f) => ({ ...f, cardNumber: formatCardNumber(e.target.value) }))} placeholder="4242 4242 4242 4242" maxLength={19} />
-                      {errors.cardNumber && <p className="text-xs text-destructive">{errors.cardNumber}</p>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label>Fecha de expiración</Label>
-                        <Input value={formData.cardExpiry} onChange={(e) => setFormData((f) => ({ ...f, cardExpiry: e.target.value }))} placeholder="MM/AA" maxLength={5} />
-                        {errors.cardExpiry && <p className="text-xs text-destructive">{errors.cardExpiry}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label>CVV</Label>
-                        <Input type="password" value={formData.cardCVV} onChange={(e) => setFormData((f) => ({ ...f, cardCVV: e.target.value }))} placeholder="123" maxLength={4} />
-                        {errors.cardCVV && <p className="text-xs text-destructive">{errors.cardCVV}</p>}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Google Pay Form */}
-              {paymentMethod === "GOOGLE_PAY" && (
-                <motion.div key="googlepay" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2"><Smartphone className="h-4 w-4" /> Google Pay</h4>
-                    <div className="space-y-2">
-                      <Label>Email de Google Pay</Label>
-                      <Input type="email" placeholder="tu@gmail.com" value={formData.paypalEmail} onChange={(e) => setFormData((f) => ({ ...f, paypalEmail: e.target.value }))} />
-                      {errors.paypalEmail && <p className="text-xs text-destructive">{errors.paypalEmail}</p>}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Se abrirá Google Pay para confirmar el pago de forma segura.</p>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Banpro Billetera Form */}
-              {paymentMethod === "BANPRO_BILLETERA" && (
-                <motion.div key="banprobilletera" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2"><Smartphone className="h-4 w-4" /> Banpro Billetera</h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo</Label>
-                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
-                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
-                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de teléfono móvil</Label>
-                      <Input value={formData.phone} onChange={(e) => setFormData((f) => ({ ...f, phone: formatPhoneNicaragua(e.target.value) }))} placeholder="8XXX-XXXX" />
-                      {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Kash Form */}
-              {paymentMethod === "KASH" && (
-                <motion.div key="kash" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2"><Smartphone className="h-4 w-4" /> Kash</h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo</Label>
-                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
-                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
-                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de teléfono móvil</Label>
-                      <Input value={formData.phone} onChange={(e) => setFormData((f) => ({ ...f, phone: formatPhoneNicaragua(e.target.value) }))} placeholder="8XXX-XXXX" />
-                      {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Western Union Form */}
-              {paymentMethod === "WESTERN_UNION" && (
-                <motion.div key="westernunion" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                  <div className="space-y-3 mt-4 p-4 rounded-lg bg-muted/30 border">
-                    <h4 className="font-medium flex items-center gap-2"><Building2 className="h-4 w-4" /> Western Union</h4>
-                    <div className="space-y-2">
-                      <Label>Nombre completo del remitente</Label>
-                      <Input value={formData.fullName} onChange={(e) => setFormData((f) => ({ ...f, fullName: e.target.value }))} placeholder="Juan Pérez" />
-                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Cédula de identidad</Label>
-                      <Input value={formData.cedula} onChange={(e) => setFormData((f) => ({ ...f, cedula: formatCedula(e.target.value) }))} placeholder="001-251285-0001U" />
-                      {errors.cedula && <p className="text-xs text-destructive">{errors.cedula}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de referencia (MTCN)</Label>
-                      <Input value={formData.accountNumber} onChange={(e) => setFormData((f) => ({ ...f, accountNumber: e.target.value }))} placeholder="Número de 10 dígitos" />
-                      {errors.accountNumber && <p className="text-xs text-destructive">{errors.accountNumber}</p>}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Realiza el giro en cualquier agencia Western Union y ingresa el número MTCN.</p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Dynamic payment form */}
+            {renderPaymentForm()}
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Total & Pay */}
+      {/* ─── Sin Fondos Error Block ──────────────────────────────── */}
+      {!hasSufficientFunds && paymentMethod && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">💸</span>
+                <div>
+                  <p className="font-semibold text-red-700 dark:text-red-300">
+                    Sin fondos — Dinero insuficiente
+                  </p>
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    Tu saldo actual es de{" "}
+                    <strong>{formatPrice(userBalance)}</strong> y necesitas{" "}
+                    <strong>{formatPrice(amount)}</strong>. Recarga tu cuenta
+                    desde Mi Perfil o intenta con otro método de pago.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40"
+                    onClick={() => navigate("profile")}
+                  >
+                    Ir a Mi Perfil
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* ─── Pay Button ─────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card className="border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-medium">Total a pagar:</span>
-              <span className="text-2xl font-bold text-primary">
-                {formatPrice(amount)}
-              </span>
-            </div>
-            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-              <Button
-                className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
-                onClick={handlePayment}
-                disabled={processing || !paymentMethod}
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                    Procesando...
-                  </>
-                ) : (
-                  `Pagar ${formatPrice(amount)}`
-                )}
-              </Button>
-            </motion.div>
-            <p className="text-xs text-muted-foreground text-center mt-3 flex items-center justify-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 text-primary" />
-              Tu información está encriptada y protegida
-            </p>
-          </CardContent>
-        </Card>
+        <Button
+          size="lg"
+          className="w-full text-lg py-6 relative overflow-hidden"
+          disabled={!paymentMethod || processing || !hasSufficientFunds}
+          onClick={handlePayment}
+        >
+          {!hasSufficientFunds ? (
+            <span className="flex items-center gap-2">
+              💸 Sin fondos — No se puede procesar
+            </span>
+          ) : processing ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Procesando...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              Pagar {formatPrice(amount)} con{" "}
+              {PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.name ||
+                "método seleccionado"}
+              <ArrowRight className="h-5 w-5" />
+            </span>
+          )}
+        </Button>
       </motion.div>
+
+      {/* Security badge */}
+      <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pb-4">
+        <Lock className="h-3 w-3" />
+        <span>
+          Pago seguro con encriptación SSL — ProveedorConecta Nicaragua
+        </span>
+      </div>
     </div>
   )
 }

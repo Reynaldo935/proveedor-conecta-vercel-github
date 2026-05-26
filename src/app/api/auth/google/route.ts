@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
 import crypto from 'crypto'
 import { validateEmail, validatePhoneNicaragua, NICARAGUA_DEPARTMENTS } from '@/lib/validators'
 
@@ -44,11 +43,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (user) {
-      // Update Google ID and any provided fields, but do NOT auto-verify email
+      // Update Google ID and any provided fields, auto-verify email for demo
       const updateData: Record<string, unknown> = {
         googleId: googleId || user.googleId,
         avatar: avatar || user.avatar,
         name: name || user.name,
+        emailVerified: true, // Auto-verify for demo/hackathon
       }
       // Only update phone/department/address if provided (don't overwrite existing with empty)
       if (cleanedPhone) updateData.phone = cleanedPhone
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         include: { businessProfile: true },
       })
     } else {
-      // Create new user from Google — email NOT verified by default
+      // Create new user from Google — auto-verify email for demo
       const userRole = role === 'SELLER' ? 'SELLER' : 'BUYER'
       user = await db.user.create({
         data: {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
           department: department || '',
           address: address || '',
           isVerified: false,
-          emailVerified: false, // Must verify even for Google users
+          emailVerified: true, // Auto-verify for demo/hackathon
           phoneVerified: false,
         },
         include: { businessProfile: true },
@@ -89,47 +89,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If email not verified, generate verification token
-    let verificationLink: string | undefined
-    let verificationToken: string | undefined
-
-    if (!user!.emailVerified) {
-      // Delete existing tokens for this email
-      await db.verificationToken.deleteMany({ where: { email } })
-
-      const token = crypto.randomUUID()
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
-
-      await db.verificationToken.create({
-        data: { email, token, expiresAt },
-      })
-
-      verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/verify?token=${token}`
-      verificationToken = token
-
-      console.log(`[EMAIL SIMULATION] Google auth verification email for ${email}`)
-      console.log(`[EMAIL SIMULATION] Link: ${verificationLink}`)
-    }
-
-    const cookieStore = await cookies()
-    cookieStore.set('pc_user_id', user!.id, {
+    // Email is auto-verified for demo/hackathon
+    const { password: _, ...safeUser } = user!
+    const response = NextResponse.json({
+      success: true,
+      data: {
+        ...safeUser,
+        requiresVerification: false,
+      },
+    })
+    response.cookies.set('pc_user_id', user!.id, {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
       path: '/',
     })
-
-    const { password: _, ...safeUser } = user!
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...safeUser,
-        verificationLink,
-        verificationToken,
-        requiresVerification: !user!.emailVerified,
-      },
-    })
+    return response
   } catch (error) {
     console.error('Google auth error:', error)
     return NextResponse.json({ success: false, error: 'Error al autenticar con Google' }, { status: 500 })

@@ -15,8 +15,185 @@ import {
   Smartphone,
   Building2,
   Globe,
+  Lock,
+  Eye,
 } from "lucide-react"
 import { motion } from "framer-motion"
+
+// --- Inline SVG Payment Method Logos ---
+function PixelPayLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#6C5CE7" />
+      <rect x="8" y="8" width="14" height="14" rx="3" fill="white" opacity="0.9" />
+      <rect x="26" y="8" width="14" height="14" rx="3" fill="white" opacity="0.6" />
+      <rect x="8" y="26" width="14" height="14" rx="3" fill="white" opacity="0.6" />
+      <rect x="26" y="26" width="14" height="14" rx="3" fill="white" opacity="0.3" />
+    </svg>
+  )
+}
+
+function PagaditoLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#00B894" />
+      <circle cx="24" cy="20" r="10" fill="white" opacity="0.9" />
+      <path d="M17 34 L24 28 L31 34" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+      <circle cx="24" cy="20" r="4" fill="#00B894" />
+    </svg>
+  )
+}
+
+function PayPalLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#003087" />
+      <path d="M18 36L20 24H16C15.5 24 15 23.5 15.1 23L17 13C17.1 12.4 17.5 12 18.1 12H27C30 12 32 14.5 31.5 17.5C31 20.5 28.5 23 25.5 23H21L20 29H24C24.5 29 25 29.5 24.9 30L24 36H18Z" fill="white" />
+      <path d="M24 36L26 24H22L23 18H27C30 18 32 20.5 31.5 23.5C31 26.5 28.5 29 25.5 29H27L26 35C25.9 35.5 25.5 36 25 36H24Z" fill="#0070E0" opacity="0.8" />
+    </svg>
+  )
+}
+
+function GooglePayLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#1A1A2E" />
+      <path d="M24 20C25.1 20 26 19.1 26 18C26 16.9 25.1 16 24 16C22.9 16 22 16.9 22 18C22 19.1 22.9 20 24 20Z" fill="#EA4335" />
+      <path d="M18 24C19.1 24 20 23.1 20 22C20 20.9 19.1 20 18 20C16.9 20 16 20.9 16 22C16 23.1 16.9 24 18 24Z" fill="#4285F4" />
+      <path d="M30 24C31.1 24 32 23.1 32 22C32 20.9 31.1 20 30 20C28.9 20 28 20.9 28 22C28 23.1 28.9 24 30 24Z" fill="#FBBC05" />
+      <path d="M24 32C25.1 32 26 31.1 26 30C26 28.9 25.1 28 24 28C22.9 28 22 28.9 22 30C22 31.1 22.9 32 24 32Z" fill="#34A853" />
+      <path d="M24 26C25.1 26 26 25.1 26 24C26 22.9 25.1 22 24 22C22.9 22 22 22.9 22 24C22 25.1 22.9 26 24 26Z" fill="white" />
+    </svg>
+  )
+}
+
+function BanproLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#006341" />
+      <rect x="10" y="14" width="28" height="20" rx="3" fill="white" opacity="0.15" />
+      <path d="M16 18V30H20C23 30 25 28 25 25.5C25 23 23 21 20 21H19V18H16ZM19 23.5H20C21.5 23.5 22 24.5 22 25.5C22 26.5 21.5 27.5 20 27.5H19V23.5Z" fill="white" />
+      <path d="M27 18V30H30V25L33 30H36L32.5 24L36 18H33L30 23V18H27Z" fill="white" opacity="0.8" />
+    </svg>
+  )
+}
+
+function BACLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#0033A0" />
+      <path d="M14 28L18 18H21L25 28H22L21.5 26H17.5L17 28H14ZM18.2 24H20.8L19.5 20L18.2 24Z" fill="white" />
+      <path d="M26 18V28H29V22L32 28H35V18H32V24L29 18H26Z" fill="white" opacity="0.9" />
+      <rect x="14" y="31" width="21" height="2" rx="1" fill="#E31837" />
+    </svg>
+  )
+}
+
+function LAFISELogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#0067B1" />
+      <path d="M14 30L19 18H22L17 30H14Z" fill="white" />
+      <path d="M20 30L25 18H28L23 30H20Z" fill="white" opacity="0.7" />
+      <path d="M26 30L31 18H34L29 30H26Z" fill="white" opacity="0.4" />
+      <circle cx="36" cy="20" r="3" fill="#F4D03F" />
+    </svg>
+  )
+}
+
+function KashLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#FF6B35" />
+      <path d="M16 18H28C30 18 31 19.5 31 21C31 22.5 30 24 28 24H20V26H28C30 26 31 27.5 31 29C31 30.5 30 32 28 32H16V18Z" fill="white" />
+      <path d="M20 21V23H27C27.5 23 28 22.5 28 22C28 21.5 27.5 21 27 21H20Z" fill="#FF6B35" />
+      <path d="M20 27V29H27C27.5 29 28 28.5 28 28C28 27.5 27.5 27 27 27H20Z" fill="#FF6B35" />
+    </svg>
+  )
+}
+
+function BilleteraLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#8E44AD" />
+      <rect x="10" y="16" width="28" height="18" rx="3" fill="white" opacity="0.9" />
+      <rect x="28" y="22" width="10" height="7" rx="2" fill="#8E44AD" opacity="0.3" />
+      <circle cx="33" cy="25.5" r="2" fill="#8E44AD" />
+      <rect x="10" y="14" width="28" height="5" rx="2" fill="white" opacity="0.5" />
+    </svg>
+  )
+}
+
+function WesternUnionLogo({ className = "h-8 w-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="10" fill="#FFDD00" />
+      <path d="M14 20H20V22H16V24H19V26H16V28H20V30H14V20Z" fill="#1A1A1A" />
+      <path d="M22 20H26L28 24L30 20H34V30H30V25L28 28L26 25V30H22V20Z" fill="#1A1A1A" />
+    </svg>
+  )
+}
+
+// --- Logo mapping ---
+const PAYMENT_LOGOS: Record<string, React.ReactNode> = {
+  PIXELPAY: <PixelPayLogo />,
+  PAGADITO: <PagaditoLogo />,
+  PAYPAL: <PayPalLogo />,
+  GOOGLE_PAY: <GooglePayLogo />,
+  BANPRO: <BanproLogo />,
+  BANPRO_BILLETERA: <BanproLogo />,
+  BAC: <BACLogo />,
+  LAFISE: <LAFISELogo />,
+  KASH: <KashLogo />,
+  BILLETERA: <BilleteraLogo />,
+  WESTERN_UNION: <WesternUnionLogo />,
+}
+
+// --- Data masking examples ---
+const MASKING_EXAMPLES = [
+  {
+    method: "Tarjeta de Crédito",
+    methodId: "card",
+    masked: "**** **** **** 1234",
+    description: "Solo se muestran los últimos 4 dígitos de la tarjeta",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    method: "Tarjeta de Débito",
+    methodId: "debit",
+    masked: "**** **** **** 5678",
+    description: "Solo se muestran los últimos 4 dígitos de la tarjeta",
+    icon: <CreditCard className="h-4 w-4" />,
+  },
+  {
+    method: "Cuenta Bancaria",
+    methodId: "bank",
+    masked: "••••••1234",
+    description: "Solo se muestran los últimos 4 dígitos de la cuenta",
+    icon: <Building2 className="h-4 w-4" />,
+  },
+  {
+    method: "Billetera Digital",
+    methodId: "wallet",
+    masked: "u***@correo.com",
+    description: "Se oculta parcialmente el correo vinculado",
+    icon: <Wallet className="h-4 w-4" />,
+  },
+  {
+    method: "Número de Teléfono",
+    methodId: "phone",
+    masked: "+505 ***8 9012",
+    description: "Solo se muestran los últimos dígitos del teléfono",
+    icon: <Smartphone className="h-4 w-4" />,
+  },
+  {
+    method: "PayPal",
+    methodId: "paypal",
+    masked: "u***@gmail.com",
+    description: "Se oculta parcialmente el correo de PayPal",
+    icon: <Globe className="h-4 w-4" />,
+  },
+]
 
 interface PaymentMethodInfo {
   id: string
@@ -254,6 +431,41 @@ export function PaymentsView() {
         </Card>
       </motion.div>
 
+      {/* Payment Method Logos Showcase */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-5">
+            <h2 className="text-lg font-semibold font-[family-name:var(--font-poppins)] mb-4">
+              Red de Pagos Disponible
+            </h2>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {Object.entries(PAYMENT_LOGOS).map(([id, logo]) => {
+                const method = PAYMENT_METHODS_INFO.find((m) => m.id === id)
+                const typeInfo = method ? TYPE_COLORS[method.type] : null
+                return (
+                  <motion.div
+                    key={id}
+                    whileHover={{ scale: 1.08, y: -2 }}
+                    className="flex flex-col items-center gap-1.5 p-2"
+                  >
+                    <div className={`p-2 rounded-xl ${typeInfo?.bg || "bg-gray-100 dark:bg-gray-800"} transition-colors`}>
+                      {logo}
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight max-w-[64px]">
+                      {method?.name || id}
+                    </span>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Payment Methods List */}
       <motion.div
         variants={staggerContainer}
@@ -272,12 +484,15 @@ export function PaymentsView() {
               <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 group">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
-                    {/* Icon/Emoji */}
+                    {/* SVG Logo + Icon */}
                     <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                      <div className={`p-3 rounded-xl ${typeInfo.bg} group-hover:scale-110 transition-transform duration-300`}>
-                        <span className={typeInfo.text}>{method.icon}</span>
+                      <div className="group-hover:scale-110 transition-transform duration-300">
+                        {PAYMENT_LOGOS[method.id] || (
+                          <div className={`p-3 rounded-xl ${typeInfo.bg}`}>
+                            <span className={typeInfo.text}>{method.icon}</span>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xl">{method.emoji}</span>
                     </div>
 
                     {/* Content */}
@@ -317,6 +532,67 @@ export function PaymentsView() {
             </motion.div>
           )
         })}
+      </motion.div>
+
+      {/* Data Masking Examples Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/20">
+                <Eye className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm font-[family-name:var(--font-poppins)]">
+                  Protección de Datos Financieros
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Así es como protegemos tu información de pago
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              {MASKING_EXAMPLES.map((example) => (
+                <div
+                  key={example.methodId}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted/80 transition-colors"
+                >
+                  <div className="p-2 rounded-lg bg-background shadow-sm flex-shrink-0">
+                    {example.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium">{example.method}</p>
+                    <p className="text-[10px] text-muted-foreground">{example.description}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <code className="text-xs font-mono bg-background px-2.5 py-1.5 rounded-lg border shadow-sm select-all">
+                      {example.masked}
+                    </code>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/30">
+              <div className="flex items-start gap-2">
+                <Lock className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    Enmascaramiento de datos
+                  </p>
+                  <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">
+                    Tus datos financieros se almacenan con enmascaramiento. Solo tú puedes ver la información completa. Los vendedores y la plataforma solo ven los datos parcialmente ocultos.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Security Notice */}

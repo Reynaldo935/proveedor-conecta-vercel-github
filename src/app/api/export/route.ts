@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
+import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -139,11 +139,11 @@ function generateDocx(
 
 // ─── Auth Helper ────────────────────────────────────────────────────────────
 
-async function getAuthUser() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('pc_user_id')?.value
+async function getAuthUser(request?: Request) {
+  const userId = await getAuthenticatedUserId(request)
 
   if (!userId) return null
+  await setAuthCookie(userId)
 
   const user = await db.user.findUnique({ where: { id: userId } })
   return user
@@ -419,9 +419,9 @@ async function generateReportDocx(): Promise<string> {
 
 // ─── Main GET Handler ──────────────────────────────────────────────────────
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthUser()
+    const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
