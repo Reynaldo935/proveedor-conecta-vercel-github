@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       success: true,
       data: {
         ...transaction,
-        product: { ...transaction.product, images: transaction.product.images ? JSON.parse(transaction.product.images) : [] },
+        product: { ...transaction.product, images: (() => { try { return transaction.product.images ? JSON.parse(transaction.product.images) : [] } catch { return [] } })() },
       },
     })
   } catch (error) {

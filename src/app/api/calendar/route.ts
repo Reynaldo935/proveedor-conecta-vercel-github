@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     console.error('Get calendar events error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener eventos del calendario' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
     console.error('Create calendar event error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al crear evento' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }
@@ -218,7 +218,7 @@ export async function DELETE(request: NextRequest) {
     console.error('Delete calendar event error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al eliminar evento' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

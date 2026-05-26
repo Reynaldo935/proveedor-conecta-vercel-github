@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cookies } from 'next/headers'
+import { getAuthenticatedUserId } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get('format') || 'csv'
   const role = request.nextUrl.searchParams.get('role') || 'buyer'
 
   try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('pc_user_id')?.value
+    const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })

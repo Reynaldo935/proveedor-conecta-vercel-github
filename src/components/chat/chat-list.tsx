@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/client-auth"
 import { MessageCircle, ChevronLeft, Search, Package } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -57,11 +58,11 @@ export function ChatList() {
     socketRef.current = socket
 
     socket.on("connect", () => {
-      console.log("[ChatList] Socket connected")
+
     })
 
     socket.on("disconnect", () => {
-      console.log("[ChatList] Socket disconnected")
+
     })
 
     // Listen for room updates (new messages in any room)
@@ -127,7 +128,7 @@ export function ChatList() {
 
   // Load rooms via REST API
   useEffect(() => {
-    fetch("/api/chat/rooms")
+    authFetch("/api/chat/rooms")
       .then((r) => r.json())
       .then((d) => {
         if (d.success) setRooms(d.data)

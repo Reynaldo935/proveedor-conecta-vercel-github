@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     console.error('Get loyalty points error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener puntos de lealtad' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     console.error('Redeem loyalty points error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al canjear puntos' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

@@ -145,7 +145,7 @@ export function ProfileSettings() {
               address: bp.address || "",
               phone: bp.phone || "",
               hours: bp.hours || "",
-              paymentMethods: bp.paymentMethods ? JSON.parse(bp.paymentMethods) : [],
+              paymentMethods: bp.paymentMethods ? (() => { try { return JSON.parse(bp.paymentMethods) } catch { return [] } })() : [],
             })
           }
         }
@@ -352,7 +352,7 @@ export function ProfileSettings() {
             address: bp.address || "",
             phone: bp.phone || "",
             hours: bp.hours || "",
-            paymentMethods: bp.paymentMethods ? JSON.parse(bp.paymentMethods) : [],
+            paymentMethods: bp.paymentMethods ? (() => { try { return JSON.parse(bp.paymentMethods) } catch { return [] } })() : [],
           })
         }
         setSavedSuccess("business")
@@ -437,7 +437,7 @@ export function ProfileSettings() {
         setWallPosts(prev => prev.map(p => {
           if (p.id !== postId) return p
           const countDelta = d.data.liked ? 1 : -1
-          return { ...p, _count: { ...p._count!, likes: Math.max(0, (p._count?.likes ?? 0) + countDelta) } }
+          return { ...p, _count: { ...(p._count ?? { likes: 0, comments: 0 }), likes: Math.max(0, (p._count?.likes ?? 0) + countDelta) } }
         }))
       }
     } catch {
@@ -488,7 +488,7 @@ export function ProfileSettings() {
         // Update comment count
         setWallPosts(prev => prev.map(p => {
           if (p.id !== postId) return p
-          return { ...p, _count: { ...p._count!, comments: (p._count?.comments ?? 0) + 1 } }
+          return { ...p, _count: { ...(p._count ?? { likes: 0, comments: 0 }), comments: (p._count?.comments ?? 0) + 1 } }
         }))
         toast.success("Comentario agregado")
       } else {
@@ -731,7 +731,7 @@ export function ProfileSettings() {
                 <div>
                   <p className="text-xs text-muted-foreground font-medium">Mi Saldo</p>
                   <p className="text-xl font-bold bg-gradient-to-r from-[#1A5276] to-[#2E86C1] bg-clip-text text-transparent">
-                    {formatPrice(user?.balance ?? 50000)}
+                    {formatPrice(user?.balance ?? 0)}
                   </p>
                 </div>
               </div>

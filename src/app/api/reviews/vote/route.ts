@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     console.error('Vote review error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al votar reseña' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: saved.map(s => ({ ...s, product: { ...s.product, images: s.product.images ? JSON.parse(s.product.images) : [] } })),
+      data: saved.map(s => ({ ...s, product: { ...s.product, images: (() => { try { return s.product.images ? JSON.parse(s.product.images) : [] } catch { return [] } })() } })),
     })
   } catch (error) {
     console.error('Get saved products error:', error)

@@ -70,8 +70,9 @@ export function ChatView() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeRoomIdRef = useRef<string | null>(null)
+  const prevRoomIdRef = useRef<string | null>(null)
 
-  // Keep ref in sync with state
+  // Keep ref in sync with state (for socket event filtering)
   useEffect(() => {
     activeRoomIdRef.current = activeRoomId
   }, [activeRoomId])
@@ -157,7 +158,7 @@ export function ChatView() {
   // Join/leave room via socket when activeRoomId changes
   useEffect(() => {
     const socket = socketRef.current
-    const prevRoomId = activeRoomIdRef.current
+    const prevRoomId = prevRoomIdRef.current
 
     if (socket && user && activeRoomId) {
       // Leave previous room if different
@@ -174,6 +175,9 @@ export function ChatView() {
         userId: user.id,
       })
     }
+
+    // Update prevRoomId AFTER leave/join logic so next change can leave this room
+    prevRoomIdRef.current = activeRoomId
 
     // Reset online/typing state when switching rooms
     setIsOtherOnline(false)
@@ -202,7 +206,7 @@ export function ChatView() {
       setChatRoom(null)
       try {
         // Load all rooms to find the target
-        const roomsRes = await fetch("/api/chat/rooms")
+        const roomsRes = await authFetch("/api/chat/rooms")
         const roomsData = await roomsRes.json()
 
         if (roomsData.success) {
@@ -212,7 +216,7 @@ export function ChatView() {
             setActiveRoomId(room.id)
 
             // Load messages for this room
-            const msgRes = await fetch(`/api/chat/rooms/${room.id}/messages`)
+            const msgRes = await authFetch(`/api/chat/rooms/${room.id}/messages`)
             const msgData = await msgRes.json()
             if (msgData.success) {
               setMessages(msgData.data)
@@ -220,7 +224,7 @@ export function ChatView() {
           } else {
             // Room not found in user's rooms, try loading directly
             try {
-              const msgRes = await fetch(`/api/chat/rooms/${roomId}/messages`)
+              const msgRes = await authFetch(`/api/chat/rooms/${roomId}/messages`)
               const msgData = await msgRes.json()
               if (msgData.success) {
                 setMessages(msgData.data)
@@ -243,14 +247,14 @@ export function ChatView() {
       setMessages([])
       setChatRoom(null)
       try {
-        const res = await fetch("/api/chat/rooms")
+        const res = await authFetch("/api/chat/rooms")
         const d = await res.json()
         if (d.success && d.data.length > 0) {
           const room = d.data[0]
           setChatRoom(room)
           setActiveRoomId(room.id)
 
-          const msgRes = await fetch(`/api/chat/rooms/${room.id}/messages`)
+          const msgRes = await authFetch(`/api/chat/rooms/${room.id}/messages`)
           const msgData = await msgRes.json()
           if (msgData.success) {
             setMessages(msgData.data)
@@ -333,7 +337,7 @@ export function ChatView() {
       })
     } else {
       try {
-        const res = await fetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+        const res = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content }),
@@ -373,7 +377,7 @@ export function ChatView() {
               mediaUrl: url,
             })
           } else {
-            const msgRes = await fetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+            const msgRes = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -426,7 +430,7 @@ export function ChatView() {
           locationName,
         })
       } else {
-        const res = await fetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+        const res = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

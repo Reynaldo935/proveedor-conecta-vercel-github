@@ -20,14 +20,19 @@ export async function GET(request: NextRequest) {
     // Build where clause properly using Prisma.ProductWhereInput
     const where: Prisma.ProductWhereInput = { status: 'ACTIVE' }
 
+    // Collect separate conditions for text search and price filters
+    const conditions: Prisma.ProductWhereInput[] = []
+
     if (q) {
-      where.OR = [
-        { title: { contains: q } },
-        { description: { contains: q } },
-        { tags: { contains: q } },
-        { category: { contains: q } },
-        { seller: { businessProfile: { businessName: { contains: q } } } },
-      ]
+      conditions.push({
+        OR: [
+          { title: { contains: q } },
+          { description: { contains: q } },
+          { tags: { contains: q } },
+          { category: { contains: q } },
+          { seller: { businessProfile: { businessName: { contains: q } } } },
+        ],
+      })
     }
 
     if (category) {
@@ -35,10 +40,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (minPrice > 0 || maxPrice < 999999) {
-      where.OR = [
-        { discountPrice: { gte: minPrice, lte: maxPrice } },
-        { discountPrice: null, price: { gte: minPrice, lte: maxPrice } },
-      ]
+      conditions.push({
+        OR: [
+          { discountPrice: { gte: minPrice, lte: maxPrice } },
+          { discountPrice: null, price: { gte: minPrice, lte: maxPrice } },
+        ],
+      })
+    }
+
+    // Combine all conditions with AND so they don't overwrite each other
+    if (conditions.length === 1) {
+      where.OR = conditions[0].OR
+    } else if (conditions.length > 1) {
+      where.AND = conditions
     }
 
     // Determine sort order
@@ -68,7 +82,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: products.map(p => ({
         ...p,
-        images: p.images ? JSON.parse(p.images) : [],
+        images: (() => { try { return p.images ? JSON.parse(p.images) : [] } catch { return [] } })(),
         likeCount: p.likes.length,
         isLiked: userId ? p.likes.some(l => l.userId === userId) : false,
         likes: undefined,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getAuthenticatedUserId } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
@@ -9,6 +10,11 @@ export async function GET(
   const format = request.nextUrl.searchParams.get('format') || 'pdf'
 
   try {
+    // Authentication check
+    const userId = await getAuthenticatedUserId(request)
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    }
     const transaction = await db.transaction.findUnique({
       where: { id },
       include: {

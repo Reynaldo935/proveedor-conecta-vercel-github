@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
     const files = formData.getAll('files') as File[]
     const subfolder = (formData.get('subfolder') as string) || 'misc'
 
+    const ALLOWED_SUBFOLDERS = ["avatars", "covers", "products", "wall", "chat", "misc"]
+    if (subfolder && !ALLOWED_SUBFOLDERS.includes(subfolder)) {
+      return NextResponse.json({ success: false, error: "Subfolder no válido" }, { status: 400 })
+    }
+
     if (!files || files.length === 0) {
       return NextResponse.json({ success: false, error: 'No se recibieron archivos' }, { status: 400 })
     }

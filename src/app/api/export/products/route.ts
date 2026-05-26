@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getAuthenticatedUserId } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get('format') || 'csv'
   const sellerId = request.nextUrl.searchParams.get('sellerId') || ''
 
   try {
+    // Authentication check
+    const userId = await getAuthenticatedUserId(request)
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    }
     const where: Record<string, unknown> = { status: 'ACTIVE' }
     if (sellerId) where.sellerId = sellerId
 

@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     console.error('Get reviews error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener reseñas' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }
@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
     console.error('Create review error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al crear reseña' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

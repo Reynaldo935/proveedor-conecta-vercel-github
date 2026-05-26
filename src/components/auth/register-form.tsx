@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
 import { Card, CardContent } from "@/components/ui/card"
@@ -78,15 +78,26 @@ export function RegisterForm() {
     link?: string
   }>({ show: false, email: "" })
 
+  // Ref for SMS countdown interval to clean up on unmount
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
+
   const passwordStrength = useMemo(() => getPasswordStrength(form.password), [form.password])
 
   // Countdown timer for SMS resend
   const startCountdown = useCallback(() => {
     setSmsCountdown(60)
-    const timer = setInterval(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(() => {
       setSmsCountdown(prev => {
         if (prev <= 1) {
-          clearInterval(timer)
+          if (intervalRef.current) clearInterval(intervalRef.current)
           return 0
         }
         return prev - 1
@@ -237,9 +248,20 @@ export function RegisterForm() {
       })
       const data = await res.json()
       if (data.success) {
-        setUser(data.data)
-        toast.success("¡Cuenta creada exitosamente! Bienvenido a ProveedorConecta.")
-        navigate("home")
+        // If API indicates email verification is needed, show verification step
+        if (data.requireEmailVerification || data.data?.emailVerified === false) {
+          setVerificationState({
+            show: true,
+            email: form.email,
+            token: data.verificationToken || data.data?.verificationToken,
+            link: data.verificationLink || data.data?.verificationLink,
+          })
+          toast.success("¡Cuenta creada! Por favor verifica tu correo electrónico.")
+        } else {
+          setUser(data.data)
+          toast.success("¡Cuenta creada exitosamente! Bienvenido a ProveedorConecta.")
+          navigate("home")
+        }
       } else {
         toast.error(data.error || "Error al registrarse")
       }

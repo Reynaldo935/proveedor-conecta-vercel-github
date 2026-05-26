@@ -233,7 +233,7 @@ export function CheckoutView() {
     }).format(p)
 
   const amount = product ? product.discountPrice || product.price : 0
-  const userBalance = user?.balance ?? 50000
+  const userBalance = user?.balance ?? 0
   const hasSufficientFunds = userBalance >= amount
 
   // ── Card type detection ──────────────────────────────────────────
@@ -530,11 +530,7 @@ export function CheckoutView() {
 
     if (!hasSufficientFunds) {
       toast.error(
-        "💸 Sin fondos — Tu saldo es de " +
-          formatPrice(userBalance) +
-          " y necesitas " +
-          formatPrice(amount) +
-          ". Recarga tu cuenta desde Mi Perfil.",
+        "Saldo insuficiente para realizar esta transacción",
         { duration: 6000 }
       )
       return
@@ -577,9 +573,9 @@ export function CheckoutView() {
       const data = await res.json()
 
       if (data.success) {
-        // Update user balance in store if returned
+        // Update user balance in store — prefer server's balance if available
         if (data.data && user) {
-          const newBalance = userBalance - amount
+          const newBalance = data.data.newBalance ?? data.data.buyer?.balance ?? (userBalance - amount)
           setUser({ ...user, balance: newBalance })
         }
         setCompleted(true)

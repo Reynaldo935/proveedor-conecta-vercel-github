@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { safeApiHandler } from '@/lib/api-utils'
+import { getAuthenticatedUserId } from '@/lib/auth'
 
-async function handleGet() {
+async function handleGet(request: NextRequest) {
   try {
+    // Authentication check
+    const userId = await getAuthenticatedUserId(request)
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    }
+
     const [users, products, transactions, businessProfiles, chatRooms, messages, cotizaciones, notifications, likes, savedProducts, follows, auditLogs, advertisements, quantityDiscounts, commissionLogs] = await Promise.all([
       db.user.findMany({ select: { id: true, email: true, name: true, role: true, phone: true, department: true, address: true, isVerified: true, createdAt: true } }),
       db.product.findMany({ select: { id: true, title: true, price: true, discountPrice: true, category: true, status: true, sellerId: true, createdAt: true } }),

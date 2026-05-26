@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -88,6 +88,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
     quantityDiscounts: [],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (editMode && editProductId) {
@@ -110,10 +111,10 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
               videoUrl: p.videoUrl,
               quantity: String(p.quantity),
               discountStart: p.discountStart
-                ? new Date(p.discountStart).toISOString().split("T")[0]
+                ? p.discountStart.split("T")[0]
                 : "",
               discountEnd: p.discountEnd
-                ? new Date(p.discountEnd).toISOString().split("T")[0]
+                ? p.discountEnd.split("T")[0]
                 : "",
               quantityDiscounts: p.quantityDiscounts
                 ? p.quantityDiscounts.map((qd: { minQty: number; discountPercent: number }) => ({
@@ -152,6 +153,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
       if (d.success) {
         setForm((f) => ({ ...f, images: [...f.images, ...d.data] }))
         toast.success("Imágenes subidas")
+        if (fileInputRef.current) fileInputRef.current.value = ""
       } else toast.error(d.error)
     } catch {
       toast.error("Error al subir")
@@ -212,7 +214,13 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
       const res = await authFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          price: parseFloat(form.price),
+          quantity: parseInt(form.quantity, 10),
+          discountPrice: form.discountPrice ? parseFloat(form.discountPrice) : null,
+          discountPercent: form.discountPercent ? parseFloat(form.discountPercent) : null,
+        }),
       })
       const d = await res.json()
       if (d.success) {
@@ -315,6 +323,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                     multiple
                     accept="image/*"
                     className="hidden"
+                    ref={fileInputRef}
                     onChange={(e) => e.target.files && handleUpload(e.target.files)}
                   />
                   <label htmlFor="photo-upload" className="cursor-pointer">
@@ -553,11 +562,12 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                       value={form.discountPrice}
                       onChange={(e) => {
                         const dp = e.target.value
+                        const priceNum = parseFloat(form.price)
                         const pct =
-                          dp && form.price
+                          dp && priceNum > 0
                             ? String(
                                 Math.round(
-                                  (1 - parseFloat(dp) / parseFloat(form.price)) *
+                                  (1 - parseFloat(dp) / priceNum) *
                                     100
                                 )
                               )
@@ -578,10 +588,11 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                       value={form.discountPercent}
                       onChange={(e) => {
                         const pct = e.target.value
+                        const priceNum = parseFloat(form.price)
                         const dp =
-                          pct && form.price
+                          pct && priceNum > 0
                             ? String(
-                                parseFloat(form.price) *
+                                priceNum *
                                   (1 - parseFloat(pct) / 100)
                               )
                             : ""
@@ -626,7 +637,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
 
                 {/* Discount preview */}
                 <AnimatePresence>
-                  {form.discountPrice && form.price && (
+                  {form.discountPrice && form.price && (() => { const p = parseFloat(form.price); return p > 0; })() && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}

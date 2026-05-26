@@ -376,7 +376,7 @@ export function Header() {
                       <Wallet className="h-3.5 w-3.5 text-primary" />
                       <span className="text-muted-foreground">Saldo:</span>
                       <span className="font-semibold text-primary">
-                        {new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(user?.balance ?? 50000)}
+                        {new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(user?.balance ?? 0)}
                       </span>
                     </div>
                   </div>

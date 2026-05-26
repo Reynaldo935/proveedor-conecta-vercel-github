@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     console.error('Weather API error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener datos del clima' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

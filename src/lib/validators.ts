@@ -104,35 +104,35 @@ export function validateEmail(email: string): { valid: boolean; message: string 
   return { valid: true, message: 'Correo válido' }
 }
 
-// Validar número de cuenta bancaria — APROXIMADAMENTE 9 dígitos
+// Validar número de cuenta bancaria — EXACTAMENTE 9 dígitos
 export function validateBankAccount(account: string): { valid: boolean; message: string } {
   const cleaned = account.replace(/\D/g, '')
-  if (cleaned.length < 8 || cleaned.length > 12) {
-    return { valid: false, message: 'Número de cuenta inválido (8-12 dígitos, aproximadamente 9)' }
+  if (cleaned.length !== 9) {
+    return { valid: false, message: 'Número de cuenta debe tener exactamente 9 dígitos' }
   }
   return { valid: true, message: 'Número de cuenta válido' }
 }
 
-// Validar cuenta específica por banco nicaragüense — ~9 dígitos
+// Validar cuenta específica por banco nicaragüense — EXACTAMENTE 9 dígitos
 export function validateBankAccountByBank(account: string, bank: string): { valid: boolean; message: string } {
   const cleaned = account.replace(/\D/g, '')
   
   switch (bank) {
     case 'BANPRO':
-      if (cleaned.length < 8 || cleaned.length > 11) {
-        return { valid: false, message: 'Cuenta Banpro: 8-11 dígitos (aprox. 9)' }
+      if (cleaned.length !== 9) {
+        return { valid: false, message: 'Cuenta Banpro debe tener exactamente 9 dígitos' }
       }
       return { valid: true, message: 'Cuenta Banpro válida' }
       
     case 'BAC':
-      if (cleaned.length < 8 || cleaned.length > 11) {
-        return { valid: false, message: 'Cuenta BAC: 8-11 dígitos (aprox. 9)' }
+      if (cleaned.length !== 9) {
+        return { valid: false, message: 'Cuenta BAC debe tener exactamente 9 dígitos' }
       }
       return { valid: true, message: 'Cuenta BAC válida' }
       
     case 'LAFISE':
-      if (cleaned.length < 8 || cleaned.length > 11) {
-        return { valid: false, message: 'Cuenta LAFISE: 8-11 dígitos (aprox. 9)' }
+      if (cleaned.length !== 9) {
+        return { valid: false, message: 'Cuenta LAFISE debe tener exactamente 9 dígitos' }
       }
       return { valid: true, message: 'Cuenta LAFISE válida' }
       

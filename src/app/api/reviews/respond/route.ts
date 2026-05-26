@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     console.error('Respond to review error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al responder reseña' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

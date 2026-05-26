@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: rooms.map(r => ({
         ...r,
-        product: r.product ? { ...r.product, images: r.product.images ? JSON.parse(r.product.images) : [] } : null,
+        product: r.product ? { ...r.product, images: (() => { try { return r.product.images ? JSON.parse(r.product.images) : [] } catch { return [] } })() } : null,
         unreadCount: r._count.messages,
         _count: undefined,
         otherUser: r.buyerId === userId
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           ...room,
-          product: room.product ? { ...room.product, images: room.product.images ? JSON.parse(room.product.images) : [] } : null,
+          product: room.product ? { ...room.product, images: (() => { try { return room.product.images ? JSON.parse(room.product.images) : [] } catch { return [] } })() } : null,
           newMessage: msg,
           otherUser: {
             id: room.seller.id, name: room.seller.name, avatar: room.seller.avatar,
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         ...room,
-        product: room.product ? { ...room.product, images: room.product.images ? JSON.parse(room.product.images) : [] } : null,
+        product: room.product ? { ...room.product, images: (() => { try { return room.product.images ? JSON.parse(room.product.images) : [] } catch { return [] } })() } : null,
         otherUser: {
           id: room.seller.id, name: room.seller.name, avatar: room.seller.avatar,
           businessName: room.seller.businessProfile?.businessName, logo: room.seller.businessProfile?.logo,

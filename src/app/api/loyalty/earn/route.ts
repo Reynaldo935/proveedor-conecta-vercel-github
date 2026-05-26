@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     console.error('Earn loyalty points error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al otorgar puntos' },
-      { status: 400 }
+      { status: 500 }
     )
   }
 }

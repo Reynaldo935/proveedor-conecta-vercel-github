@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: items.map(p => ({
         ...p,
-        images: p.images ? JSON.parse(p.images) : [],
+        images: (() => { try { return p.images ? JSON.parse(p.images) : [] } catch { return [] } })(),
         likeCount: p.likes.length,
         isLiked: userId ? p.likes.some(l => l.userId === userId) : false,
         isSaved: savedProductIds.includes(p.id),
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { ...product, images: JSON.parse(product.images), likeCount: 0, isLiked: false, isSaved: false },
+      data: { ...product, images: (() => { try { return JSON.parse(product.images) } catch { return [] } })(), likeCount: 0, isLiked: false, isSaved: false },
     })
   } catch (error) {
     console.error('Create product error:', error)

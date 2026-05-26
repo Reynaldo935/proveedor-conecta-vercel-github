@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: transactions.map(t => ({
         ...t,
-        product: { ...t.product, images: t.product.images ? JSON.parse(t.product.images) : [] },
+        product: { ...t.product, images: (() => { try { return t.product.images ? JSON.parse(t.product.images) : [] } catch { return [] } })() },
       })),
     })
   } catch (error) {
@@ -102,44 +102,13 @@ export async function POST(request: NextRequest) {
     const sellerPayout = Math.round((finalAmount - commission) * 100) / 100
 
     // ============================================================
-    // BALANCE VALIDATION — Check if user has sufficient funds
+    // PRE-VALIDATION — Bank validation (non-demo accounts only)
     // ============================================================
     const buyer = await db.user.findUnique({ where: { id: userId } })
     if (!buyer) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    const buyerBalance = (buyer as Record<string, unknown>).balance as number | undefined
-    const userBalance = typeof buyerBalance === 'number' ? buyerBalance : 50000 // Default balance for users without the field yet
-
-    if (userBalance < finalAmount) {
-      await db.auditLog.create({
-        data: {
-          userId,
-          action: 'PAYMENT_DECLINED_INSUFFICIENT_FUNDS',
-          entity: 'Product',
-          entityId: productId,
-          details: `Sin fondos: Saldo C$${userBalance.toFixed(2)}, Monto C$${finalAmount.toFixed(2)} — ${paymentMethod}`,
-        },
-      })
-
-      return NextResponse.json({
-        success: false,
-        error: `💸 Sin fondos — Dinero insuficiente. Tu saldo es de C$${userBalance.toFixed(2)} y el monto a pagar es C$${finalAmount.toFixed(2)}. Recarga tu cuenta o intenta con otro método de pago.`,
-        errorCode: 'INSUFFICIENT_FUNDS',
-        data: {
-          paymentMethod,
-          amount: finalAmount,
-          balance: userBalance,
-          currency: 'NIO',
-        },
-      }, { status: 400 })
-    }
-
-    // ============================================================
-    // SIMULATED BANK VALIDATION (card/account verification)
-    // Only applies to non-demo accounts
-    // ============================================================
     const isDemoAccount = buyer?.email?.endsWith('@demo.ni') || false
 
     if (!isDemoAccount) {
@@ -165,7 +134,8 @@ export async function POST(request: NextRequest) {
 
     // ============================================================
     // ALL VALIDATIONS PASSED — DEDUCT BALANCE & CREATE TRANSACTION
-    // Use Prisma $transaction to ensure atomicity:
+    // Use Prisma $transaction to ensure atomicity AND race-condition safety:
+    //   0. Read & validate buyer balance INSIDE the transaction
     //   1. Deduct from buyer balance
     //   2. Credit seller balance (97% payout)
     //   3. Create transaction record
@@ -174,6 +144,29 @@ export async function POST(request: NextRequest) {
     // ============================================================
 
     const transaction = await db.$transaction(async (tx) => {
+      // 0. Read buyer balance INSIDE the transaction to prevent race conditions
+      const txBuyer = await tx.user.findUnique({ where: { id: userId } })
+      if (!txBuyer) {
+        throw new Error('USER_NOT_FOUND')
+      }
+
+      const buyerBalance = (txBuyer as Record<string, unknown>).balance as number | undefined
+      const userBalance = typeof buyerBalance === 'number' ? buyerBalance : 50000
+
+      if (userBalance < finalAmount) {
+        // Log insufficient funds attempt inside transaction
+        await tx.auditLog.create({
+          data: {
+            userId,
+            action: 'PAYMENT_DECLINED_INSUFFICIENT_FUNDS',
+            entity: 'Product',
+            entityId: productId,
+            details: `Sin fondos: Saldo C$${userBalance.toFixed(2)}, Monto C$${finalAmount.toFixed(2)} — ${paymentMethod}`,
+          },
+        })
+        throw new Error('INSUFFICIENT_FUNDS')
+      }
+
       // 1. Deduct balance from buyer (atomic decrement)
       await tx.user.update({
         where: { id: userId },
@@ -218,8 +211,22 @@ export async function POST(request: NextRequest) {
         data: { quantity: { decrement: 1 } },
       })
 
-      return newTransaction
+      return { newTransaction, userBalance }
+    }).catch((txError: Error) => {
+      // Handle custom errors thrown inside the transaction
+      if (txError.message === 'INSUFFICIENT_FUNDS') {
+        // Re-throw with a marker so the outer catch can identify it
+        const insufficientFundsError = new Error('INSUFFICIENT_FUNDS')
+        insufficientFundsError.cause = { finalAmount, paymentMethod }
+        throw insufficientFundsError
+      }
+      if (txError.message === 'USER_NOT_FOUND') {
+        throw new Error('USER_NOT_FOUND')
+      }
+      throw txError
     })
+
+    const { newTransaction, userBalance } = transaction
 
     // Notify seller
     await db.notification.create({
@@ -228,7 +235,7 @@ export async function POST(request: NextRequest) {
         type: 'PAYMENT',
         title: 'Pago recibido',
         message: `Pago de C$${finalAmount} recibido por "${product.title}" (Tu ganancia: C$${sellerPayout.toFixed(2)})`,
-        link: `/transactions/${transaction.id}`,
+        link: `/transactions/${newTransaction.id}`,
       },
     })
 
@@ -237,7 +244,7 @@ export async function POST(request: NextRequest) {
         userId,
         action: 'CREATE_TRANSACTION',
         entity: 'Transaction',
-        entityId: transaction.id,
+        entityId: newTransaction.id,
         details: `Transacción creada: ${paymentMethod} - C$${finalAmount} — Comisión: C$${commission.toFixed(2)} — Pago vendedor: C$${sellerPayout.toFixed(2)} — Saldo restante: C$${Math.max(0, userBalance - finalAmount).toFixed(2)}`,
       },
     })
@@ -245,7 +252,7 @@ export async function POST(request: NextRequest) {
     // Create commission log
     await db.commissionLog.create({
       data: {
-        transactionId: transaction.id,
+        transactionId: newTransaction.id,
         amount: commission,
         rate: COMMISSION_RATE,
         destination: 'rey7214935@gmail.com',
@@ -284,7 +291,7 @@ export async function POST(request: NextRequest) {
             type: 'EARN',
             amount: pointsEarned,
             reason: `Compra de ${product.title}`,
-            transactionId: transaction.id,
+            transactionId: newTransaction.id,
           },
         })
       }
@@ -295,11 +302,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        ...transaction,
-        product: { ...transaction.product, images: transaction.product.images ? JSON.parse(transaction.product.images) : [] },
+        ...newTransaction,
+        product: { ...newTransaction.product, images: (() => { try { return newTransaction.product.images ? JSON.parse(newTransaction.product.images) : [] } catch { return [] } })() },
       },
     })
   } catch (error) {
+    // Handle custom errors from inside the transaction
+    if (error instanceof Error && error.message === 'INSUFFICIENT_FUNDS') {
+      return NextResponse.json({
+        success: false,
+        error: `💸 Sin fondos — Dinero insuficiente. Recarga tu cuenta o intenta con otro método de pago.`,
+        errorCode: 'INSUFFICIENT_FUNDS',
+      }, { status: 400 })
+    }
+    if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
+      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+    }
     console.error('Create transaction error:', error)
     return NextResponse.json({ success: false, error: 'Error al crear transacción' }, { status: 500 })
   }

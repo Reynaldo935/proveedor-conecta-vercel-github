@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       success: true,
       data: {
         ...product,
-        images: product.images ? JSON.parse(product.images) : [],
+        images: (() => { try { return product.images ? JSON.parse(product.images) : [] } catch { return [] } })(),
         likeCount: product.likes.length,
         savedCount,
         isLiked,
@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: { userId, action: 'UPDATE_PRODUCT', entity: 'Product', entityId: id, details: `Producto actualizado: ${updated.title}` },
     })
 
-    return NextResponse.json({ success: true, data: { ...updated, images: JSON.parse(updated.images) } })
+    return NextResponse.json({ success: true, data: { ...updated, images: (() => { try { return JSON.parse(updated.images) } catch { return [] } })() } })
   } catch (error) {
     console.error('Update product error:', error)
     return NextResponse.json({ success: false, error: 'Error al actualizar producto' }, { status: 500 })
