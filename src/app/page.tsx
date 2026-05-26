@@ -4,14 +4,16 @@ import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { motion } from "framer-motion"
 import { Plus } from "lucide-react"
 
+// ALL dynamic imports with ssr: false to prevent server-side hanging
+const Header = dynamic(() => import("@/components/layout/header").then(m => ({ default: m.Header })), { ssr: false })
+const Footer = dynamic(() => import("@/components/layout/footer").then(m => ({ default: m.Footer })), { ssr: false })
+
 // Dynamic imports to reduce initial bundle size and prevent server overload
-const HomeFeed = dynamic(() => import("@/components/marketplace/home-feed").then(m => ({ default: m.HomeFeed })), { ssr: true })
+const HomeFeed = dynamic(() => import("@/components/marketplace/home-feed").then(m => ({ default: m.HomeFeed })), { ssr: false, loading: () => <PageLoader /> })
 const LoginForm = dynamic(() => import("@/components/auth/login-form").then(m => ({ default: m.LoginForm })), { ssr: false })
 const RegisterForm = dynamic(() => import("@/components/auth/register-form").then(m => ({ default: m.RegisterForm })), { ssr: false })
 const VerifyEmail = dynamic(() => import("@/components/auth/verify-email").then(m => ({ default: m.VerifyEmail })), { ssr: false })
