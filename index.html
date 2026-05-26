@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProveedorConecta Nicaragua - Marketplace B2B/B2C para MIPYMES</title>
+  <meta name="description" content="Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en Nicaragua. 17 departamentos, 11 métodos de pago, chat en tiempo real.">
+  <meta name="keywords" content="Nicaragua, proveedores, MIPYMES, marketplace, B2B, emprendedores, ferretería, agricultura, tecnología, Managua, León, Granada">
+  <meta property="og:title" content="ProveedorConecta Nicaragua - Marketplace B2B/B2C">
+  <meta property="og:description" content="Conectamos emprendedores y MIPYMES con proveedores de insumos en toda Nicaragua.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_NI">
+  <meta property="og:site_name" content="ProveedorConecta Nicaragua">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ProveedorConecta Nicaragua">
+  <meta name="twitter:description" content="Marketplace B2B/B2C para emprendedores nicaragüenses">
+  <link rel="icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1A5276;
+      --primary-light: #2E86C1;
+      --primary-dark: #154360;
+      --accent: #F4D03F;
+      --accent-dark: #D4AC0D;
+      --bg-light: #E8F4FD;
+      --bg-dark: #0B1A2C;
+      --text-dark: #1C2833;
+      --text-muted: #5D6D7E;
+      --white: #FFFFFF;
+      --success: #27AE60;
+      --danger: #E74C3C;
+      --shadow: 0 4px 24px rgba(26, 82, 118, 0.12);
+      --shadow-lg: 0 8px 40px rgba(26, 82, 118, 0.18);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-dark);
+      background: var(--bg-light);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', sans-serif; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Navbar ────────────────────────────────────────────── */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(26,82,118,0.08);
+      transition: box-shadow 0.3s;
+    }
+    .navbar.scrolled { box-shadow: 0 2px 20px rgba(26,82,118,0.1); }
+    .navbar .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .navbar-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--primary);
+    }
+    .navbar-brand .logo {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 18px; font-family: 'Poppins';
+    }
+    .navbar-brand span { font-weight: 700; font-size: 20px; font-family: 'Poppins'; }
+    .navbar-links { display: flex; align-items: center; gap: 8px; }
+    .navbar-links a {
+      text-decoration: none; color: var(--text-muted); font-size: 14px;
+      font-weight: 500; padding: 8px 16px; border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .navbar-links a:hover { color: var(--primary); background: rgba(26,82,118,0.06); }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white !important; padding: 10px 24px; border-radius: 10px;
+      font-weight: 600; font-size: 14px; border: none; cursor: pointer;
+      text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 16px rgba(26,82,118,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(26,82,118,0.4); }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--primary); padding: 10px 24px;
+      border-radius: 10px; font-weight: 600; font-size: 14px;
+      border: 2px solid var(--primary); cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover { background: var(--primary); color: white; }
+
+    .mobile-menu-btn {
+      display: none; background: none; border: none; cursor: pointer;
+      padding: 8px; color: var(--primary);
+    }
+
+    /* ── Hero ──────────────────────────────────────────────── */
+    .hero {
+      position: relative; min-height: 100vh;
+      display: flex; align-items: center;
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 40%, var(--primary-light) 100%);
+      overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='dots' x='0' y='0' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='30' cy='30' r='1.5' fill='white'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23dots)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+    }
+    .hero-orb-1 {
+      position: absolute; top: -80px; right: -80px; width: 400px; height: 400px;
+      border-radius: 50%; background: rgba(244,208,63,0.08); filter: blur(60px);
+    }
+    .hero-orb-2 {
+      position: absolute; bottom: -60px; left: -60px; width: 300px; height: 300px;
+      border-radius: 50%; background: rgba(244,208,63,0.06); filter: blur(40px);
+    }
+    .hero .container {
+      position: relative; z-index: 2;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+      padding-top: 100px; padding-bottom: 60px;
+    }
+    .hero-content h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 800;
+      color: white; line-height: 1.15; margin-bottom: 20px;
+    }
+    .hero-content h1 .accent { color: var(--accent); }
+    .hero-content p {
+      font-size: 1.15rem; color: rgba(255,255,255,0.88);
+      max-width: 520px; margin-bottom: 32px; line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+    .hero-actions .btn-white {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: white; color: var(--primary); padding: 14px 32px;
+      border-radius: 12px; font-weight: 700; font-size: 16px;
+      border: none; cursor: pointer; text-decoration: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: all 0.2s;
+    }
+    .hero-actions .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .hero-actions .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.1); color: white; padding: 14px 32px;
+      border-radius: 12px; font-weight: 600; font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+      text-decoration: none; backdrop-filter: blur(10px); transition: all 0.2s;
+    }
+    .hero-actions .btn-ghost:hover { background: rgba(255,255,255,0.18); }
+
+    .hero-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+      margin-top: 48px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat .number { font-size: 1.8rem; font-weight: 800; color: white; font-family: 'Poppins'; }
+    .hero-stat .label { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+    .hero-visual {
+      display: flex; justify-content: center; align-items: center;
+    }
+    .hero-mockup {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 20px; backdrop-filter: blur(10px);
+      width: 100%; max-width: 460px;
+    }
+    .mockup-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+      padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-dot.red { background: #E74C3C; }
+    .mockup-dot.yellow { background: #F4D03F; }
+    .mockup-dot.green { background: #27AE60; }
+    .mockup-card {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; overflow: hidden; margin-bottom: 12px;
+    }
+    .mockup-card-img {
+      height: 120px; background: linear-gradient(135deg, rgba(46,134,193,0.3), rgba(26,82,118,0.3));
+      display: flex; align-items: center; justify-content: center; font-size: 40px;
+    }
+    .mockup-card-body { padding: 12px; }
+    .mockup-card-body h4 { color: white; font-size: 14px; margin-bottom: 6px; }
+    .mockup-card-body .price { color: var(--accent); font-weight: 700; font-size: 16px; }
+    .mockup-card-body .seller { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 4px; }
+    .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Sections ──────────────────────────────────────────── */
+    section { padding: 80px 0; }
+
+    .section-header { text-align: center; margin-bottom: 48px; }
+    .section-header .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(26,82,118,0.06); color: var(--primary);
+      padding: 6px 16px; border-radius: 20px; font-size: 13px;
+      font-weight: 600; margin-bottom: 12px;
+    }
+    .section-header h2 {
+      font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 800;
+      color: var(--text-dark); margin-bottom: 12px;
+    }
+    .section-header p {
+      font-size: 1.05rem; color: var(--text-muted); max-width: 600px; margin: 0 auto;
+    }
+
+    /* ── Features ──────────────────────────────────────────── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    .feature-card {
+      background: white; border-radius: var(--radius); padding: 32px;
+      border: 1px solid rgba(26,82,118,0.06); transition: all 0.3s;
+      box-shadow: 0 2px 12px rgba(26,82,118,0.04);
+    }
+    .feature-card:hover {
+      transform: translateY(-4px); box-shadow: var(--shadow-lg);
+      border-color: rgba(26,82,118,0.12);
+    }
+    .feature-icon {
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 20px;
+    }
+    .feature-icon.blue { background: linear-gradient(135deg, rgba(26,82,118,0.1), rgba(46,134,193,0.1)); }
+    .feature-icon.gold { background: linear-gradient(135deg, rgba(244,208,63,0.15), rgba(212,172,13,0.1)); }
+    .feature-icon.green { background: linear-gradient(135deg, rgba(39,174,96,0.1), rgba(39,174,96,0.05)); }
+    .feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── How it works ──────────────────────────────────────── */
+    .how-it-works { background: white; }
+    .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
+    .step { text-align: center; position: relative; }
+    .step-number {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white; font-size: 22px; font-weight: 800; font-family: 'Poppins';
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(26,82,118,0.3);
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .step p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* ── Suppliers ─────────────────────────────────────────── */
+    .suppliers-table {
+      width: 100%; border-collapse: collapse; background: white;
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .suppliers-table th {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white; padding: 14px 18px; text-align: left; font-size: 13px;
+      font-weight: 600; font-family: 'Poppins';
+    }
+    .suppliers-table td {
+      padding: 12px 18px; border-bottom: 1px solid rgba(26,82,118,0.06);
+      font-size: 13px; vertical-align: middle;
+    }
+    .suppliers-table tr:hover td { background: rgba(26,82,118,0.02); }
+    .supplier-link {
+      color: var(--primary-light); text-decoration: none; font-weight: 500;
+    }
+    .supplier-link:hover { text-decoration: underline; }
+    .badge-cat {
+      display: inline-block; padding: 3px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      background: rgba(26,82,118,0.06); color: var(--primary);
+    }
+
+    /* ── Payment Methods ───────────────────────────────────── */
+    .payment-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+    .payment-card {
+      background: white; border-radius: var(--radius-sm); padding: 20px 28px;
+      border: 1px solid rgba(26,82,118,0.06); text-align: center;
+      font-weight: 600; font-size: 14px; min-width: 140px;
+      transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .payment-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .payment-card .icon { font-size: 28px; margin-bottom: 6px; }
+
+    /* ── Pricing ───────────────────────────────────────────── */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .pricing-card {
+      background: white; border-radius: var(--radius); padding: 36px;
+      border: 1px solid rgba(26,82,118,0.06); text-align: center;
+      transition: all 0.3s; box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    }
+    .pricing-card.featured {
+      border: 2px solid var(--primary); transform: scale(1.03);
+      box-shadow: var(--shadow-lg); position: relative;
+    }
+    .pricing-card.featured::before {
+      content: 'POPULAR'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white; padding: 4px 20px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; font-family: 'Poppins';
+    }
+    .pricing-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+    .pricing-card .price { font-size: 2.5rem; font-weight: 800; color: var(--primary); font-family: 'Poppins'; }
+    .pricing-card .price span { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
+    .pricing-card ul { list-style: none; margin: 24px 0; text-align: left; }
+    .pricing-card li {
+      padding: 8px 0; font-size: 0.9rem; color: var(--text-muted);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pricing-card li::before { content: '✓'; color: var(--success); font-weight: 700; }
+
+    /* ── CTA ────────────────────────────────────────────────── */
+    .cta-section {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary), var(--primary-light));
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='cta-dots' x='0' y='0' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='30' cy='30' r='1' fill='white'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23cta-dots)'/%3E%3C/svg%3E");
+      opacity: 0.05;
+    }
+    .cta-content { position: relative; z-index: 2; text-align: center; }
+    .cta-content h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 800; color: white; margin-bottom: 16px; }
+    .cta-content p { font-size: 1.1rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto 32px; }
+    .cta-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    footer {
+      background: var(--bg-dark); color: rgba(255,255,255,0.7); padding: 48px 0 24px;
+    }
+    footer .container {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px;
+    }
+    footer h4 { color: white; font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+    footer a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 13px; display: block; padding: 3px 0; }
+    footer a:hover { color: white; }
+    .footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .footer-brand .logo {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 16px; font-family: 'Poppins';
+    }
+    .footer-brand span { color: white; font-weight: 700; font-size: 18px; font-family: 'Poppins'; }
+    .footer-bottom {
+      grid-column: 1 / -1; border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 20px; margin-top: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px;
+    }
+
+    /* ── Animations ─────────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate { animation: fadeInUp 0.7s ease-out forwards; opacity: 0; }
+    .animate:nth-child(2) { animation-delay: 0.1s; }
+    .animate:nth-child(3) { animation-delay: 0.2s; }
+    .animate:nth-child(4) { animation-delay: 0.3s; }
+
+    /* ── Stripe animation ───────────────────────────────────── */
+    .nicaragua-stripe {
+      height: 4px;
+      background: linear-gradient(90deg, #0067B8 0%, #0067B8 33%, white 33%, white 66%, #0067B8 66%, #0067B8 100%);
+    }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .hero .container { grid-template-columns: 1fr; text-align: center; }
+      .hero-content p { margin: 0 auto 32px; }
+      .hero-actions { justify-content: center; }
+      .hero-stats { grid-template-columns: repeat(4, 1fr); }
+      .hero-visual { display: none; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps-grid { grid-template-columns: repeat(2, 1fr); }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      footer .container { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .navbar-links { display: none; }
+      .mobile-menu-btn { display: block; }
+      .hero-stats { grid-template-columns: repeat(2, 1fr); }
+      .features-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .suppliers-table { font-size: 11px; }
+      .suppliers-table th, .suppliers-table td { padding: 8px 10px; }
+      footer .container { grid-template-columns: 1fr; gap: 24px; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+      section { padding: 48px 0; }
+    }
+
+    /* ── Mobile Nav ─────────────────────────────────────────── */
+    .mobile-nav {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    }
+    .mobile-nav.open { display: block; }
+    .mobile-nav-content {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 280px;
+      background: white; padding: 24px; box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+    }
+    .mobile-nav-content a {
+      display: block; padding: 12px 0; color: var(--text-dark);
+      text-decoration: none; font-weight: 500; border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .mobile-nav-close {
+      background: none; border: none; font-size: 24px; cursor: pointer;
+      color: var(--text-muted); margin-bottom: 16px;
+    }
+
+    /* ── Scrollbar ──────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(26,82,118,0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(26,82,118,0.35); }
+  </style>
+</head>
+<body>
+  <!-- Nicaragua Stripe -->
+  <div class="nicaragua-stripe"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="navbar-brand">
+        <div class="logo">PC</div>
+        <span>ProveedorConecta</span>
+      </a>
+      <div class="navbar-links">
+        <a href="#features">Funciones</a>
+        <a href="#suppliers">Proveedores</a>
+        <a href="#payments">Pagos</a>
+        <a href="#pricing">Precios</a>
+        <a href="#cta" class="btn-primary">🚀 Comenzar Gratis</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.add('open')">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav -->
+  <div class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-content">
+      <button class="mobile-nav-close" onclick="document.getElementById('mobileNav').classList.remove('open')">✕</button>
+      <a href="#features" onclick="document.getElementById('mobileNav').classList.remove('open')">Funciones</a>
+      <a href="#suppliers" onclick="document.getElementById('mobileNav').classList.remove('open')">Proveedores</a>
+      <a href="#payments" onclick="document.getElementById('mobileNav').classList.remove('open')">Pagos</a>
+      <a href="#pricing" onclick="document.getElementById('mobileNav').classList.remove('open')">Precios</a>
+      <a href="#cta" onclick="document.getElementById('mobileNav').classList.remove('open')" style="color:var(--primary);font-weight:700">🚀 Comenzar Gratis</a>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-orb-1"></div>
+    <div class="hero-orb-2"></div>
+    <div class="container">
+      <div class="hero-content animate">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border-radius:20px;padding:6px 16px;font-size:13px;color:white;margin-bottom:16px;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(10px)">
+          🇳🇮 Hecho en Nicaragua ✨
+        </div>
+        <h1>
+          Proveedor<span>Conecta</span><br>
+          <span class="accent">Nicaragua</span>
+        </h1>
+        <p>Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima y servicios en toda Nicaragua. Vender y comprar es <strong>100% GRATIS</strong>.</p>
+        <div class="hero-actions">
+          <a href="#cta" class="btn-white">🏪 Vender Gratis</a>
+          <a href="#features" class="btn-ghost">🔍 Explorar</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="number">500+</div><div class="label">Proveedores</div></div>
+          <div class="hero-stat"><div class="number">2000+</div><div class="label">Productos</div></div>
+          <div class="hero-stat"><div class="number">17</div><div class="label">Departamentos</div></div>
+          <div class="hero-stat"><div class="number">11</div><div class="label">Métodos de Pago</div></div>
+        </div>
+      </div>
+      <div class="hero-visual animate" style="animation-delay:0.3s">
+        <div class="hero-mockup">
+          <div class="mockup-header">
+            <div class="mockup-dot red"></div>
+            <div class="mockup-dot yellow"></div>
+            <div class="mockup-dot green"></div>
+            <span style="color:rgba(255,255,255,0.4);font-size:11px;margin-left:auto">proveedorconecta.ni</span>
+          </div>
+          <div class="mockup-grid">
+            <div class="mockup-card">
+              <div class="mockup-card-img">🏗️</div>
+              <div class="mockup-card-body">
+                <h4>Cemento Portland</h4>
+                <div class="price">C$285</div>
+                <div class="seller">🏪 Ferromax Managua</div>
+              </div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-img">🌾</div>
+              <div class="mockup-card-body">
+                <h4>Fertilizante NPK</h4>
+                <div class="price">C$450</div>
+                <div class="seller">🏪 Agroindustrial SA</div>
+              </div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-img">💻</div>
+              <div class="mockup-card-body">
+                <h4>Laptop Dell 15"</h4>
+                <div class="price">C$18,500</div>
+                <div class="seller">🏪 TechNI Solutions</div>
+              </div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-img">🍽️</div>
+              <div class="mockup-card-body">
+                <h4>Café Flor de Caña</h4>
+                <div class="price">C$320</div>
+                <div class="seller">🏪 Flor de Caña SA</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">🚀 Funcionalidades</div>
+        <h2>Todo lo que necesitas para conectar</h2>
+        <p>Una plataforma completa para comprar, vender y crecer tu negocio en Nicaragua.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card animate">
+          <div class="feature-icon blue">🏪</div>
+          <h3>Marketplace GRATIS</h3>
+          <p>Publica y compra productos sin costo. Solo cobramos 3% de comisión en ventas completadas. Sin suscripciones, sin letra chica.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon gold">💬</div>
+          <h3>Chat en Tiempo Real</h3>
+          <p>Comunícate directamente con proveedores y compradores. Negocia precios, pregunta por disponibilidad y cierra tratos al instante.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon green">🗺️</div>
+          <h3>Mapa Interactivo</h3>
+          <p>Encuentra proveedores geolocalizados en los 17 departamentos de Nicaragua. Filtros por categoría y ubicación.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon blue">💳</div>
+          <h3>11 Métodos de Pago</h3>
+          <p>PayPal, Google Pay, PixelPay, Pagadito, Banpro, BAC Credomatic, LAFISE, Kash, Billetera Móvil, Western Union y más.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon gold">⭐</div>
+          <h3>Sistema de Confianza</h3>
+          <p>Calificaciones bidireccionales, insignias de confianza (Bronce, Plata, Oro) y verificación de identidad para compradores y vendedores.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon green">🌤️</div>
+          <h3>Clima en Tiempo Real</h3>
+          <p>Información meteorológica de 8 ciudades nicaragüenses. Planifica entregas y compras según el clima de tu zona.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon blue">🎁</div>
+          <h3>Puntos de Lealtad</h3>
+          <p>Gana 1 punto por cada C$1 gastado. Canjea puntos por descuentos. Descuentos por volumen desde 5 unidades.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon gold">📅</div>
+          <h3>Agenda y Citas</h3>
+          <p>Sistema de calendario para programar reuniones, entregas y reabastecimiento. Recordatorios automáticos.</p>
+        </div>
+        <div class="feature-card animate">
+          <div class="feature-icon green">📊</div>
+          <h3>Dashboard Completo</h3>
+          <p>Estadísticas de ventas, compras, cotizaciones y balance. Exporta datos a Excel, CSV o PDF. Panel de administración.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it Works -->
+  <section class="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">📋 Cómo Funciona</div>
+        <h2>Empieza en 4 pasos simples</h2>
+        <p>Desde el registro hasta tu primera venta, todo es rápido y gratuito.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step animate">
+          <div class="step-number">1</div>
+          <h3>Regístrate Gratis</h3>
+          <p>Crea tu cuenta como comprador o vendedor en menos de 1 minuto.</p>
+        </div>
+        <div class="step animate">
+          <div class="step-number">2</div>
+          <h3>Publica o Busca</h3>
+          <p>Sube tus productos con fotos o busca entre 2000+ productos disponibles.</p>
+        </div>
+        <div class="step animate">
+          <div class="step-number">3</div>
+          <h3>Negocia y Cotiza</h3>
+          <p>Usa el chat o sistema de cotizaciones para acordar precios y condiciones.</p>
+        </div>
+        <div class="step animate">
+          <div class="step-number">4</div>
+          <h3>Compra y Vende</h3>
+          <p>Elige tu método de pago, completa la transacción y califica al vendedor.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Suppliers -->
+  <section id="suppliers">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">🏭 Proveedores Verificados</div>
+        <h2>Proveedores Nicaragüenses Confiables</h2>
+        <p>Más de 20 proveedores verificados con productos reales y precios actualizados 2026.</p>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="suppliers-table">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Categoría</th>
+              <th>Teléfono</th>
+              <th>Sitio Web</th>
+              <th>Productos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Ingenio San Antonio</strong></td><td><span class="badge-cat">Alimentos</span></td><td>+505 2333-0000</td><td><a href="https://www.isa.com.ni" target="_blank" class="supplier-link">🌐 isa.com.ni</a></td><td>Azúcar, miel, etanol</td></tr>
+            <tr><td><strong>Flor de Caña</strong></td><td><span class="badge-cat">Bebidas</span></td><td>+505 2333-1100</td><td><a href="https://www.flordecana.com" target="_blank" class="supplier-link">🌐 flordecana.com</a></td><td>Ron, licor, bebidas</td></tr>
+            <tr><td><strong>La Curacao</strong></td><td><span class="badge-cat">Retail</span></td><td>+505 2266-0000</td><td><a href="https://www.lacuracao.com" target="_blank" class="supplier-link">🌐 lacuracao.com</a></td><td>Electrodomésticos, tecnología</td></tr>
+            <tr><td><strong>Pollo Tip Top</strong></td><td><span class="badge-cat">Alimentos</span></td><td>+505 2278-0000</td><td><a href="https://www.tiptop.com.ni" target="_blank" class="supplier-link">🌐 tiptop.com.ni</a></td><td>Pollo, embutidos, lácteos</td></tr>
+            <tr><td><strong>Grupo Ferromax</strong></td><td><span class="badge-cat">Ferretería</span></td><td>+505 2255-0000</td><td><a href="https://www.ferromax.com.ni" target="_blank" class="supplier-link">🌐 ferromax.com.ni</a></td><td>Cemento, varilla, herramientas</td></tr>
+            <tr><td><strong>CCN (Cámara de Comercio)</strong></td><td><span class="badge-cat">Servicios</span></td><td>+505 2266-1700</td><td><a href="https://www.ccn.org.ni" target="_blank" class="supplier-link">🌐 ccn.org.ni</a></td><td>Servicios empresariales</td></tr>
+            <tr><td><strong>Casa Pellas</strong></td><td><span class="badge-cat">Automotriz</span></td><td>+505 2255-5500</td><td><a href="https://www.casapellas.com" target="_blank" class="supplier-link">🌐 casapellas.com</a></td><td>Vehículos, repuestos, maquinaria</td></tr>
+            <tr><td><strong>Agroindustrial COMETA</strong></td><td><span class="badge-cat">Agricultura</span></td><td>+505 2255-3300</td><td><a href="https://www.cometa.com.ni" target="_blank" class="supplier-link">🌐 cometa.com.ni</a></td><td>Fertilizantes, semillas, agroquímicos</td></tr>
+            <tr><td><strong>Distribuidora Lafise</strong></td><td><span class="badge-cat">Financiero</span></td><td>+505 2270-0000</td><td><a href="https://www.lafise.com" target="_blank" class="supplier-link">🌐 lafise.com</a></td><td>Servicios financieros, pagos</td></tr>
+            <tr><td><strong>TechNI Solutions</strong></td><td><span class="badge-cat">Tecnología</span></td><td>+505 2266-4400</td><td><a href="https://www.techni.com.ni" target="_blank" class="supplier-link">🌐 techni.com.ni</a></td><td>Laptops, impresoras, redes</td></tr>
+            <tr><td><strong>Novex de Nicaragua</strong></td><td><span class="badge-cat">Construcción</span></td><td>+505 2278-2200</td><td><a href="https://www.novex.com.ni" target="_blank" class="supplier-link">🌐 novex.com.ni</a></td><td>Pintura, acabados, impermeabilizantes</td></tr>
+            <tr><td><strong>Almacenes Élite</strong></td><td><span class="badge-cat">Retail</span></td><td>+505 2255-1100</td><td><a href="https://www.almaceneselite.com" target="_blank" class="supplier-link">🌐 almaceneselite.com</a></td><td>Muebles, decoración, hogar</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Payment Methods -->
+  <section id="payments" style="background:white">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">💳 Métodos de Pago</div>
+        <h2>11 formas de pagar y cobrar</h2>
+        <p>Transacciones seguras con los métodos más usados en Nicaragua y Centroamérica.</p>
+      </div>
+      <div class="payment-grid">
+        <div class="payment-card"><div class="icon">🅿️</div>PayPal</div>
+        <div class="payment-card"><div class="icon">📱</div>Google Pay</div>
+        <div class="payment-card"><div class="icon">💎</div>PixelPay</div>
+        <div class="payment-card"><div class="icon">💲</div>Pagadito</div>
+        <div class="payment-card"><div class="icon">🏦</div>Banpro Transfer</div>
+        <div class="payment-card"><div class="icon">📲</div>Banpro Billetera</div>
+        <div class="payment-card"><div class="icon">💳</div>BAC Credomatic</div>
+        <div class="payment-card"><div class="icon">🌍</div>LAFISE</div>
+        <div class="payment-card"><div class="icon">💰</div>Kash</div>
+        <div class="payment-card"><div class="icon"> cellular </div>Billetera Móvil</div>
+        <div class="payment-card"><div class="icon">📮</div>Western Union</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">💰 Modelo de Precios</div>
+        <h2>Vender y comprar es GRATIS</h2>
+        <p>Solo ganamos con anuncios y una comisión justa del 3% en ventas.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>🛒 Comprador</h3>
+          <div class="price">C$0<span>/mes</span></div>
+          <ul>
+            <li>Registro gratuito</li>
+            <li>Búsqueda ilimitada</li>
+            <li>Chat con vendedores</li>
+            <li>Sistema de cotizaciones</li>
+            <li>Puntos de lealtad</li>
+            <li>Calificaciones y reviews</li>
+            <li>11 métodos de pago</li>
+          </ul>
+          <a href="#cta" class="btn-primary" style="display:block;text-align:center">Comenzar Gratis</a>
+        </div>
+        <div class="pricing-card featured">
+          <h3>🏪 Vendedor</h3>
+          <div class="price">C$0<span>/mes</span></div>
+          <ul>
+            <li>Publicar productos GRATIS</li>
+            <li>Solo 3% comisión por venta</li>
+            <li>Dashboard de ventas</li>
+            <li>Muro de negocio</li>
+            <li>Chat con compradores</li>
+            <li>Insignias de confianza</li>
+            <li>Agenda y calendario</li>
+            <li>Exportar datos (Excel/PDF)</li>
+          </ul>
+          <a href="#cta" class="btn-primary" style="display:block;text-align:center">Vender Gratis</a>
+        </div>
+        <div class="pricing-card">
+          <h3>📢 Anuncios</h3>
+          <div class="price">Desde<span> C$500</span></div>
+          <ul>
+            <li>Destacar productos</li>
+            <li>Mayor visibilidad</li>
+            <li>Plan semanal o mensual</li>
+            <li>Segmentación por zona</li>
+            <li>Estadísticas de impacto</li>
+            <li>Aprobación admin</li>
+          </ul>
+          <a href="#cta" class="btn-outline" style="display:block;text-align:center">Más Información</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="cta">
+    <div class="container">
+      <div class="cta-content">
+        <h2>🇳🇮 Únete a ProveedorConecta Nicaragua</h2>
+        <p>La plataforma gratuita que conecta emprendedores, MIPYMES y proveedores en toda Nicaragua. Regístrate hoy y empieza a vender o comprar.</p>
+        <div class="cta-actions">
+          <a href="#" class="btn-white" onclick="alert('¡Gracias por tu interés! La plataforma está en desarrollo. Visita el repositorio en GitHub para más información.')">🚀 Comenzar Gratis</a>
+          <a href="#features" class="btn-ghost">📚 Conocer Más</a>
+        </div>
+        <div style="margin-top:32px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
+          <span style="color:rgba(255,255,255,0.6);font-size:13px">✓ 100% Gratis</span>
+          <span style="color:rgba(255,255,255,0.6);font-size:13px">✓ Solo 3% comisión</span>
+          <span style="color:rgba(255,255,255,0.6);font-size:13px">✓ 11 métodos de pago</span>
+          <span style="color:rgba(255,255,255,0.6);font-size:13px">✓ Sin tarjeta de crédito</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div>
+        <div class="footer-brand">
+          <div class="logo">PC</div>
+          <span>ProveedorConecta</span>
+        </div>
+        <p style="font-size:13px;max-width:300px;line-height:1.6">
+          Marketplace B2B/B2C que conecta emprendedores y MIPYMES con proveedores en toda Nicaragua. Hackathon Nicaragua 10ma Edición.
+        </p>
+      </div>
+      <div>
+        <h4>Plataforma</h4>
+        <a href="#features">Funciones</a>
+        <a href="#suppliers">Proveedores</a>
+        <a href="#payments">Métodos de Pago</a>
+        <a href="#pricing">Precios</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Términos de Servicio</a>
+        <a href="#">Política de Privacidad</a>
+        <a href="#">Política de Reembolso</a>
+        <a href="#">Cookies</a>
+      </div>
+      <div>
+        <h4>Contacto</h4>
+        <a href="mailto:rey7214935@gmail.com">rey7214935@gmail.com</a>
+        <a href="#">Managua, Nicaragua</a>
+        <a href="#">+505 0000-0000</a>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 ProveedorConecta Nicaragua. Todos los derechos reservados.</span>
+        <span>Hecho con ❤️ para Nicaragua 🇳🇮</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // Close mobile nav on outside click
+    document.getElementById('mobileNav').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('mobileNav')) {
+        document.getElementById('mobileNav').classList.remove('open');
+      }
+    });
+
+    // Intersection Observer for animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.animate').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
+
+    // Animated counters
+    function animateCounter(el, target, suffix = '') {
+      let current = 0;
+      const duration = 2000;
+      const steps = 60;
+      const increment = target / steps;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          el.textContent = target.toLocaleString() + suffix;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.floor(current).toLocaleString() + suffix;
+        }
+      }, duration / steps);
+    }
+
+    const statsObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const statEls = entry.target.querySelectorAll('.number');
+          const targets = [500, 2000, 17, 11];
+          const suffixes = ['+', '+', '', ''];
+          statEls.forEach((el, i) => animateCounter(el, targets[i], suffixes[i]));
+          statsObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    const heroStats = document.querySelector('.hero-stats');
+    if (heroStats) statsObserver.observe(heroStats);
+  </script>
+</body>
+</html>
