@@ -5,7 +5,9 @@ import { useAppStore } from "@/store/app-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, DollarSign, TrendingUp, TrendingDown, RefreshCw, CreditCard, Building2, Smartphone, Wallet, Globe, Shield, Clock } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ChevronLeft, DollarSign, TrendingUp, TrendingDown, RefreshCw, CreditCard, Building2, Smartphone, Wallet, Globe, Shield, Clock, ArrowRightLeft } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface ExchangeRate {
@@ -128,12 +130,36 @@ const PAYMENT_METHODS = [
   },
 ]
 
+const CONVERTER_CURRENCIES = ["NIO", "USD", "EUR", "BRL", "MXN", "CRC"]
+
 export function CurrenciesView() {
   const { navigate } = useAppStore()
   const [lastUpdate, setLastUpdate] = useState<string>(new Date().toLocaleTimeString("es-NI"))
+  const [converterAmount, setConverterAmount] = useState<string>("1")
+  const [converterFrom, setConverterFrom] = useState<string>("USD")
+  const [converterTo, setConverterTo] = useState<string>("NIO")
+  const [converterResult, setConverterResult] = useState<number | null>(null)
 
   const handleRefresh = () => {
     setLastUpdate(new Date().toLocaleTimeString("es-NI"))
+  }
+
+  const handleConvert = () => {
+    const amount = parseFloat(converterAmount)
+    if (isNaN(amount) || amount <= 0) {
+      setConverterResult(null)
+      return
+    }
+    const fromRate = EXCHANGE_RATES.find((r) => r.code === converterFrom)
+    const toRate = EXCHANGE_RATES.find((r) => r.code === converterTo)
+    if (!fromRate || !toRate) {
+      setConverterResult(null)
+      return
+    }
+    // Convert: FROM currency -> NIO (using buyRate), then NIO -> TO currency (using sellRate)
+    const nioAmount = amount * fromRate.buyRate
+    const result = nioAmount / toRate.sellRate
+    setConverterResult(result)
   }
 
   return (
@@ -215,6 +241,88 @@ export function CurrenciesView() {
           <p className="text-[10px] text-muted-foreground mt-3 text-center">
             * Tasas referenciales. Última actualización: {lastUpdate}. Comisión plataforma: 3% automática.
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Currency Converter */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ArrowRightLeft className="h-4 w-4 text-primary" /> Convertidor de Divisas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Monto</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="Ingrese monto"
+                  value={converterAmount}
+                  onChange={(e) => setConverterAmount(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">De</label>
+                <Select value={converterFrom} onValueChange={setConverterFrom}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Moneda origen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONVERTER_CURRENCIES.map((code) => {
+                      const rate = EXCHANGE_RATES.find((r) => r.code === code)
+                      return (
+                        <SelectItem key={code} value={code}>
+                          {rate?.flag} {code}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">A</label>
+                <Select value={converterTo} onValueChange={setConverterTo}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Moneda destino" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONVERTER_CURRENCIES.map((code) => {
+                      const rate = EXCHANGE_RATES.find((r) => r.code === code)
+                      return (
+                        <SelectItem key={code} value={code}>
+                          {rate?.flag} {code}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button onClick={handleConvert} className="w-full">
+              <ArrowRightLeft className="h-4 w-4 mr-2" /> Convertir
+            </Button>
+            {converterResult !== null && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-lg border bg-primary/5 p-4 text-center"
+              >
+                <p className="text-xs text-muted-foreground mb-1">Resultado</p>
+                <p className="text-2xl font-bold">
+                  {EXCHANGE_RATES.find((r) => r.code === converterTo)?.flag}{" "}
+                  {converterResult.toLocaleString("es-NI", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}{" "}
+                  {converterTo}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {converterAmount} {converterFrom} = {converterResult.toLocaleString("es-NI", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {converterTo}
+                </p>
+              </motion.div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

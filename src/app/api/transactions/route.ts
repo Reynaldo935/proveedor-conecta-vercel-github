@@ -303,6 +303,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         ...newTransaction,
+        newBalance: Math.max(0, userBalance - finalAmount),
         product: { ...newTransaction.product, images: (() => { try { return newTransaction.product.images ? JSON.parse(newTransaction.product.images) : [] } catch { return [] } })() },
       },
     })

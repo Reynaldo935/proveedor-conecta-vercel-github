@@ -16,6 +16,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/client-auth"
 import {
   ChevronLeft,
   Users,
@@ -85,7 +86,7 @@ export function AdminPanel() {
 
   const loadStats = async () => {
     try {
-      const res = await fetch("/api/admin/stats")
+      const res = await authFetch("/api/admin/stats")
       const data = await res.json()
       if (data.success) {
         setStats(data.data)
@@ -102,7 +103,7 @@ export function AdminPanel() {
 
   const loadHelpers = async () => {
     try {
-      const res = await fetch("/api/admin/helpers")
+      const res = await authFetch("/api/admin/helpers")
       const data = await res.json()
       if (data.success) setHelpers(data.data)
     } catch {}
@@ -110,7 +111,7 @@ export function AdminPanel() {
 
   const loadCommissions = async () => {
     try {
-      const res = await fetch("/api/commissions")
+      const res = await authFetch("/api/commissions")
       const data = await res.json()
       if (data.success) {
         setCommissions(data.data.commissions)
@@ -121,7 +122,7 @@ export function AdminPanel() {
 
   const loadAds = async () => {
     try {
-      const res = await fetch("/api/advertisements")
+      const res = await authFetch("/api/advertisements")
       const data = await res.json()
       if (data.success) setAds(data.data)
     } catch {}
@@ -131,11 +132,11 @@ export function AdminPanel() {
     if (!helperEmail || !helperRoleSelect) { toast.error("Email y rol son requeridos"); return }
     setAssigningHelper(true)
     try {
-      const userRes = await fetch(`/api/users/email?email=${encodeURIComponent(helperEmail)}`)
+      const userRes = await authFetch(`/api/users/email?email=${encodeURIComponent(helperEmail)}`)
       const userData = await userRes.json()
       if (!userData.success) { toast.error("Usuario no encontrado"); return }
 
-      const res = await fetch("/api/admin/helpers", {
+      const res = await authFetch("/api/admin/helpers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUserId: userData.data.id, helperRole: helperRoleSelect }),
@@ -155,7 +156,7 @@ export function AdminPanel() {
 
   const updateAdStatus = async (adId: string, status: string) => {
     try {
-      const res = await fetch(`/api/advertisements/${adId}`, {
+      const res = await authFetch(`/api/advertisements/${adId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),

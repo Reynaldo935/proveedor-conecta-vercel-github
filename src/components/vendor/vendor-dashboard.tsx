@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/client-auth"
 import {
   Package, Heart, DollarSign, FileText, TrendingUp, Plus,
   BarChart3, ShoppingCart, MessageCircle, Users, Loader2, ArrowUpRight
@@ -99,9 +100,9 @@ export function VendorDashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/stats").then(r => r.json()).catch(() => ({ success: false })),
-      fetch("/api/transactions?role=seller").then(r => r.json()).catch(() => ({ success: false })),
-      fetch(`/api/products?sellerId=${user?.id}&limit=100`).then(r => r.json()).catch(() => ({ success: false })),
+      authFetch("/api/stats").then(r => r.json()).catch(() => ({ success: false })),
+      authFetch("/api/transactions?role=seller").then(r => r.json()).catch(() => ({ success: false })),
+      authFetch(`/api/products?sellerId=${user?.id}&limit=100`).then(r => r.json()).catch(() => ({ success: false })),
     ]).then(([statsData, transData, productsData]) => {
       if (statsData.success) setStats(statsData.data)
       if (transData.success) setRecentTransactions(transData.data)
