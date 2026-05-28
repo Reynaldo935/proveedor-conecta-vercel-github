@@ -54,6 +54,8 @@ import {
   FileSpreadsheet,
   FileImage,
   FileDown,
+  DollarSign,
+  Calendar,
 } from "lucide-react"
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react"
 import { CreatorsDropdown } from "@/components/creators/CreatorsDropdown"
@@ -234,6 +236,9 @@ export function Header() {
                 <DropdownMenuItem onClick={() => handleNav("cotizaciones")}>
                   <FileText className="mr-2 h-4 w-4" /> Cotizaciones
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNav("currencies")}>
+                  <DollarSign className="mr-2 h-4 w-4" /> Divisas y Tipos de Cambio
+                </DropdownMenuItem>
                 {isAuthenticated && (
                   <DropdownMenuItem onClick={() => handleNav("checkout")}>
                     <ShoppingCart className="mr-2 h-4 w-4" /> Checkout
@@ -318,6 +323,20 @@ export function Header() {
                           {notifCount > 9 ? "9+" : notifCount}
                         </Badge>
                       )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">
+                      Más Funciones
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleNav("currencies")}>
+                      <DollarSign className="mr-2 h-4 w-4" /> Divisas y Cambio
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNav("loyalty")}>
+                      <Star className="mr-2 h-4 w-4" /> Puntos de Lealtad
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNav("calendar")}>
+                      <Calendar className="mr-2 h-4 w-4" /> Agenda y Citas
                     </DropdownMenuItem>
                   </>
                 )}
@@ -533,6 +552,9 @@ export function Header() {
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("cotizaciones")}>
                 <FileText className="h-4 w-4 mr-3 text-primary" /> Cotizaciones
               </Button>
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("currencies")}>
+                <DollarSign className="h-4 w-4 mr-3 text-primary" /> Divisas y Tipos de Cambio
+              </Button>
               {isAuthenticated && (
                 <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("checkout")}>
                   <ShoppingCart className="h-4 w-4 mr-3 text-primary" /> Checkout
@@ -600,6 +622,12 @@ export function Header() {
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("settings")}>
                     <Settings className="h-4 w-4 mr-3 text-primary" /> Configuración
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("loyalty")}>
+                    <Star className="h-4 w-4 mr-3 text-primary" /> Puntos de Lealtad
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("calendar")}>
+                    <Calendar className="h-4 w-4 mr-3 text-primary" /> Agenda y Citas
                   </Button>
                 </>
               )}

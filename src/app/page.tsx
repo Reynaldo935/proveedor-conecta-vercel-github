@@ -44,6 +44,7 @@ const ForgotPasswordForm = dynamic(() => import("@/components/auth/forgot-passwo
 const LoyaltyDashboard = dynamic(() => import("@/components/loyalty/loyalty-dashboard").then(m => ({ default: m.LoyaltyDashboard })), { ssr: false })
 const ReviewsSection = dynamic(() => import("@/components/reviews/reviews-section").then(m => ({ default: m.ReviewsSection })), { ssr: false })
 const CalendarView = dynamic(() => import("@/components/calendar/calendar-view").then(m => ({ default: m.CalendarView })), { ssr: false })
+const CurrenciesView = dynamic(() => import("@/components/marketplace/currencies-view").then(m => ({ default: m.CurrenciesView })), { ssr: false })
 
 // Loading fallback
 function PageLoader() {
@@ -109,6 +110,7 @@ export default function ProveedorConecta() {
       case "loyalty": return isAuthenticated ? <LoyaltyDashboard /> : <LoginForm />
       case "reviews": return isAuthenticated ? <ReviewsSection targetId={selectedVendorId ?? user?.id ?? ""} /> : <LoginForm />
       case "calendar": return isAuthenticated ? <CalendarView /> : <LoginForm />
+      case "currencies": return <CurrenciesView />
       default: return <HomeFeed />
     }
   }

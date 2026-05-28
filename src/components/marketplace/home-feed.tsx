@@ -535,7 +535,7 @@ export function HomeFeed() {
               { icon: <Users className="h-4 w-4" />, value: 500, suffix: "+", label: "Proveedores" },
               { icon: <Package className="h-4 w-4" />, value: 2000, suffix: "+", label: "Productos" },
               { icon: <MapPin className="h-4 w-4" />, value: 17, suffix: "", label: "Departamentos" },
-              { icon: <CreditCard className="h-4 w-4" />, value: 5, suffix: "", label: "Métodos de Pago" },
+              { icon: <CreditCard className="h-4 w-4" />, value: 11, suffix: "", label: "Métodos de Pago" },
             ].map((stat) => (
               <div key={stat.label} className="text-center sm:text-left">
                 <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/70 mb-0.5">

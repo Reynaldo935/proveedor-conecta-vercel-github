@@ -34,6 +34,7 @@ export type AppView =
   | 'loyalty'
   | 'reviews'
   | 'calendar'
+  | 'currencies'
 
 interface AppState {
   currentView: AppView
