@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import dynamic from "next/dynamic"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ViewErrorBoundary } from "@/components/layout/view-error-boundary"
 import { motion } from "framer-motion"
 import { Plus } from "lucide-react"
 
@@ -46,6 +47,12 @@ const ReviewsSection = dynamic(() => import("@/components/reviews/reviews-sectio
 const CalendarView = dynamic(() => import("@/components/calendar/calendar-view").then(m => ({ default: m.CalendarView })), { ssr: false })
 const CurrenciesView = dynamic(() => import("@/components/marketplace/currencies-view").then(m => ({ default: m.CurrenciesView })), { ssr: false })
 
+// ─── Hydration-safe "mounted" flag ────────────────────────────────────────────
+const emptySubscribe = () => () => {}
+function useMounted() {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false)
+}
+
 // Loading fallback
 function PageLoader() {
   return (
@@ -65,10 +72,56 @@ function PageLoader() {
   )
 }
 
+// Auth initialization skeleton — shown while the auth state is being resolved
+// to prevent a flash of unauthenticated content
+function AuthInitSkeleton() {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header skeleton */}
+      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-9 rounded-lg" />
+              <Skeleton className="h-5 w-36 hidden sm:block" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-24" />
+              <Skeleton className="h-9 w-24" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content skeleton */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <PageLoader />
+      </main>
+
+      {/* Footer skeleton */}
+      <footer className="border-t bg-card">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
 export default function ProveedorConecta() {
   const { currentView, navigate, selectedVendorId } = useAppStore()
-  const { setUser, isAuthenticated, user, initAuth } = useAuthStore()
+  const { isAuthenticated, user, initAuth, isLoading } = useAuthStore()
   const [showChatbot, setShowChatbot] = useState(false)
+  const mounted = useMounted()
 
   const isSeller = isAuthenticated && user?.role === "SELLER"
 
@@ -115,11 +168,19 @@ export default function ProveedorConecta() {
     }
   }
 
+  // Show full-page skeleton during auth initialization to prevent
+  // flash of unauthenticated content (login buttons → logged in UI)
+  if (!mounted || isLoading) {
+    return <AuthInitSkeleton />
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {renderView()}
+        <ViewErrorBoundary viewName={currentView}>
+          {renderView()}
+        </ViewErrorBoundary>
       </main>
       <Footer />
       <AIChatbot isOpen={showChatbot} onToggle={() => setShowChatbot(!showChatbot)} />

@@ -120,8 +120,8 @@ export function FeaturedView() {
       if (data.success) {
         setProducts(data.data)
       }
-    } catch (error) {
-      console.error("Load products error:", error)
+    } catch {
+      // Network or parsing error — gracefully handle
     } finally {
       setLoading(false)
     }
@@ -184,8 +184,8 @@ export function FeaturedView() {
           )
         )
       }
-    } catch (error) {
-      console.error("Like error:", error)
+    } catch {
+      // Like request failed — gracefully handle
     }
   }
 

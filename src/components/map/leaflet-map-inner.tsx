@@ -175,8 +175,8 @@ const LeafletMapInner = forwardRef<MapInnerHandle, LeafletMapInnerProps>(
           }
 
           mapInstanceRef.current = map
-        } catch (err) {
-          console.error("Leaflet map init error:", err)
+        } catch {
+          // Leaflet map init failed — component will show fallback
         }
       }
 

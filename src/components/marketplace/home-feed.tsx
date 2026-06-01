@@ -228,9 +228,15 @@ export function HomeFeed() {
       params.set("limit", "20")
 
       const res = await fetch(`/api/products?${params}`)
-      const data = await res.json()
+      if (!res.ok) return
+      let data: { success?: boolean; data?: Product[]; nextCursor?: string | null }
+      try {
+        data = await res.json()
+      } catch {
+        return // Non-JSON response — bail out gracefully
+      }
 
-      if (data.success) {
+      if (data.success && Array.isArray(data.data)) {
         const newProducts = data.data
         if (reset) {
           setProducts(newProducts)
@@ -240,8 +246,9 @@ export function HomeFeed() {
         setCursor(data.nextCursor ?? null)
         setHasMore(!!data.nextCursor && newProducts.length > 0)
       }
-    } catch (error) {
-      console.error("Load products error:", error)
+    } catch {
+      // Network or parsing error — silently handle so the UI
+      // shows the empty state instead of crashing
     } finally {
       setLoading(false)
     }

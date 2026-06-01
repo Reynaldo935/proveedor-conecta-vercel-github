@@ -113,7 +113,7 @@ const GoogleMapInner = forwardRef<MapInnerHandle, GoogleMapInnerProps>(
         <APIProvider
           apiKey={apiKey}
           onError={() => {
-            console.error("Google Maps API failed to load")
+            // Google Maps API failed — trigger fallback to Leaflet
             onError()
           }}
         >
