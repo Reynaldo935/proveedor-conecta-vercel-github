@@ -29,6 +29,40 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('supplier123', 12)
   const demoPasswordHash = await bcrypt.hash('demo123', 12)
+  const adminPasswordHash = await bcrypt.hash('admin123', 12)
+
+  // ─── Admin User ────────────────────────────────────────────────────────
+  const admin = await db.user.create({
+    data: {
+      email: 'rey7214935@gmail.com',
+      name: 'Reynaldo Admin',
+      password: adminPasswordHash,
+      role: 'ADMIN',
+      phone: '8999-0000',
+      address: 'Managua, Nicaragua',
+      avatar: '',
+      isVerified: true,
+      emailVerified: true,
+      helperRole: 'FULLSTACK',
+      balance: 100000,
+    },
+  })
+
+  await db.businessProfile.create({
+    data: {
+      userId: admin.id,
+      businessName: 'ProveedorConecta Nicaragua - Admin',
+      description: 'Administrador principal de la plataforma ProveedorConecta Nicaragua',
+      category: 'Tecnología y Electrónica',
+      address: 'Managua, Nicaragua',
+      latitude: 12.1364,
+      longitude: -86.2514,
+      phone: '8999-0000',
+      paymentMethods: JSON.stringify(['PAYPAL', 'BANPRO', 'BAC', 'LAFISE', 'BILLETERA']),
+      logo: '',
+      coverImage: '',
+    },
+  })
 
   // ─── Original Demo Sellers ─────────────────────────────────────────────
   const seller1 = await db.user.create({
@@ -718,6 +752,7 @@ async function main() {
 
   console.log(`✅ Seeded ${totalProducts} products, ${totalSellers} sellers (3 demo + ${suppliers.length} verified), 1 buyer`)
   console.log('📧 Demo accounts:')
+  console.log('  Admin:  rey7214935@gmail.com / admin123')
   console.log('  Seller: ferreteria@demo.ni / demo123')
   console.log('  Seller: agroserv@demo.ni / demo123')
   console.log('  Seller: tech@demo.ni / demo123')

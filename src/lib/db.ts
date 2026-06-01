@@ -11,9 +11,13 @@ function createPrismaClient(): PrismaClient {
   const tursoUrl = process.env.TURSO_DATABASE_URL
   const tursoToken = process.env.TURSO_AUTH_TOKEN
 
-  if (isProduction && tursoUrl && tursoToken && tursoUrl.startsWith('libsql://')) {
+  // Skip Turso during build phase (static generation doesn't need DB)
+  const isBuildPhase = !!(process.env.NEXT_PHASE?.includes('build'))
+
+  // Only use Turso if we have a valid URL and token AND we're not in build phase
+  if (isProduction && !isBuildPhase && tursoUrl && tursoToken && tursoUrl.startsWith('libsql://')) {
     try {
-      // Dynamic imports for Turso adapter - only in production
+      // Dynamic imports for Turso adapter - only in production runtime
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { PrismaLibSql } = require('@prisma/adapter-libsql')
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -23,15 +27,16 @@ function createPrismaClient(): PrismaClient {
         url: tursoUrl,
         authToken: tursoToken,
       })
+
       const adapter = new PrismaLibSql(libsql)
-      console.log('☁️ Using Turso Cloud database')
+      console.log('☁️ Connected to Turso Cloud database')
       return new PrismaClient({ adapter })
     } catch (err) {
       console.error('⚠️ Turso adapter failed, falling back to local SQLite:', err)
     }
   }
 
-  // Development / fallback: local SQLite
+  // Development / build-phase / fallback: local SQLite
   return new PrismaClient()
 }
 
