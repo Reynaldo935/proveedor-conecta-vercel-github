@@ -5,7 +5,7 @@
   "homepage": ".",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "build": "prisma generate && next build",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "db:push": "prisma db push",
@@ -55,6 +55,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/bcryptjs": "^3.0.0",
     "@types/nodemailer": "^8.0.0",
+    "@vercel/blob": "^2.4.0",
     "@vis.gl/react-google-maps": "^1.8.3",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",

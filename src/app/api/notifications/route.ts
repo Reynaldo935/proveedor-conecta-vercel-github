@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     await setAuthCookie(userId)
 
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50') || 50, 1), 200)
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
 
     const where: Record<string, unknown> = { userId }

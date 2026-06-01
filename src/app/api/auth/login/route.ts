@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, data: safeUser })
     response.cookies.set('pc_user_id', user.id, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
       path: '/',

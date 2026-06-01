@@ -8,9 +8,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const q = searchParams.get('q') || ''
     const category = searchParams.get('category') || ''
-    const minPrice = parseFloat(searchParams.get('minPrice') || '0')
-    const maxPrice = parseFloat(searchParams.get('maxPrice') || '999999')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const minPrice = parseFloat(searchParams.get('minPrice') || '0') || 0
+    const maxPrice = parseFloat(searchParams.get('maxPrice') || '999999') || 999999
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20') || 20, 1), 100)
     const sort = searchParams.get('sort') || 'recent'
 
     if (!q && !category) {

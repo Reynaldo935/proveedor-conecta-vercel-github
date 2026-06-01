@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
-import { readFileSync, existsSync } from 'fs'
-import path from 'path'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 const FALLBACK_CREATORS = [
   {
@@ -51,25 +50,26 @@ const FALLBACK_CREATORS = [
   }
 ]
 
+// In-memory override (persists while server is running; resets on serverless cold start)
+let overrideCreators: typeof FALLBACK_CREATORS | null = null
+
 export async function GET() {
   try {
-    // Try to read from secure data file
-    const dataPath = path.join(process.cwd(), 'data', 'creators.json')
-    if (existsSync(dataPath)) {
-      const data = readFileSync(dataPath, 'utf-8')
-      const creators = JSON.parse(data)
-      return NextResponse.json({ success: true, data: creators })
-    }
-  } catch {
-    // Fall through to fallback
+    return NextResponse.json({
+      success: true,
+      data: overrideCreators || FALLBACK_CREATORS,
+    })
+  } catch (error) {
+    console.error('Get creators error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Error al obtener equipo' },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json({ success: true, data: FALLBACK_CREATORS })
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
-    const { writeFile, mkdir } = await import('fs/promises')
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
@@ -78,7 +78,6 @@ export async function PUT(request: Request) {
     await setAuthCookie(userId)
 
     // Only admin (rey7214935@gmail.com) can update creators
-    const { db } = await import('@/lib/db')
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user || user.email !== 'rey7214935@gmail.com') {
       return NextResponse.json({ success: false, error: 'Solo el administrador puede actualizar el equipo' }, { status: 403 })
@@ -89,10 +88,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: 'Formato inválido' }, { status: 400 })
     }
 
-    // Save to data directory
-    const dataDir = path.join(process.cwd(), 'data')
-    await mkdir(dataDir, { recursive: true })
-    await writeFile(path.join(dataDir, 'creators.json'), JSON.stringify(body, null, 2))
+    // Store in-memory (no filesystem on Vercel)
+    overrideCreators = body
 
     return NextResponse.json({ success: true, data: body })
   } catch (error) {

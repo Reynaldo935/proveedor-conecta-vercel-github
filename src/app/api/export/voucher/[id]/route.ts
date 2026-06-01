@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthenticatedUserId } from '@/lib/auth'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,14 +27,20 @@ export async function GET(
     const transaction = await db.transaction.findUnique({
       where: { id },
       include: {
-        buyer: { select: { name: true, email: true, phone: true } },
-        seller: { select: { name: true, email: true, phone: true, businessProfile: true } },
+        buyer: { select: { id: true, name: true, email: true, phone: true } },
+        seller: { select: { id: true, name: true, email: true, phone: true, businessProfile: true } },
         product: { select: { title: true, category: true, images: true } },
       },
     })
 
     if (!transaction) {
       return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 404 })
+    }
+
+    // Authorization check: only buyer, seller, or admin can view the voucher
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (transaction.buyerId !== userId && transaction.sellerId !== userId && user?.email !== 'rey7214935@gmail.com') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
     }
 
     const businessName = transaction.seller.businessProfile?.businessName || transaction.seller.name
@@ -38,7 +53,6 @@ export async function GET(
     })
 
     if (format === 'word') {
-      // Word format - HTML with .doc extension (compatible with MS Word)
       const html = generateVoucherHTML(transaction, businessName, dateStr, false)
       return new NextResponse(html, {
         headers: {
@@ -49,7 +63,6 @@ export async function GET(
     }
 
     if (format === 'image') {
-      // Return same HTML with print-friendly styling for screenshot
       const html = generateVoucherHTML(transaction, businessName, dateStr, true)
       return new NextResponse(html, {
         headers: {
@@ -124,35 +137,35 @@ function generateVoucherHTML(
   <div class="body">
     <div class="row">
       <span class="label">No. Transacci&oacute;n</span>
-      <span class="value">${transaction.id.slice(-8).toUpperCase()}</span>
+      <span class="value">${escapeHtml(transaction.id.slice(-8).toUpperCase())}</span>
     </div>
     <div class="row">
       <span class="label">Fecha</span>
-      <span class="value">${dateStr}</span>
+      <span class="value">${escapeHtml(dateStr)}</span>
     </div>
     <div class="row">
       <span class="label">Producto</span>
-      <span class="value">${transaction.product.title}</span>
+      <span class="value">${escapeHtml(transaction.product.title)}</span>
     </div>
     <div class="row">
       <span class="label">Categor&iacute;a</span>
-      <span class="value">${transaction.product.category}</span>
+      <span class="value">${escapeHtml(transaction.product.category)}</span>
     </div>
     <div class="row">
       <span class="label">Vendedor</span>
-      <span class="value">${businessName}</span>
+      <span class="value">${escapeHtml(businessName)}</span>
     </div>
     <div class="row">
       <span class="label">Comprador</span>
-      <span class="value">${transaction.buyer.name}</span>
+      <span class="value">${escapeHtml(transaction.buyer.name)}</span>
     </div>
     <div class="row">
       <span class="label">M&eacute;todo de Pago</span>
-      <span class="value">${transaction.paymentMethod}</span>
+      <span class="value">${escapeHtml(transaction.paymentMethod)}</span>
     </div>
     <div class="row">
       <span class="label">Estado</span>
-      <span class="value"><span class="status-badge status-${transaction.status.toLowerCase()}">${transaction.status}</span></span>
+      <span class="value"><span class="status-badge status-${escapeHtml(transaction.status.toLowerCase())}">${escapeHtml(transaction.status)}</span></span>
     </div>
     <div class="total-row row">
       <span class="label">Monto Total</span>

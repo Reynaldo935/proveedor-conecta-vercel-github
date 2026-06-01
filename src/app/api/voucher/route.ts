@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
@@ -62,25 +71,25 @@ export async function GET(request: NextRequest) {
 <body>
 <div class="voucher">
   <div class="header">
-    <h1>🧾 Comprobante de Pago</h1>
+    <h1>&#129534; Comprobante de Pago</h1>
     <p>ProveedorConecta Nicaragua</p>
   </div>
   <div class="body">
-    <div class="row"><span class="label">N° Transacción</span><span class="value">${transaction.id.slice(-8).toUpperCase()}</span></div>
-    <div class="row"><span class="label">Fecha</span><span class="value">${new Date(transaction.createdAt).toLocaleDateString('es-NI', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div>
-    <div class="row"><span class="label">Estado</span><span class="value"><span class="status-badge ${transaction.status === 'COMPLETED' ? 'status-completed' : 'status-pending'}">${transaction.status === 'COMPLETED' ? '✓ Completado' : '⏳ Pendiente'}</span></span></div>
-    <div class="row"><span class="label">Producto</span><span class="value">${transaction.product.title}</span></div>
-    <div class="row"><span class="label">Comprador</span><span class="value">${transaction.buyer.name}</span></div>
-    <div class="row"><span class="label">Vendedor</span><span class="value">${transaction.seller?.businessProfile?.businessName || transaction.seller.name}</span></div>
-    <div class="row"><span class="label">Método de Pago</span><span class="value">${transaction.paymentMethod}</span></div>
+    <div class="row"><span class="label">N&deg; Transacci&oacute;n</span><span class="value">${escapeHtml(transaction.id.slice(-8).toUpperCase())}</span></div>
+    <div class="row"><span class="label">Fecha</span><span class="value">${escapeHtml(new Date(transaction.createdAt).toLocaleDateString('es-NI', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div>
+    <div class="row"><span class="label">Estado</span><span class="value"><span class="status-badge ${transaction.status === 'COMPLETED' ? 'status-completed' : 'status-pending'}">${transaction.status === 'COMPLETED' ? '&#10003; Completado' : '&#9203; Pendiente'}</span></span></div>
+    <div class="row"><span class="label">Producto</span><span class="value">${escapeHtml(transaction.product.title)}</span></div>
+    <div class="row"><span class="label">Comprador</span><span class="value">${escapeHtml(transaction.buyer.name)}</span></div>
+    <div class="row"><span class="label">Vendedor</span><span class="value">${escapeHtml(transaction.seller?.businessProfile?.businessName || transaction.seller.name)}</span></div>
+    <div class="row"><span class="label">M&eacute;todo de Pago</span><span class="value">${escapeHtml(transaction.paymentMethod)}</span></div>
     <div class="amount-section">
       <div class="amount">${formatPrice(transaction.amount)}</div>
-      <div class="commission">Comisión 3%: ${formatPrice(transaction.commission)} · Pago vendedor: ${formatPrice(transaction.sellerPayout)}</div>
+      <div class="commission">Comisi&oacute;n 3%: ${formatPrice(transaction.commission)} &middot; Pago vendedor: ${formatPrice(transaction.sellerPayout)}</div>
     </div>
   </div>
   <div class="footer">
-    <p>ProveedorConecta Nicaragua · Managua, Nicaragua</p>
-    <p>Este comprobante es válido como recibo de pago en la plataforma.</p>
+    <p>ProveedorConecta Nicaragua &middot; Managua, Nicaragua</p>
+    <p>Este comprobante es v&aacute;lido como recibo de pago en la plataforma.</p>
   </div>
 </div>
 </body>

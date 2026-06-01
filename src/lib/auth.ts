@@ -77,9 +77,10 @@ export async function getAuthenticatedUser(request?: Request) {
 
 export async function setAuthCookie(userId: string) {
   const cookieStore = await cookies();
+  const isProduction = process.env.NODE_ENV === 'production';
   cookieStore.set('pc_user_id', userId, {
     httpOnly: true,
-    secure: false, // Always false for development/sandbox
+    secure: isProduction, // True on Vercel (HTTPS), false locally
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 30, // 30 days

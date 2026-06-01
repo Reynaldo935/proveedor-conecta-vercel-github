@@ -38,7 +38,7 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor');
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200);
 
     const where: Record<string, unknown> = { chatRoomId: id };
 

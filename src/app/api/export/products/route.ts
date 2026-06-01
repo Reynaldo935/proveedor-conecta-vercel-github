@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthenticatedUserId } from '@/lib/auth'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function escapeCsv(str: string): string {
+  // Escape double quotes in CSV by doubling them
+  return str.replace(/"/g, '""')
+}
+
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get('format') || 'csv'
   const sellerId = request.nextUrl.searchParams.get('sellerId') || ''
@@ -25,7 +39,7 @@ export async function GET(request: NextRequest) {
     if (format === 'csv') {
       const headers = 'Producto,Precio,Categoría,Vendedor,Teléfono,Ubicación\n'
       const rows = products.map(p =>
-        `"${p.title}",${p.price},"${p.category}","${p.seller.businessProfile?.businessName || p.seller.name}","${p.seller.phone}","${p.seller.address}"`
+        `"${escapeCsv(p.title)}",${p.price},"${escapeCsv(p.category)}","${escapeCsv(p.seller.businessProfile?.businessName || p.seller.name)}","${escapeCsv(p.seller.phone)}","${escapeCsv(p.seller.address)}"`
       ).join('\n')
       return new NextResponse(headers + rows, {
         headers: {
@@ -40,7 +54,7 @@ export async function GET(request: NextRequest) {
 <head><meta charset="utf-8"></head>
 <body><table border="1">
 <tr><th>Producto</th><th>Precio (C$)</th><th>Categoría</th><th>Vendedor</th><th>Teléfono</th><th>Ubicación</th><th>Horario</th></tr>
-${products.map(p => `<tr><td>${p.title}</td><td>${p.price}</td><td>${p.category}</td><td>${p.seller.businessProfile?.businessName || p.seller.name}</td><td>${p.seller.phone}</td><td>${p.seller.address}</td><td>${p.seller.businessProfile?.hours || ''}</td></tr>`).join('')}
+${products.map(p => `<tr><td>${escapeHtml(p.title)}</td><td>${p.price}</td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.seller.businessProfile?.businessName || p.seller.name)}</td><td>${escapeHtml(p.seller.phone)}</td><td>${escapeHtml(p.seller.address)}</td><td>${escapeHtml(p.seller.businessProfile?.hours || '')}</td></tr>`).join('')}
 </table></body></html>`
       return new NextResponse(html, {
         headers: {
@@ -71,7 +85,7 @@ ${products.map(p => `<tr><td>${p.title}</td><td>${p.price}</td><td>${p.category}
 <p class="meta">Listado de productos con precios actualizados - ${new Date().toLocaleDateString('es-NI')} | Total: ${products.length} productos</p>
 <table>
 <tr><th>Producto</th><th>Precio (C$)</th><th>Categoría</th><th>Vendedor</th><th>Teléfono</th><th>Ubicación</th></tr>
-${products.map(p => `<tr><td>${p.title}</td><td class="price">C$ ${p.price.toLocaleString()}</td><td>${p.category}</td><td>${p.seller.businessProfile?.businessName || p.seller.name}</td><td>${p.seller.phone}</td><td>${p.seller.address}</td></tr>`).join('')}
+${products.map(p => `<tr><td>${escapeHtml(p.title)}</td><td class="price">C$ ${p.price.toLocaleString()}</td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.seller.businessProfile?.businessName || p.seller.name)}</td><td>${escapeHtml(p.seller.phone)}</td><td>${escapeHtml(p.seller.address)}</td></tr>`).join('')}
 </table>
 <p class="footer">Generado por ProveedorConecta Nicaragua - Hackathon Nicaragua 2026, 10ma Edici&oacute;n</p>
 </body></html>`
@@ -89,7 +103,7 @@ ${products.map(p => `<tr><td>${p.title}</td><td class="price">C$ ${p.price.toLoc
 <body><h1>&#127470;&#127484; ProveedorConecta Nicaragua - Productos 2026</h1>
 <p>Listado de productos con precios actualizados - ${new Date().toLocaleDateString('es-NI')}</p>
 <table><tr><th>Producto</th><th>Precio</th><th>Categoría</th><th>Vendedor</th><th>Ubicación</th></tr>
-${products.map(p => `<tr><td>${p.title}</td><td class="price">C$ ${p.price.toLocaleString()}</td><td>${p.category}</td><td>${p.seller.businessProfile?.businessName || p.seller.name}</td><td>${p.seller.address}</td></tr>`).join('')}
+${products.map(p => `<tr><td>${escapeHtml(p.title)}</td><td class="price">C$ ${p.price.toLocaleString()}</td><td>${escapeHtml(p.category)}</td><td>${escapeHtml(p.seller.businessProfile?.businessName || p.seller.name)}</td><td>${escapeHtml(p.seller.address)}</td></tr>`).join('')}
 </table><p style="margin-top:20px;color:#666">Generado por ProveedorConecta Nicaragua - Hackathon Nicaragua 2026, 10ma Edici&oacute;n</p>
 </body></html>`
     return new NextResponse(html, {

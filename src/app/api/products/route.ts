@@ -8,11 +8,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category') || ''
     const search = searchParams.get('search') || ''
-    const minPrice = parseFloat(searchParams.get('minPrice') || '0')
-    const maxPrice = parseFloat(searchParams.get('maxPrice') || '999999')
+    const minPrice = parseFloat(searchParams.get('minPrice') || '0') || 0
+    const maxPrice = parseFloat(searchParams.get('maxPrice') || '999999') || 999999
     const location = searchParams.get('location') || ''
     const cursor = searchParams.get('cursor') || ''
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20') || 20, 1), 100)
     const sellerId = searchParams.get('sellerId') || ''
 
     const userId = await getAuthenticatedUserId(request)
