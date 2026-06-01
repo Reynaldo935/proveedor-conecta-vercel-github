@@ -137,6 +137,25 @@ export function ChatList() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Polling fallback: refresh rooms every 10s when Socket.IO is disconnected
+  // This ensures chat list works on Vercel (no WebSocket support)
+  useEffect(() => {
+    const socket = socketRef.current
+    // Only poll if socket is not connected
+    if (socket?.connected) return
+
+    const pollInterval = setInterval(() => {
+      authFetch("/api/chat/rooms")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success) setRooms(d.data)
+        })
+        .catch(() => {})
+    }, 10000)
+
+    return () => clearInterval(pollInterval)
+  }, [rooms])
+
   // Get unread count for a room (provided by API)
   const getUnreadCount = (room: ChatRoom) => {
     return room.unreadCount || 0

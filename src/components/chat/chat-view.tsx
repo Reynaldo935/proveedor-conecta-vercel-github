@@ -274,6 +274,34 @@ export function ChatView() {
     }
   }, [selectedRoomId, user])
 
+  // Polling fallback: fetch new messages every 5s when Socket.IO is disconnected
+  // This ensures chat works on Vercel (no WebSocket support)
+  useEffect(() => {
+    if (!chatRoom || isConnected) return
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`)
+        const d = await res.json()
+        if (d.success && d.data) {
+          setMessages((prev) => {
+            // Only add messages we don't already have
+            const existingIds = new Set(prev.map((m) => m.id))
+            const newMsgs = d.data.filter((m: ChatMessage) => !existingIds.has(m.id))
+            if (newMsgs.length > 0) {
+              return [...prev, ...newMsgs]
+            }
+            return prev
+          })
+        }
+      } catch {
+        // Silent fail for polling
+      }
+    }, 5000)
+
+    return () => clearInterval(pollInterval)
+  }, [chatRoom, isConnected])
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
@@ -690,7 +718,7 @@ export function ChatView() {
         </div>
 
         <Badge
-          variant={isConnected ? "default" : "secondary"}
+          variant={isConnected ? "default" : "outline"}
           className="text-[10px] gap-1"
         >
           {isConnected ? (
@@ -698,7 +726,7 @@ export function ChatView() {
           ) : (
             <WifiOff className="h-3 w-3" />
           )}
-          {isConnected ? "En vivo" : "Sin conexión"}
+          {isConnected ? "En vivo" : "Modo mensajes"}
         </Badge>
       </motion.div>
 

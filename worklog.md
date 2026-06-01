@@ -671,3 +671,322 @@ The script was run with `cd /home/z/my-project && bun run scripts/seed-admin-tur
 | `scripts/seed-admin-turso.ts` | Created | Turso Cloud admin seeder script |
 
 ### No existing data was modified or deleted
+
+---
+
+## Task ID: DEEP-AUDIT-1 — Deep Audit of All API Routes for Vercel Deployment
+
+**Date:** 2026-03-06
+
+### Task
+BRUTALLY HONEST audit of every API route for Vercel deployment issues. Read-only analysis — no code changes.
+
+### Files Audited
+
+**API Routes (all 55 under `src/app/api/`), specifically requested:**
+- `src/app/api/upload/route.ts`
+- `src/app/api/backup/route.ts`
+- `src/app/api/export/backup/route.ts`
+- `src/app/api/chat/rooms/route.ts`
+- `src/app/api/chat/rooms/[id]/messages/route.ts`
+- `src/app/api/ai/route.ts`
+- `src/app/api/transactions/route.ts`
+- `src/app/api/export/products/route.ts`
+- `src/app/api/export/transactions/route.ts`
+- `src/app/api/export/voucher/[id]/route.ts`
+- `src/app/api/auth/login/route.ts`
+- `src/app/api/auth/register/route.ts`
+- `src/app/api/auth/google/route.ts`
+- `src/app/api/auth/logout/route.ts`
+- `src/app/api/auth/forgot-password/route.ts`
+
+**Supporting files:**
+- `next.config.ts`
+- `src/lib/db.ts`
+- `src/lib/auth.ts`
+- `src/lib/api-utils.ts`
+- `mini-services/chat-service/index.ts`
+- `package.json`
+- `.env.example`
+- `vercel.json`
+- `prisma/schema.prisma`
+
+**Client-side Socket.IO consumers:**
+- `src/components/chat/chat-view.tsx`
+- `src/components/chat/chat-list.tsx`
+
+---
+
+### ❌ CRITICAL — WILL FAIL ON VERCEL
+
+#### 1. Socket.IO Real-Time Chat Service — ❌ WILL FAIL (COMPLETELY BROKEN)
+
+**Affected files:**
+- `mini-services/chat-service/index.ts` — Standalone Node.js HTTP server on port 3003
+- `src/components/chat/chat-view.tsx` — Connects via `io("/?XTransformPort=3003", ...)`
+- `src/components/chat/chat-list.tsx` — Connects via `io("/?XTransformPort=3003", ...)`
+
+**Problem:** Vercel serverless functions do NOT support WebSocket connections. The chat service is a persistent Node.js process (`createServer()` + `new Server(httpServer)`) that runs on port 3003. This **cannot** be deployed to Vercel — there is no way to run a standalone server process.
+
+**Client-side impact:** The `socket.io-client` will attempt to connect to the same Vercel app's URL (because `io("/?XTransformPort=3003")` is a relative path), but Vercel will reject the WebSocket upgrade. The chat UI will show **"Sin conexión"** permanently. Real-time features (typing indicators, online status, live message delivery) will all fail.
+
+**Severity:** 🔴 DEPLOYMENT BLOCKER for real-time chat. The REST API fallback (POST to `/api/chat/rooms/[id]/messages`) will still work for sending/receiving messages, but the UX will be severely degraded — no real-time updates, no typing indicators, no online status.
+
+**Additional issue in chat-service:** Line 7 hardcodes `process.env.DATABASE_URL = 'file:/home/z/my-project/db/custom.db'` and line 13 creates a plain `PrismaClient()` without the Turso adapter. Even if you could run this on Vercel (you can't), it would try to access a local SQLite file that doesn't exist.
+
+---
+
+#### 2. Upload Route — ⚠️ CONDITIONAL (Will fail if BLOB_READ_WRITE_TOKEN not configured)
+
+**File:** `src/app/api/upload/route.ts`
+
+**Problem:** Lines 4-5 import `writeFile, mkdir` from `fs/promises` and `path`. Lines 53-63 use these to write files to `public/uploads/`. On Vercel, the filesystem is READ-ONLY — `mkdir()` and `writeFile()` will throw `EROFS: read-only file system`.
+
+**Mitigation already in place:** Line 32 checks `const isVercelBlob = !!process.env.BLOB_READ_WRITE_TOKEN`. If the token is set, it uses `@vercel/blob` instead. However, the `fs/promises` and `path` imports are still at the top of the file — they won't crash at import time, but if the token is missing, the `else` branch WILL crash.
+
+**Verdict:** ✅ OK if `BLOB_READ_WRITE_TOKEN` is set in Vercel (it's auto-set when you enable Vercel Blob store). ❌ WILL FAIL if it's not set. The current `.env.example` lists it as optional/commented-out, which is misleading — it's actually REQUIRED for Vercel.
+
+---
+
+### ⚠️ WARNINGS — Might Work but Problematic
+
+#### 3. In-Memory Backup Store — Resets on Every Cold Start
+
+**File:** `src/app/api/backup/route.ts`
+
+Line 17: `const backupStore: BackupMetadata[] = []`
+
+On Vercel, each serverless function invocation may run on a different instance. The `backupStore` array resets on every cold start. This means:
+- GET `/api/backup` will always return an empty `backups: []` array on Vercel
+- Created backups are ephemeral — metadata vanishes between invocations
+- The restore function only works with direct `data` payload (not `backupId`), so it's partially usable
+- The `createBackup()` function queries all tables and returns a download URL (`/api/backup?action=download&id=...`), but the actual backup data is never stored anywhere — only the metadata is kept in memory. The download URL won't work.
+
+**Verdict:** ⚠️ WARNING — The backup list feature is broken on Vercel. Creating a backup returns metadata but you can't download it. Restoring from a backup ID is impossible. Only restoring from a directly-uploaded JSON payload works.
+
+#### 4. `sharp` in Dependencies but Never Used
+
+**Files:** `package.json` (line 86: `"sharp": "^0.34.3"`), `next.config.ts` (line 8: `serverExternalPackages: ["bcryptjs", "sharp"]`)
+
+**Problem:** `sharp` is a heavy native image processing library (~30MB with native binaries). It's listed as a dependency and in `serverExternalPackages`, but NO code in the entire project imports or uses it. This will:
+- Increase deployment bundle size unnecessarily
+- Potentially cause build issues if the native binary can't be compiled for Vercel's runtime
+- The `serverExternalPackages` listing prevents Webpack from bundling it, but Vercel still needs to install and resolve it
+
+**Verdict:** ⚠️ WARNING — Not a deploy blocker (it's in serverExternalPackages so it won't be bundled), but it adds unnecessary deployment time and could cause edge-case issues. Should be removed.
+
+#### 5. `nodemailer` in Dependencies but Never Used
+
+**File:** `package.json` (line 74: `"nodemailer": "^8.0.7"`)
+
+No code in the project imports or uses nodemailer. The forgot-password route simulates email by returning the token directly in the response. This adds unnecessary bundle size.
+
+**Verdict:** ⚠️ WARNING — Harmless but wasteful.
+
+#### 6. `next-auth` in Dependencies but Never Used
+
+**File:** `package.json` (line 72: `"next-auth": "4"`)
+
+The project uses a custom cookie-based auth system (`src/lib/auth.ts`), not NextAuth. This dependency is unused and adds unnecessary install time.
+
+**Verdict:** ⚠️ WARNING — Harmless but wasteful.
+
+#### 7. Chat Client Has No Graceful Degradation for Missing WebSocket
+
+**Files:** `src/components/chat/chat-view.tsx`, `src/components/chat/chat-list.tsx`
+
+The chat components connect to Socket.IO on mount with `io("/?XTransformPort=3003", { transports: ["websocket", "polling"] })`. On Vercel, this connection will fail. The UI already shows a connection status indicator ("En vivo" / "Sin conexión"), but:
+- Messages can only be sent when `isConnected && socketRef.current` (line 332) — if the socket fails to connect, users CANNOT send messages via the UI
+- The chat-view component should fall back to the REST API (POST `/api/chat/rooms/[id]/messages`) when Socket.IO is unavailable
+- Currently, the send button is wired to `socketRef.current.emit("send-message", ...)` exclusively — there is NO REST API fallback for sending messages
+
+**Verdict:** ⚠️ WARNING — Chat will be non-functional on Vercel because the UI blocks sending when disconnected. The REST API endpoint exists but the frontend doesn't use it as a fallback.
+
+#### 8. Database Fallback to Local SQLite
+
+**File:** `src/lib/db.ts`
+
+Lines 39-40: If Turso env vars are not set, falls back to `new PrismaClient()` which uses `DATABASE_URL=file:./db/custom.db`. On Vercel, this local SQLite file doesn't exist and the filesystem is read-only.
+
+**Verdict:** ⚠️ WARNING — OK if TURSO_DATABASE_URL + TURSO_AUTH_TOKEN are configured in Vercel (which they should be per the .env.vercel file). But if they're missing, every single API route that touches the database will fail.
+
+---
+
+### ✅ VERIFIED OK — No Issues Found
+
+#### 9. `/api/upload/route.ts` — Vercel Blob Integration
+✅ OK — Properly uses `@vercel/blob` `put()` when `BLOB_READ_WRITE_TOKEN` is set. Only the fallback path (fs writes) would fail.
+
+#### 10. `/api/backup/route.ts` — Database Access
+✅ OK — All database operations go through Prisma (which uses Turso on Vercel). No filesystem writes beyond the in-memory store issue.
+
+#### 11. `/api/export/backup/route.ts` — Database Backup Export
+✅ OK — Reads from database via Prisma, returns JSON response. No filesystem access. No Vercel issues.
+
+#### 12. `/api/chat/rooms/route.ts` — Chat Rooms CRUD
+✅ OK — All database operations via Prisma. No WebSocket dependency in this route. Cookie settings are correct (`setAuthCookie` uses production-secure cookies).
+
+#### 13. `/api/chat/rooms/[id]/messages/route.ts` — Chat Messages
+✅ OK — REST API for getting/sending messages works fine on Vercel. Limit clamping is in place (`[1, 200]`). Uses `getAuthenticatedUser` which is correct.
+
+#### 14. `/api/ai/route.ts` — AI Chatbot
+✅ OK — Uses dynamic import of `z-ai-web-dev-sdk` with an 8-second timeout and local fallback. No filesystem access. No Vercel issues.
+
+#### 15. `/api/transactions/route.ts` — Transaction Processing
+✅ OK — Uses Prisma `$transaction` for atomic operations. Cookie settings correct. No filesystem access. No Vercel issues.
+
+#### 16. `/api/export/products/route.ts` — Product Exports
+✅ OK — XSS escaping in place. Returns HTML/CSV/Excel/Word responses. No filesystem writes. No Vercel issues.
+
+#### 17. `/api/export/transactions/route.ts` — Transaction Exports
+✅ OK — Same as above. XSS escaping in place. No Vercel issues.
+
+#### 18. `/api/export/voucher/[id]/route.ts` — Voucher Export
+✅ OK — Authorization check in place. XSS escaping in place. No Vercel issues.
+
+#### 19. `src/lib/auth.ts` — Authentication Library
+✅ OK — `secure: process.env.NODE_ENV === 'production'`, `sameSite: 'lax'`. Cookie settings are correct for Vercel HTTPS. `bcryptjs` is in `serverExternalPackages`.
+
+#### 20. `next.config.ts` — Next.js Configuration
+✅ OK — `serverExternalPackages` includes `bcryptjs` and `sharp`. `images.remotePatterns` configured for Vercel Blob. `allowedDevOrigins` is harmless in production.
+
+#### 21. Auth Routes (login, register, google, logout)
+✅ OK — All use `secure: process.env.NODE_ENV === 'production'` and `sameSite: 'lax'`. `bcryptjs` is in `serverExternalPackages`. No Vercel issues.
+
+#### 22. `src/lib/api-utils.ts` — Safe API Handler
+✅ OK — 15-second timeout wrapper. No Vercel issues.
+
+#### 23. `.env.example` — Environment Variables Template
+✅ OK — Lists all required and optional env vars. (Note: `BLOB_READ_WRITE_TOKEN` should be listed as REQUIRED for Vercel, not optional.)
+
+#### 24. `vercel.json` — Vercel Configuration
+✅ OK — Framework, build command, install command, and headers are correct. No issues.
+
+---
+
+### SUMMARY TABLE
+
+| # | File | Issue | Severity | Verdict |
+|---|------|-------|----------|---------|
+| 1 | `mini-services/chat-service/index.ts` | Socket.IO server CANNOT run on Vercel | 🔴 CRITICAL | ❌ WILL FAIL |
+| 2 | `src/components/chat/chat-view.tsx` | No REST API fallback for sending messages | 🔴 CRITICAL | ❌ WILL FAIL |
+| 3 | `src/components/chat/chat-list.tsx` | Socket.IO client won't connect on Vercel | 🔴 CRITICAL | ❌ WILL FAIL |
+| 4 | `src/app/api/upload/route.ts` | Falls back to fs writes if no Blob token | 🟡 CONDITIONAL | ⚠️ Depends on BLOB_READ_WRITE_TOKEN |
+| 5 | `src/app/api/backup/route.ts` | In-memory store resets on cold start | 🟡 WARNING | ⚠️ Feature degraded |
+| 6 | `package.json` | `sharp` installed but never used | 🟡 WARNING | ⚠️ Unnecessary |
+| 7 | `package.json` | `nodemailer` installed but never used | 🟡 WARNING | ⚠️ Unnecessary |
+| 8 | `package.json` | `next-auth` installed but never used | 🟡 WARNING | ⚠️ Unnecessary |
+| 9 | `src/lib/db.ts` | Falls back to local SQLite if no Turso | 🟡 WARNING | ⚠️ Depends on Turso vars |
+| 10 | All export routes | ✅ No issues | ✅ OK | ✅ |
+| 11 | All auth routes | ✅ Cookies correct | ✅ OK | ✅ |
+| 12 | `src/lib/auth.ts` | ✅ Production-secure | ✅ OK | ✅ |
+| 13 | `next.config.ts` | ✅ serverExternalPackages correct | ✅ OK | ✅ |
+
+---
+
+### HONEST ASSESSMENT FOR NATIONAL HACKATHON
+
+**What works on Vercel:**
+- ✅ Authentication (login, register, Google OAuth, logout)
+- ✅ Product CRUD and marketplace
+- ✅ Transaction processing with atomic balance updates
+- ✅ AI chatbot (with local fallback)
+- ✅ File uploads (with Vercel Blob)
+- ✅ All export routes (CSV, Excel, Word, HTML)
+- ✅ Database operations (with Turso Cloud)
+- ✅ Weather, search, reviews, notifications, loyalty, calendar, appointments, cotizaciones
+- ✅ Business profiles, wall posts, follows, likes
+- ✅ Cookie security (secure + sameSite for HTTPS)
+
+**What WILL FAIL on Vercel:**
+- ❌ **Real-time chat** — The #1 featured feature. Socket.IO server cannot run on Vercel. Chat UI blocks sending when disconnected. NO REST fallback for sending messages in the UI.
+- ⚠️ **File uploads** — Works ONLY if `BLOB_READ_WRITE_TOKEN` is configured. If you forget to enable Vercel Blob store, uploads crash.
+- ⚠️ **Backup/Restore** — Backup list is always empty; downloads don't work. Only direct JSON upload restore works.
+
+**The single biggest risk:** If judges test the chat feature on the Vercel deployment, it will be completely broken. The UI will show "Sin conexión" and users won't be able to send any messages. This affects a core feature prominently listed in the README.
+
+---
+
+### RECOMMENDED NEXT ACTIONS (NOT CODE — JUST ADVICE)
+
+1. **CRITICAL:** Add a REST API fallback in `chat-view.tsx` — when `socketRef.current` is null or `!isConnected`, send messages via `fetch('/api/chat/rooms/[id]/messages', { method: 'POST', body: ... })` instead of `socketRef.current.emit("send-message", ...)`. This is the minimum viable fix.
+
+2. **CRITICAL:** Consider deploying the chat service to a separate WebSocket-capable host (Railway, Fly.io, Render — all have free tiers) and updating the client-side Socket.IO URL to point to that host. Or accept that chat will be polling-based on Vercel and implement a polling fallback.
+
+3. **HIGH:** Move `BLOB_READ_WRITE_TOKEN` from "optional" to "required" in `.env.example` since it's mandatory for Vercel.
+
+4. **MEDIUM:** Remove unused dependencies (`sharp`, `nodemailer`, `next-auth`) from `package.json` to reduce deployment size and build time.
+
+5. **LOW:** The backup feature needs a redesign for Vercel — store backup data in Turso or Vercel Blob instead of in-memory.
+
+---
+
+## Task ID: DEEP-AUDIT-2 — Comprehensive API Endpoint Audit
+
+**Date:** 2026-06-01
+
+### Task
+Test EVERY API endpoint on the running dev server (http://localhost:3000) and report HTTP status codes and success/failure for each.
+
+### Server Status
+- Dev server was NOT running at start of audit — launched via `daemon.sh`
+- Server started successfully on port 3000
+- All tests performed against live running instance
+
+### Public Endpoints (No Auth Required)
+
+| # | Endpoint | Method | HTTP Status | Success? | Notes |
+|---|----------|--------|-------------|----------|-------|
+| 1 | `/api/products?limit=3` | GET | 200 | ✅ YES | Returns 3 products with full data (seller, businessProfile, likeCount) |
+| 2 | `/api/products?category=Tecnología` | GET | 200 | ⚠️ PARTIAL | Returns empty `data:[]` — category filter uses EXACT match; "Tecnología" doesn't match "Tecnología y Electrónica". With full category name `?category=Tecnología y Electrónica` returns 8 products ✅ |
+| 3 | `/api/search?q=cemento` | GET | 200 | ✅ YES | Returns 1 result: "Cemento Portland 50kg" from Ferretería Central Managua |
+| 4 | `/api/weather?city=Managua` | GET | 200 | ✅ YES | Returns current temp (30°C), humidity (65%), condition (Soleado), and 3-day forecast |
+| 5 | `/api/creators` | GET | 200 | ✅ YES | Returns 5 team members (Apolonio, Arbela, Mychael, Pedro, Reynaldo) with photos, roles, bios |
+| 6 | `/api/stats` | GET | 401 | ✅ EXPECTED | Requires authentication — returns `{"success":false,"error":"No autenticado"}` |
+
+### Auth Endpoints
+
+| # | Endpoint | Method | HTTP Status | Success? | Notes |
+|---|----------|--------|-------------|----------|-------|
+| 7 | `/api/auth/register` (without phone) | POST | 400 | ⚠️ PARTIAL | Returns `{"success":false,"error":"El teléfono es requerido"}` — phone is required. Also requires `department` field (returns 400 "El departamento es requerido" without it) |
+| 7b | `/api/auth/register` (with phone+dept) | POST | 200 | ✅ YES | With `phone` + `department` + `address` fields: creates user successfully, returns full user object with `balance: 50000` |
+| 8 | `/api/auth/login` (admin) | POST | 200 | ✅ YES | Login as `rey7214935@gmail.com` / `admin123` — returns ADMIN user with businessProfile, sets `pc_user_id` HttpOnly cookie |
+| 9 | `/api/auth/login` (seller) | POST | 200 | ✅ YES | Login as `ferreteria@demo.ni` / `demo123` — returns SELLER user (Carlos Hernández) with Ferretería Central Managua businessProfile |
+
+### Auth-Protected Endpoints (No Cookie — Should Return 401)
+
+| # | Endpoint | Method | HTTP Status | Success? | Notes |
+|---|----------|--------|-------------|----------|-------|
+| 10 | `/api/auth/me` | GET | 401 | ✅ YES | Returns `{"success":false,"error":"No autenticado"}` — correctly rejects unauthenticated request |
+| 11 | `/api/admin/stats` | GET | 401 | ✅ YES | Returns `{"success":false,"error":"No autenticado"}` — correctly rejects unauthenticated request |
+| 12 | `/api/cotizacion` | GET | 401 | ✅ YES | Returns `{"success":false,"error":"No autenticado"}` — requires auth |
+| 13 | `/api/notifications` | GET | 401 | ✅ YES | Returns `{"success":false,"error":"No autenticado"}` — correctly rejects unauthenticated request |
+| 14 | `/api/loyalty` | GET | 401 | ✅ YES | Returns `{"success":false,"error":"No autenticado"}` — correctly rejects unauthenticated request |
+| 15 | `/api/advertisements` | GET | 401 | ✅ YES | Returns `{"success":false,"error":"No autenticado"}` — requires auth |
+| 16 | `/api/commissions` | GET | 401 | ✅ YES | Returns `{"success":false,"error":"No autenticado"}` — requires auth |
+
+### Auth-Protected Endpoints (With Admin Cookie)
+
+| # | Endpoint | Method | HTTP Status | Success? | Notes |
+|---|----------|--------|-------------|----------|-------|
+| 10b | `/api/auth/me` | GET | 200 | ✅ YES | Returns full ADMIN user object with businessProfile |
+| 11b | `/api/admin/stats` | GET | 200 | ✅ YES | Returns: 25 users, 23 sellers, 1 buyer, 73 products, 73 active, 0 transactions, 0 revenue |
+| 12b | `/api/cotizacion` | GET | 200 | ✅ YES | Returns `{"success":true,"data":[]}` — empty (no cotizaciones created) |
+| 13b | `/api/notifications` | GET | 200 | ✅ YES | Returns `{"success":true,"data":[],"unreadCount":0}` |
+| 14b | `/api/loyalty` | GET | 200 | ✅ YES | Returns `{"success":true,"data":{"balance":0,"totalEarned":0,"totalRedeemed":0,"expiresAt":"2027-06-01T...","history":[]}}` |
+| 15b | `/api/advertisements` | GET | 200 | ✅ YES | Returns `{"success":true,"data":[]}` — empty (no ads created) |
+| 16b | `/api/commissions` | GET | 200 | ✅ YES | Returns 3 pending commissions (C$9.60, C$10.50, C$10.50), total C$30.60 pending, 3% rate |
+
+### Summary
+
+**All 16 endpoints tested successfully.** Key findings:
+
+1. **All endpoints return correct HTTP status codes** — 200 for success, 401 for unauthorized, 400 for validation errors
+2. **Auth protection works correctly** — unauthenticated requests get 401, authenticated requests get 200
+3. **Two minor observations:**
+   - `/api/products?category=Tecnología` returns empty because the filter uses EXACT match. Must use the full category name "Tecnología y Electrónica" to get results. This is by design but could be improved with partial/contains matching.
+   - `/api/auth/register` requires `phone` and `department` fields beyond the 4 specified in the test payload. The 400 error messages clearly indicate which field is missing — this is correct validation behavior.
+4. **Admin dashboard stats show production data** — 25 users, 73 products, 3 pending commissions (C$30.60 total at 3% rate)
+5. **Cookie-based auth works** — `pc_user_id` HttpOnly cookie is set on login and accepted by all protected endpoints
+
+### No code changes were made — audit only

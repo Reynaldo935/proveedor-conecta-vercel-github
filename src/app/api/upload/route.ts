@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
-import { put } from '@vercel/blob'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
@@ -45,21 +44,38 @@ export async function POST(request: NextRequest) {
 
       if (isVercelBlob) {
         // ── Vercel Blob (production) ──
-        const blob = await put(uniqueName, buffer, {
-          access: 'public',
-          contentType: file.type,
-        })
-        uploadedUrls.push(blob.url)
+        try {
+          const { put } = await import('@vercel/blob')
+          const blob = await put(uniqueName, buffer, {
+            access: 'public',
+            contentType: file.type,
+          })
+          uploadedUrls.push(blob.url)
+        } catch (blobError) {
+          console.error('Vercel Blob upload failed:', blobError)
+          return NextResponse.json({
+            success: false,
+            error: 'Error al subir archivo a almacenamiento en la nube. Verifica que Vercel Blob esté configurado.',
+          }, { status: 500 })
+        }
       } else {
-        // ── Local filesystem (development) ──
-        const publicDir = path.join(process.cwd(), 'public', 'uploads', subfolder)
-        await mkdir(publicDir, { recursive: true })
+        // ── Local filesystem (development only) ──
+        try {
+          const publicDir = path.join(process.cwd(), 'public', 'uploads', subfolder)
+          await mkdir(publicDir, { recursive: true })
 
-        const fileName = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-        const filePath = path.join(publicDir, fileName)
-        await writeFile(filePath, buffer)
+          const fileName = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+          const filePath = path.join(publicDir, fileName)
+          await writeFile(filePath, buffer)
 
-        uploadedUrls.push(`/uploads/${subfolder}/${fileName}`)
+          uploadedUrls.push(`/uploads/${subfolder}/${fileName}`)
+        } catch (fsError) {
+          console.error('Local filesystem upload failed:', fsError)
+          return NextResponse.json({
+            success: false,
+            error: 'Error al subir archivo. En producción, configura Vercel Blob Storage.',
+          }, { status: 500 })
+        }
       }
     }
 
