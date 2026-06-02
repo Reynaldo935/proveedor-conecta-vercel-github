@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProveedorConecta Nicaragua - Marketplace B2B/B2C para MIPYMES</title>
+  <meta name="description" content="Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en Nicaragua. 17 departamentos, 11 métodos de pago, chat en tiempo real.">
+  <meta name="keywords" content="Nicaragua, proveedores, MIPYMES, marketplace, B2B, emprendedores, ferretería, agricultura, tecnología, Managua, León, Granada">
+  <meta property="og:title" content="ProveedorConecta Nicaragua - Marketplace B2B/B2C">
+  <meta property="og:description" content="Conectamos emprendedores y MIPYMES con proveedores de insumos en toda Nicaragua.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_NI">
+  <meta property="og:site_name" content="ProveedorConecta Nicaragua">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ProveedorConecta Nicaragua">
+  <meta name="twitter:description" content="Marketplace B2B/B2C para emprendedores nicaragüenses">
+  <link rel="icon" href="./favicon.ico">
+  <meta property="og:url" content="https://mych336-bli.github.io/hakaton/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1A5276;
+      --primary-light: #2E86C1;
+      --primary-dark: #154360;
+      --accent: #F4D03F;
+      --accent-dark: #D4AC0D;
+      --bg-light: #E8F4FD;
+      --bg-dark: #0B1A2C;
+      --bg-dark2: #0F2137;
+      --bg-dark3: #132D4A;
+      --text-dark: #1C2833;
+      --text-muted: #5D6D7E;
+      --white: #FFFFFF;
+      --success: #27AE60;
+      --danger: #E74C3C;
+      --warning: #F39C12;
+      --info: #3498DB;
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-xs: 6px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #E8F4FD;
+      background: var(--bg-dark);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', sans-serif; }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Nicaragua Stripe ── */
+    .nicaragua-stripe {
+      height: 5px;
+      background: linear-gradient(90deg, #0067B8 0%, #0067B8 33%, #FFFFFF 33%, #FFFFFF 66%, #0067B8 66%, #0067B8 100%);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1001;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: fixed; top: 5px; left: 0; right: 0; z-index: 1000;
+      background: rgba(11,26,44,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: box-shadow 0.3s;
+    }
+    .navbar.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.3); background: rgba(11,26,44,0.97); }
+    .navbar .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .navbar-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: white;
+    }
+    .navbar-brand .logo {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 16px; font-family: 'Poppins';
+    }
+    .navbar-brand span { font-weight: 700; font-size: 18px; font-family: 'Poppins'; color: white; }
+    .navbar-brand .nic { color: var(--accent); }
+    .navbar-links { display: flex; align-items: center; gap: 4px; }
+    .navbar-links a {
+      text-decoration: none; color: rgba(255,255,255,0.7); font-size: 13px;
+      font-weight: 500; padding: 8px 14px; border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .navbar-links a:hover { color: white; background: rgba(255,255,255,0.08); }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white !important; padding: 10px 24px; border-radius: 10px;
+      font-weight: 600; font-size: 14px; border: none; cursor: pointer;
+      text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 16px rgba(46,134,193,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(46,134,193,0.4); }
+    .btn-accent {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: var(--bg-dark) !important; padding: 10px 24px; border-radius: 10px;
+      font-weight: 700; font-size: 14px; border: none; cursor: pointer;
+      text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 16px rgba(244,208,63,0.3);
+    }
+    .btn-accent:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(244,208,63,0.4); }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--accent); padding: 10px 24px;
+      border-radius: 10px; font-weight: 600; font-size: 14px;
+      border: 2px solid rgba(244,208,63,0.4); cursor: pointer; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover { background: rgba(244,208,63,0.1); border-color: var(--accent); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.08); color: white; padding: 12px 28px;
+      border-radius: 12px; font-weight: 600; font-size: 15px;
+      border: 1px solid rgba(255,255,255,0.15); cursor: pointer;
+      text-decoration: none; backdrop-filter: blur(10px); transition: all 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.15); }
+
+    .mobile-menu-btn {
+      display: none; background: none; border: none; cursor: pointer;
+      padding: 8px; color: white;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; min-height: 100vh;
+      display: flex; align-items: center;
+      background: linear-gradient(135deg, #0B1A2C 0%, #0F2137 30%, #132D4A 60%, #1A5276 100%);
+      overflow: hidden; padding-top: 70px;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='dots' x='0' y='0' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='30' cy='30' r='1' fill='white'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23dots)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+    }
+    .hero-orb-1 {
+      position: absolute; top: -100px; right: -100px; width: 500px; height: 500px;
+      border-radius: 50%; background: rgba(244,208,63,0.06); filter: blur(80px);
+    }
+    .hero-orb-2 {
+      position: absolute; bottom: -80px; left: -80px; width: 400px; height: 400px;
+      border-radius: 50%; background: rgba(46,134,193,0.08); filter: blur(60px);
+    }
+    .hero .container {
+      position: relative; z-index: 2;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+      padding-top: 40px; padding-bottom: 60px;
+    }
+    .hero-content h1 {
+      font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 900;
+      color: white; line-height: 1.1; margin-bottom: 20px;
+    }
+    .hero-content h1 .accent { color: var(--accent); }
+    .hero-content p {
+      font-size: 1.15rem; color: rgba(255,255,255,0.75);
+      max-width: 520px; margin-bottom: 32px; line-height: 1.7;
+    }
+    .hero-search {
+      display: flex; gap: 8px; margin-bottom: 24px;
+      background: rgba(255,255,255,0.08); border-radius: 14px;
+      padding: 6px; border: 1px solid rgba(255,255,255,0.1);
+    }
+    .hero-search input {
+      flex: 1; background: #fff !important; color: #000 !important;
+      border: none; border-radius: 10px; padding: 12px 18px;
+      font-size: 14px; outline: none; font-family: 'Inter';
+    }
+    .hero-search input::placeholder { color: #999; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .hero-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      margin-top: 40px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .hero-stat {
+      text-align: center; padding: 16px 8px;
+      background: rgba(255,255,255,0.04); border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .hero-stat .number { font-size: 1.6rem; font-weight: 800; color: var(--accent); font-family: 'Poppins'; }
+    .hero-stat .label { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .hero-badges {
+      display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 600;
+    }
+    .hero-badge.nica {
+      background: rgba(255,255,255,0.1); color: white;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .hero-badge.hack {
+      background: rgba(244,208,63,0.12); color: var(--accent);
+      border: 1px solid rgba(244,208,63,0.2);
+    }
+
+    .hero-visual { display: flex; justify-content: center; align-items: center; }
+    .hero-mockup {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 16px; backdrop-filter: blur(10px);
+      width: 100%; max-width: 440px;
+    }
+    .mockup-header {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 14px;
+      padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-dot.red { background: #E74C3C; }
+    .mockup-dot.yellow { background: #F4D03F; }
+    .mockup-dot.green { background: #27AE60; }
+    .mockup-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+    .mockup-card:hover { border-color: rgba(244,208,63,0.2); background: rgba(255,255,255,0.06); }
+    .mockup-card-img {
+      height: 100px; display: flex; align-items: center; justify-content: center; font-size: 36px;
+    }
+    .mockup-card-img.construction { background: linear-gradient(135deg, rgba(46,134,193,0.15), rgba(26,82,118,0.2)); }
+    .mockup-card-img.agriculture { background: linear-gradient(135deg, rgba(39,174,96,0.15), rgba(39,174,96,0.2)); }
+    .mockup-card-img.tech { background: linear-gradient(135deg, rgba(52,152,219,0.15), rgba(52,152,219,0.2)); }
+    .mockup-card-img.food { background: linear-gradient(135deg, rgba(243,156,18,0.15), rgba(243,156,18,0.2)); }
+    .mockup-card-body { padding: 10px; }
+    .mockup-card-body h4 { color: white; font-size: 13px; margin-bottom: 4px; }
+    .mockup-card-body .price { color: var(--accent); font-weight: 700; font-size: 15px; }
+    .mockup-card-body .seller { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 3px; }
+    .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── Sections ── */
+    section { padding: 80px 0; }
+
+    .section-header { text-align: center; margin-bottom: 48px; }
+    .section-header .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(244,208,63,0.1); color: var(--accent);
+      padding: 6px 16px; border-radius: 20px; font-size: 13px;
+      font-weight: 600; margin-bottom: 12px;
+      border: 1px solid rgba(244,208,63,0.15);
+    }
+    .section-header h2 {
+      font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 800;
+      color: white; margin-bottom: 12px;
+    }
+    .section-header p {
+      font-size: 1.05rem; color: rgba(255,255,255,0.6); max-width: 600px; margin: 0 auto;
+    }
+
+    .section-divider {
+      width: 60px; height: 3px; background: var(--accent); margin: 16px auto 0; border-radius: 2px;
+    }
+
+    /* ── Payment Methods (Detailed Cards) ── */
+    .payments-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;
+    }
+    .payment-card {
+      background: var(--bg-dark2); border-radius: var(--radius); padding: 24px;
+      border: 1px solid rgba(255,255,255,0.06); transition: all 0.3s;
+      position: relative; overflow: hidden;
+    }
+    .payment-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--primary-light), var(--accent));
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .payment-card:hover {
+      transform: translateY(-4px); border-color: rgba(244,208,63,0.2);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .payment-card:hover::before { opacity: 1; }
+    .payment-card-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+    }
+    .payment-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .payment-icon.digital { background: linear-gradient(135deg, rgba(46,134,193,0.2), rgba(46,134,193,0.1)); }
+    .payment-icon.bancario { background: linear-gradient(135deg, rgba(39,174,96,0.2), rgba(39,174,96,0.1)); }
+    .payment-icon.movil { background: linear-gradient(135deg, rgba(155,89,182,0.2), rgba(155,89,182,0.1)); }
+    .payment-icon.internacional { background: linear-gradient(135deg, rgba(243,156,18,0.2), rgba(243,156,18,0.1)); }
+    .payment-card-header h3 { color: white; font-size: 1rem; font-weight: 700; }
+    .payment-card-header .type-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .type-badge.digital { background: rgba(46,134,193,0.15); color: #5DADE2; }
+    .type-badge.bancario { background: rgba(39,174,96,0.15); color: #58D68D; }
+    .type-badge.movil { background: rgba(155,89,182,0.15); color: #BB8FCE; }
+    .type-badge.internacional { background: rgba(243,156,18,0.15); color: #F5B041; }
+    .payment-detail {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 13px;
+    }
+    .payment-detail:last-child { border-bottom: none; }
+    .payment-detail .label { color: rgba(255,255,255,0.5); }
+    .payment-detail .value { color: white; font-weight: 600; }
+    .currency-tags { display: flex; gap: 6px; margin-top: 12px; }
+    .currency-tag {
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      background: rgba(244,208,63,0.1); color: var(--accent);
+      border: 1px solid rgba(244,208,63,0.15);
+    }
+
+    /* ── Products ── */
+    .products-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;
+    }
+    .product-card {
+      background: var(--bg-dark2); border-radius: var(--radius); overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06); transition: all 0.3s;
+    }
+    .product-card:hover {
+      transform: translateY(-4px); border-color: rgba(244,208,63,0.15);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .product-img {
+      height: 160px; display: flex; align-items: center; justify-content: center;
+      font-size: 48px; position: relative;
+    }
+    .product-img.construction { background: linear-gradient(135deg, rgba(46,134,193,0.12), rgba(26,82,118,0.18)); }
+    .product-img.agriculture { background: linear-gradient(135deg, rgba(39,174,96,0.12), rgba(39,174,96,0.18)); }
+    .product-img.tech { background: linear-gradient(135deg, rgba(52,152,219,0.12), rgba(52,152,219,0.18)); }
+    .product-img.food { background: linear-gradient(135deg, rgba(243,156,18,0.12), rgba(243,156,18,0.18)); }
+    .product-img.paint { background: linear-gradient(135deg, rgba(231,76,60,0.12), rgba(231,76,60,0.18)); }
+    .product-img.tools { background: linear-gradient(135deg, rgba(149,165,166,0.12), rgba(149,165,166,0.18)); }
+    .product-fav {
+      position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
+      border-radius: 50%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; color: rgba(255,255,255,0.6);
+      transition: all 0.2s; font-size: 16px;
+    }
+    .product-fav:hover, .product-fav.active { color: #E74C3C; background: rgba(231,76,60,0.2); }
+    .product-discount {
+      position: absolute; top: 12px; left: 12px; padding: 4px 10px;
+      background: var(--danger); color: white; border-radius: 6px;
+      font-size: 11px; font-weight: 700;
+    }
+    .product-body { padding: 16px; }
+    .product-body h4 { color: white; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .product-prices { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .product-price { color: var(--accent); font-weight: 800; font-size: 18px; font-family: 'Poppins'; }
+    .product-price-old { color: rgba(255,255,255,0.4); font-size: 13px; text-decoration: line-through; }
+    .product-seller { color: rgba(255,255,255,0.4); font-size: 12px; display: flex; align-items: center; gap: 4px; }
+
+    /* ── Dashboard ── */
+    .dashboard-section { background: var(--bg-dark); }
+    .dashboard-panel {
+      background: var(--bg-dark2); border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .dashboard-header {
+      padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .dashboard-header h3 { color: white; font-size: 1.1rem; font-weight: 700; }
+    .dashboard-tabs {
+      display: flex; gap: 4px; overflow-x: auto; padding: 12px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.15);
+    }
+    .dashboard-tab {
+      padding: 8px 16px; border-radius: 8px; font-size: 13px;
+      font-weight: 500; cursor: pointer; transition: all 0.2s;
+      color: rgba(255,255,255,0.5); background: transparent;
+      border: none; white-space: nowrap;
+    }
+    .dashboard-tab:hover { color: white; background: rgba(255,255,255,0.06); }
+    .dashboard-tab.active { color: var(--accent); background: rgba(244,208,63,0.1); font-weight: 600; }
+    .dashboard-body { padding: 24px; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-sm); padding: 16px; text-align: center;
+    }
+    .stat-card .stat-icon { font-size: 20px; margin-bottom: 8px; }
+    .stat-card .stat-value { font-size: 1.3rem; font-weight: 800; color: white; font-family: 'Poppins'; }
+    .stat-card .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .commission-banner {
+      background: linear-gradient(135deg, rgba(244,208,63,0.1), rgba(244,208,63,0.05));
+      border: 1px solid rgba(244,208,63,0.15); border-radius: var(--radius-sm);
+      padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px;
+    }
+    .commission-banner i { color: var(--accent); font-size: 20px; }
+    .commission-banner .comm-text { color: rgba(255,255,255,0.7); font-size: 14px; }
+    .commission-banner .comm-amount { color: var(--accent); font-weight: 700; font-size: 16px; }
+    .charts-grid {
+      display: grid; grid-template-columns: 2fr 1fr; gap: 20px;
+    }
+    .chart-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-sm); padding: 20px;
+    }
+    .chart-card h4 { color: white; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+
+    /* ── Weather ── */
+    .weather-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;
+    }
+    .weather-card {
+      background: var(--bg-dark2); border-radius: var(--radius-sm); padding: 20px;
+      border: 1px solid rgba(255,255,255,0.06); text-align: center;
+      transition: all 0.3s;
+    }
+    .weather-card:hover {
+      transform: translateY(-3px); border-color: rgba(46,134,193,0.2);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+    }
+    .weather-card .city { color: white; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .weather-card .temp { font-size: 2rem; font-weight: 800; color: var(--accent); font-family: 'Poppins'; }
+    .weather-card .desc { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 4px; text-transform: capitalize; }
+    .weather-card .icon { font-size: 36px; margin: 8px 0; }
+    .weather-card .details { display: flex; justify-content: center; gap: 12px; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    /* ── Login Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-content {
+      background: var(--bg-dark2); border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.08); padding: 32px;
+      width: 100%; max-width: 420px; margin: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal-close {
+      float: right; background: none; border: none; color: rgba(255,255,255,0.4);
+      font-size: 20px; cursor: pointer; padding: 4px; transition: color 0.2s;
+    }
+    .modal-close:hover { color: white; }
+    .modal-content h2 { color: white; font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+    .modal-content .subtitle { color: rgba(255,255,255,0.5); font-size: 14px; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; background: #fff !important; color: #000 !important;
+      border: none; border-radius: var(--radius-xs); padding: 12px 16px;
+      font-size: 14px; outline: none; font-family: 'Inter';
+    }
+    .form-input::placeholder { color: #999; }
+    .btn-google {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: rgba(255,255,255,0.06); color: white; padding: 12px;
+      border-radius: var(--radius-xs); font-weight: 600; font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.2s;
+      margin-top: 16px;
+    }
+    .btn-google:hover { background: rgba(255,255,255,0.1); }
+    .divider {
+      display: flex; align-items: center; gap: 12px; margin: 16px 0;
+      color: rgba(255,255,255,0.3); font-size: 12px;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+
+    /* ── Sell Product Form ── */
+    .sell-form-card {
+      background: var(--bg-dark2); border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .sell-steps {
+      display: flex; border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.15);
+    }
+    .sell-step {
+      flex: 1; padding: 14px 16px; text-align: center; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: all 0.2s;
+      color: rgba(255,255,255,0.4); border-bottom: 2px solid transparent;
+    }
+    .sell-step:hover { color: rgba(255,255,255,0.7); }
+    .sell-step.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(244,208,63,0.05); }
+    .sell-form-body { padding: 24px; }
+    .upload-area {
+      border: 2px dashed rgba(255,255,255,0.12); border-radius: var(--radius-sm);
+      padding: 40px; text-align: center; cursor: pointer;
+      transition: all 0.2s; margin-bottom: 16px;
+    }
+    .upload-area:hover { border-color: rgba(244,208,63,0.3); background: rgba(244,208,63,0.03); }
+    .upload-area i { font-size: 36px; color: rgba(255,255,255,0.3); margin-bottom: 12px; }
+    .upload-area p { color: rgba(255,255,255,0.5); font-size: 14px; }
+    .upload-area span { color: var(--accent); font-weight: 600; }
+
+    /* ── Cotizaciones ── */
+    .quote-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .quote-card {
+      background: var(--bg-dark2); border-radius: var(--radius-sm); padding: 20px;
+      border: 1px solid rgba(255,255,255,0.06); transition: all 0.3s;
+    }
+    .quote-card:hover { border-color: rgba(46,134,193,0.2); }
+    .quote-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .quote-status {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .quote-status.pending { background: rgba(243,156,18,0.15); color: #F5B041; }
+    .quote-status.approved { background: rgba(39,174,96,0.15); color: #58D68D; }
+    .quote-status.rejected { background: rgba(231,76,60,0.15); color: #F1948A; }
+
+    /* ── Loyalty ── */
+    .loyalty-card {
+      background: linear-gradient(135deg, var(--bg-dark2), var(--bg-dark3));
+      border-radius: var(--radius); padding: 32px; text-align: center;
+      border: 1px solid rgba(244,208,63,0.1); position: relative; overflow: hidden;
+    }
+    .loyalty-card::before {
+      content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%;
+      background: radial-gradient(circle, rgba(244,208,63,0.05), transparent);
+    }
+    .loyalty-points { font-size: 3rem; font-weight: 900; color: var(--accent); font-family: 'Poppins'; position: relative; }
+    .loyalty-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; }
+    .loyalty-item {
+      background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); padding: 16px;
+      text-align: center; border: 1px solid rgba(255,255,255,0.06);
+    }
+    .loyalty-item .value { font-size: 1.3rem; font-weight: 700; color: white; }
+    .loyalty-item .label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+
+    /* ── Calendar ── */
+    .calendar-card {
+      background: var(--bg-dark2); border-radius: var(--radius); padding: 24px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .calendar-nav h3 { color: white; font-size: 1.1rem; font-weight: 700; }
+    .calendar-nav button {
+      background: rgba(255,255,255,0.06); border: none; color: white;
+      width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s; font-size: 16px;
+    }
+    .calendar-nav button:hover { background: rgba(255,255,255,0.12); }
+    .calendar-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+    }
+    .calendar-day-name {
+      text-align: center; font-size: 11px; font-weight: 600;
+      color: rgba(255,255,255,0.4); padding: 8px 4px;
+    }
+    .calendar-day {
+      text-align: center; padding: 8px 4px; border-radius: 8px;
+      font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .calendar-day:hover { background: rgba(255,255,255,0.06); color: white; }
+    .calendar-day.today { background: var(--primary-light); color: white; font-weight: 700; }
+    .calendar-day.has-event { position: relative; color: white; }
+    .calendar-day.has-event::after {
+      content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: var(--accent);
+    }
+    .calendar-day.empty { cursor: default; }
+
+    /* ── Map Section ── */
+    .map-container {
+      background: var(--bg-dark2); border-radius: var(--radius); overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .map-placeholder {
+      height: 400px; background: linear-gradient(135deg, rgba(46,134,193,0.08), rgba(26,82,118,0.12));
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .map-pin {
+      position: absolute; width: 24px; height: 24px; border-radius: 50% 50% 50% 0;
+      background: var(--danger); transform: rotate(-45deg);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(231,76,60,0.4);
+      animation: mapBounce 2s infinite;
+    }
+    .map-pin::after {
+      content: ''; width: 8px; height: 8px; border-radius: 50%;
+      background: white; transform: rotate(45deg);
+    }
+    @keyframes mapBounce {
+      0%, 100% { transform: rotate(-45deg) translateY(0); }
+      50% { transform: rotate(-45deg) translateY(-6px); }
+    }
+    .map-depts {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
+      padding: 20px;
+    }
+    .map-dept {
+      background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 12px;
+      font-size: 12px; color: rgba(255,255,255,0.7); text-align: center;
+      border: 1px solid rgba(255,255,255,0.04); transition: all 0.2s; cursor: pointer;
+    }
+    .map-dept:hover { background: rgba(46,134,193,0.1); border-color: rgba(46,134,193,0.2); color: white; }
+
+    /* ── Team ── */
+    .team-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;
+    }
+    .team-card {
+      background: var(--bg-dark2); border-radius: var(--radius); padding: 28px;
+      border: 1px solid rgba(255,255,255,0.06); text-align: center;
+      transition: all 0.3s;
+    }
+    .team-card:hover { transform: translateY(-4px); border-color: rgba(244,208,63,0.15); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .team-avatar {
+      width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 800; font-family: 'Poppins';
+    }
+    .team-avatar.r { background: linear-gradient(135deg, #E74C3C, #C0392B); color: white; }
+    .team-avatar.m { background: linear-gradient(135deg, #3498DB, #2980B9); color: white; }
+    .team-avatar.p { background: linear-gradient(135deg, #27AE60, #229954); color: white; }
+    .team-avatar.a1 { background: linear-gradient(135deg, #F39C12, #E67E22); color: white; }
+    .team-avatar.a2 { background: linear-gradient(135deg, #9B59B6, #8E44AD); color: white; }
+    .team-card h4 { color: white; font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .team-card .role { color: var(--accent); font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+    .team-card .email { color: rgba(255,255,255,0.4); font-size: 12px; }
+
+    /* ── AI Chatbox ── */
+    .chat-fab {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1500;
+      width: 60px; height: 60px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white; border: none; cursor: pointer; font-size: 24px;
+      box-shadow: 0 4px 24px rgba(46,134,193,0.4);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s;
+    }
+    .chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 32px rgba(46,134,193,0.5); }
+    .chat-fab.has-panel { display: none; }
+    .chat-panel {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1500;
+      width: 380px; max-height: 520px; border-radius: var(--radius);
+      background: var(--bg-dark2); border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5); display: none;
+      flex-direction: column; overflow: hidden;
+    }
+    .chat-panel.open { display: flex; }
+    .chat-header {
+      padding: 16px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .chat-header-info { display: flex; align-items: center; gap: 10px; }
+    .chat-header-info .chat-avatar {
+      width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .chat-header-info h4 { color: white; font-size: 14px; font-weight: 700; }
+    .chat-header-info span { color: rgba(255,255,255,0.7); font-size: 11px; display: block; }
+    .chat-close {
+      background: rgba(255,255,255,0.15); border: none; color: white;
+      width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+      font-size: 14px; display: flex; align-items: center; justify-content: center;
+    }
+    .chat-body { flex: 1; padding: 16px; overflow-y: auto; max-height: 320px; }
+    .chat-msg { margin-bottom: 12px; }
+    .chat-msg.bot { text-align: left; }
+    .chat-msg.user { text-align: right; }
+    .chat-bubble {
+      display: inline-block; padding: 10px 14px; border-radius: 12px;
+      font-size: 13px; max-width: 85%; line-height: 1.5;
+    }
+    .chat-msg.bot .chat-bubble { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border-bottom-left-radius: 4px; }
+    .chat-msg.user .chat-bubble { background: var(--primary-light); color: white; border-bottom-right-radius: 4px; }
+    .chat-capabilities {
+      margin-top: 12px; padding: 12px; background: rgba(244,208,63,0.05);
+      border: 1px solid rgba(244,208,63,0.1); border-radius: 10px;
+    }
+    .chat-capabilities h5 { color: var(--accent); font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+    .chat-capabilities ul { list-style: none; padding: 0; }
+    .chat-capabilities li { font-size: 12px; color: rgba(255,255,255,0.6); padding: 3px 0; display: flex; align-items: center; gap: 6px; }
+    .chat-capabilities li::before { content: '🤖'; font-size: 10px; }
+    .chat-input-area {
+      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex; gap: 8px;
+    }
+    .chat-input {
+      flex: 1; background: #fff !important; color: #000 !important;
+      border: none; border-radius: 8px; padding: 10px 14px;
+      font-size: 13px; outline: none; font-family: 'Inter';
+    }
+    .chat-input::placeholder { color: #999; }
+    .chat-send {
+      background: var(--primary-light); color: white; border: none;
+      width: 40px; height: 40px; border-radius: 8px; cursor: pointer;
+      font-size: 16px; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .chat-send:hover { background: var(--primary); }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: linear-gradient(135deg, var(--bg-dark), var(--bg-dark3), var(--primary-dark));
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='cta-dots' x='0' y='0' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='30' cy='30' r='1' fill='white'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23cta-dots)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+    }
+    .cta-content { position: relative; z-index: 2; text-align: center; }
+    .cta-content h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 800; color: white; margin-bottom: 16px; }
+    .cta-content p { font-size: 1.1rem; color: rgba(255,255,255,0.7); max-width: 600px; margin: 0 auto 32px; }
+    .cta-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--bg-dark); color: rgba(255,255,255,0.7); padding: 48px 0 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    footer .container {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px;
+    }
+    footer h4 { color: white; font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+    footer a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 13px; display: block; padding: 3px 0; transition: color 0.2s; }
+    footer a:hover { color: var(--accent); }
+    .footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .footer-brand .logo {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 16px; font-family: 'Poppins';
+    }
+    .footer-brand span { color: white; font-weight: 700; font-size: 18px; font-family: 'Poppins'; }
+    .footer-bottom {
+      grid-column: 1 / -1; border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 20px; margin-top: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: rgba(255,255,255,0.4);
+    }
+
+    /* ── User Profile Section ── */
+    .profile-card {
+      background: var(--bg-dark2); border-radius: var(--radius); padding: 32px;
+      border: 1px solid rgba(255,255,255,0.06); display: flex; gap: 32px;
+      align-items: flex-start;
+    }
+    .profile-avatar {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 800; color: white; font-family: 'Poppins';
+      flex-shrink: 0;
+    }
+    .profile-info { flex: 1; }
+    .profile-info h3 { color: white; font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .profile-info .email { color: rgba(255,255,255,0.5); font-size: 14px; margin-bottom: 12px; }
+    .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .profile-badge-item {
+      padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      background: rgba(39,174,96,0.12); color: #58D68D; border: 1px solid rgba(39,174,96,0.15);
+    }
+    .profile-badge-item.gold { background: rgba(244,208,63,0.12); color: var(--accent); border-color: rgba(244,208,63,0.15); }
+    .profile-badge-item.blue { background: rgba(46,134,193,0.12); color: #5DADE2; border-color: rgba(46,134,193,0.15); }
+
+    /* ── Animations ── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate { animation: fadeInUp 0.7s ease-out forwards; opacity: 0; }
+    .animate:nth-child(2) { animation-delay: 0.1s; }
+    .animate:nth-child(3) { animation-delay: 0.2s; }
+    .animate:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* ── Mobile Nav ── */
+    .mobile-nav {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    }
+    .mobile-nav.open { display: block; }
+    .mobile-nav-content {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 280px;
+      background: var(--bg-dark2); padding: 24px; box-shadow: -4px 0 24px rgba(0,0,0,0.3);
+    }
+    .mobile-nav-content a {
+      display: block; padding: 12px 0; color: rgba(255,255,255,0.7);
+      text-decoration: none; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 14px;
+    }
+    .mobile-nav-content a:hover { color: var(--accent); }
+    .mobile-nav-close {
+      background: none; border: none; font-size: 24px; cursor: pointer;
+      color: rgba(255,255,255,0.5); margin-bottom: 16px;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: rgba(46,134,193,0.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(46,134,193,0.5); }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .hero .container { grid-template-columns: 1fr; text-align: center; }
+      .hero-content p { margin: 0 auto 32px; }
+      .hero-search { max-width: 500px; margin: 0 auto 24px; }
+      .hero-actions { justify-content: center; }
+      .hero-badges { justify-content: center; }
+      .hero-visual { display: none; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .profile-card { flex-direction: column; align-items: center; text-align: center; }
+      footer .container { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .navbar-links { display: none; }
+      .mobile-menu-btn { display: block; }
+      .hero-stats { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .payments-grid { grid-template-columns: 1fr; }
+      .products-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+      .dashboard-tabs { padding: 8px 16px; }
+      .chat-panel { width: calc(100vw - 32px); right: 16px; bottom: 16px; }
+      footer .container { grid-template-columns: 1fr; gap: 24px; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+      section { padding: 48px 0; }
+    }
+    @media (max-width: 480px) {
+      .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .hero-stat { padding: 12px 4px; }
+      .hero-stat .number { font-size: 1.3rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .weather-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Nicaragua Stripe -->
+  <div class="nicaragua-stripe"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="navbar-brand">
+        <div class="logo">PC</div>
+        <span>Proveedor<span class="nic">Conecta</span></span>
+      </a>
+      <div class="navbar-links">
+        <a href="#hero">Inicio</a>
+        <a href="#payments">Pagos</a>
+        <a href="#products">Productos</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#weather">Clima</a>
+        <a href="#map">Mapa</a>
+        <a href="#team">Equipo</a>
+        <a href="#" class="btn-primary" onclick="openLogin()" style="margin-left:8px"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.add('open')">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav -->
+  <div class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-content">
+      <button class="mobile-nav-close" onclick="document.getElementById('mobileNav').classList.remove('open')">✕</button>
+      <a href="#hero" onclick="document.getElementById('mobileNav').classList.remove('open')">🏠 Inicio</a>
+      <a href="#payments" onclick="document.getElementById('mobileNav').classList.remove('open')">💳 Pagos</a>
+      <a href="#products" onclick="document.getElementById('mobileNav').classList.remove('open')">🛒 Productos</a>
+      <a href="#dashboard" onclick="document.getElementById('mobileNav').classList.remove('open')">📊 Dashboard</a>
+      <a href="#weather" onclick="document.getElementById('mobileNav').classList.remove('open')">🌤️ Clima</a>
+      <a href="#map" onclick="document.getElementById('mobileNav').classList.remove('open')">🗺️ Mapa</a>
+      <a href="#team" onclick="document.getElementById('mobileNav').classList.remove('open')">👥 Equipo</a>
+      <a href="#" onclick="document.getElementById('mobileNav').classList.remove('open');openLogin()" style="color:var(--accent);font-weight:700">🔑 Iniciar Sesión</a>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ HERO ═══════════════════ -->
+  <section class="hero" id="hero">
+    <div class="hero-orb-1"></div>
+    <div class="hero-orb-2"></div>
+    <div class="container">
+      <div class="hero-content animate">
+        <div class="hero-badges">
+          <div class="hero-badge nica">🇳🇮 Hecho en Nicaragua</div>
+          <div class="hero-badge hack">🏆 Hackathon Nicaragua 2026 – 10ª Edición</div>
+        </div>
+        <h1>
+          Proveedor<span>Conecta</span><br>
+          <span class="accent">Nicaragua</span>
+        </h1>
+        <p>Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima y servicios en toda Nicaragua. Vender y comprar es <strong style="color:var(--accent)">100% GRATIS</strong>.</p>
+        <div class="hero-search">
+          <input type="text" placeholder="Buscar productos, proveedores...">
+          <button class="btn-accent"><i class="fas fa-search"></i> Buscar</button>
+        </div>
+        <div class="hero-actions">
+          <a href="#sell" class="btn-accent"><i class="fas fa-store"></i> Vender</a>
+          <a href="#map" class="btn-ghost"><i class="fas fa-map-marked-alt"></i> Explorar Mapa</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="number">500+</div><div class="label">Proveedores</div></div>
+          <div class="hero-stat"><div class="number">2000+</div><div class="label">Productos</div></div>
+          <div class="hero-stat"><div class="number">17</div><div class="label">Departamentos</div></div>
+          <div class="hero-stat"><div class="number">11</div><div class="label">Métodos de Pago</div></div>
+        </div>
+      </div>
+      <div class="hero-visual animate" style="animation-delay:0.3s">
+        <div class="hero-mockup">
+          <div class="mockup-header">
+            <div class="mockup-dot red"></div>
+            <div class="mockup-dot yellow"></div>
+            <div class="mockup-dot green"></div>
+            <span style="color:rgba(255,255,255,0.3);font-size:10px;margin-left:auto">proveedorconecta.ni</span>
+          </div>
+          <div class="mockup-grid">
+            <div class="mockup-card">
+              <div class="mockup-card-img construction">🏗️</div>
+              <div class="mockup-card-body"><h4>Cemento Portland</h4><div class="price">C$285</div><div class="seller">🏪 Ferromax Managua</div></div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-img agriculture">🌾</div>
+              <div class="mockup-card-body"><h4>Fertilizante NPK</h4><div class="price">C$450</div><div class="seller">🏪 Agroindustrial SA</div></div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-img tech">💻</div>
+              <div class="mockup-card-body"><h4>Laptop Dell 15"</h4><div class="price">C$18,500</div><div class="seller">🏪 TechNI Solutions</div></div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-img food">☕</div>
+              <div class="mockup-card-body"><h4>Café Flor de Caña</h4><div class="price">C$320</div><div class="seller">🏪 Flor de Caña SA</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ PAYMENT METHODS (DETAILED) ═══════════════════ -->
+  <section id="payments">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">💳 Métodos de Pago</div>
+        <h2>11 formas de pagar y cobrar</h2>
+        <p>Transacciones seguras con los métodos más usados en Nicaragua y Centroamérica.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="payments-grid">
+        <!-- 1. PixelPay -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon digital"><i class="fas fa-credit-card"></i></div>
+            <div>
+              <h3>PixelPay</h3>
+              <span class="type-badge digital">Digital</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">2.5% + C$5 por transacción</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Inmediato</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Nicaragua</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 2. Pagadito -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon digital"><i class="fas fa-wallet"></i></div>
+            <div>
+              <h3>Pagadito</h3>
+              <span class="type-badge digital">Digital</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">2.8% por transacción</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Inmediato</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Centroamérica</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 3. PayPal -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon internacional"><i class="fab fa-paypal"></i></div>
+            <div>
+              <h3>PayPal</h3>
+              <span class="type-badge internacional">Internacional</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">3.5% + $0.30 USD</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">1-2 días</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Global</span></div>
+          <div class="currency-tags"><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 4. Google Pay -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon digital"><i class="fab fa-google-pay"></i></div>
+            <div>
+              <h3>Google Pay</h3>
+              <span class="type-badge digital">Digital</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">Sin comisión adicional</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Inmediato</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Global</span></div>
+          <div class="currency-tags"><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 5. Banpro Transferencia -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon bancario"><i class="fas fa-university"></i></div>
+            <div>
+              <h3>Banpro Transferencia</h3>
+              <span class="type-badge bancario">Bancario</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">Sin comisión</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Mismo día</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Nicaragua</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 6. Banpro Billetera -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon movil"><i class="fas fa-mobile-alt"></i></div>
+            <div>
+              <h3>Banpro Billetera</h3>
+              <span class="type-badge movil">Móvil</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">Sin comisión</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Inmediato</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Nicaragua</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 7. BAC Credomatic -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon bancario"><i class="fas fa-credit-card"></i></div>
+            <div>
+              <h3>BAC Credomatic</h3>
+              <span class="type-badge bancario">Bancario</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">3% por transacción</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">1-3 días</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Centroamérica</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 8. LAFISE -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon bancario"><i class="fas fa-exchange-alt"></i></div>
+            <div>
+              <h3>LAFISE</h3>
+              <span class="type-badge bancario">Bancario</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">1.5% por transferencia</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Mismo día</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Centroamérica</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span><span class="currency-tag">USD</span></div>
+        </div>
+        <!-- 9. Kash -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon movil"><i class="fas fa-coins"></i></div>
+            <div>
+              <h3>Kash</h3>
+              <span class="type-badge movil">Móvil</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">1% por transacción</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Inmediato</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Nicaragua</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span></div>
+        </div>
+        <!-- 10. Billetera Móvil -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon movil"><i class="fas fa-mobile-alt"></i></div>
+            <div>
+              <h3>Billetera Móvil</h3>
+              <span class="type-badge movil">Móvil</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">C$5 por transacción</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">Inmediato</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Nicaragua</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span></div>
+        </div>
+        <!-- 11. Western Union -->
+        <div class="payment-card">
+          <div class="payment-card-header">
+            <div class="payment-icon internacional"><i class="fas fa-globe-americas"></i></div>
+            <div>
+              <h3>Western Union</h3>
+              <span class="type-badge internacional">Internacional</span>
+            </div>
+          </div>
+          <div class="payment-detail"><span class="label">Comisión</span><span class="value">Según tarifa</span></div>
+          <div class="payment-detail"><span class="label">Procesamiento</span><span class="value">1-5 días</span></div>
+          <div class="payment-detail"><span class="label">Disponibilidad</span><span class="value">Global</span></div>
+          <div class="currency-tags"><span class="currency-tag">NIO</span><span class="currency-tag">USD</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ PRODUCTS ═══════════════════ -->
+  <section id="products">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">🛒 Productos Destacados</div>
+        <h2>Ofertas y productos populares</h2>
+        <p>Los mejores productos de proveedores nicaragüenses verificados.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="products-grid">
+        <div class="product-card">
+          <div class="product-img construction">🏗️
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Cemento Portland</h4>
+            <div class="product-prices"><span class="product-price">C$285</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> Ferromax Managua</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img agriculture">🌾
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Fertilizante NPK</h4>
+            <div class="product-prices"><span class="product-price">C$450</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> Agroindustrial SA</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img tech">💻
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Laptop Dell 15"</h4>
+            <div class="product-prices"><span class="product-price">C$18,500</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> TechNI Solutions</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img tech">🖨️
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+            <span class="product-discount">-10%</span>
+          </div>
+          <div class="product-body">
+            <h4>Impresora HP LaserJet</h4>
+            <div class="product-prices"><span class="product-price">C$5,200</span><span class="product-price-old">C$5,800</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> Tech Solutions Nicaragua</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img food">☕
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Café Flor de Caña</h4>
+            <div class="product-prices"><span class="product-price">C$320</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> Flor de Caña SA</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img construction">🔩
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Varilla de Acero</h4>
+            <div class="product-prices"><span class="product-price">C$185</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> Ferromax Managua</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img tech">📡
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Router TP-Link</h4>
+            <div class="product-prices"><span class="product-price">C$1,250</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> TechNI Solutions</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img paint">🎨
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Pintura Novex</h4>
+            <div class="product-prices"><span class="product-price">C$490</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> Novex Nicaragua</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img agriculture">🌱
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Semillas de Maíz</h4>
+            <div class="product-prices"><span class="product-price">C$350</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> COMETA</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-img tools">🔧
+            <button class="product-fav" onclick="this.classList.toggle('active')"><i class="far fa-heart"></i></button>
+          </div>
+          <div class="product-body">
+            <h4>Taladro Bosch</h4>
+            <div class="product-prices"><span class="product-price">C$2,800</span></div>
+            <div class="product-seller"><i class="fas fa-store"></i> Ferromax Managua</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ SELL PRODUCT FORM ═══════════════════ -->
+  <section id="sell">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">🏪 Vender Producto</div>
+        <h2>Publica tu producto gratis</h2>
+        <p>Formulario multi-paso para publicar productos en el marketplace.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="sell-form-card" style="max-width:600px;margin:0 auto">
+        <div class="sell-steps">
+          <div class="sell-step active" onclick="showSellStep(0)"><i class="fas fa-camera"></i> Fotos</div>
+          <div class="sell-step" onclick="showSellStep(1)"><i class="fas fa-info-circle"></i> Detalles</div>
+          <div class="sell-step" onclick="showSellStep(2)"><i class="fas fa-tag"></i> Descuento</div>
+        </div>
+        <div class="sell-form-body">
+          <div id="sellStep0">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Arrastra fotos aquí o <span>haz clic para subir</span></p>
+              <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:8px">JPG, PNG hasta 5MB • Máximo 5 fotos</p>
+              <input type="file" id="fileInput" style="display:none" multiple accept="image/*">
+            </div>
+          </div>
+          <div id="sellStep1" style="display:none">
+            <div class="form-group">
+              <label>Nombre del Producto</label>
+              <input type="text" class="form-input" placeholder="Ej: Cemento Portland 50kg">
+            </div>
+            <div class="form-group">
+              <label>Descripción</label>
+              <textarea class="form-input" rows="3" placeholder="Describe tu producto..." style="resize:vertical"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="form-group">
+                <label>Precio (C$)</label>
+                <input type="number" class="form-input" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Categoría</label>
+                <select class="form-input">
+                  <option>Construcción</option>
+                  <option>Agricultura</option>
+                  <option>Tecnología</option>
+                  <option>Alimentos</option>
+                  <option>Herramientas</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Stock Disponible</label>
+              <input type="number" class="form-input" placeholder="0">
+            </div>
+          </div>
+          <div id="sellStep2" style="display:none">
+            <div class="form-group">
+              <label>Descuento (%)</label>
+              <input type="number" class="form-input" placeholder="0" min="0" max="90">
+            </div>
+            <div class="form-group">
+              <label>Cantidad mínima para descuento</label>
+              <input type="number" class="form-input" placeholder="5">
+            </div>
+            <div class="form-group">
+              <label>Fecha de expiración del descuento</label>
+              <input type="date" class="form-input">
+            </div>
+            <button class="btn-accent" style="width:100%;justify-content:center;margin-top:16px"><i class="fas fa-check"></i> Publicar Producto</button>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:16px">
+            <button class="btn-outline" style="flex:1;justify-content:center" id="prevBtn" onclick="prevSellStep()" disabled>← Anterior</button>
+            <button class="btn-accent" style="flex:1;justify-content:center" id="nextBtn" onclick="nextSellStep()">Siguiente →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ ADMIN DASHBOARD ═══════════════════ -->
+  <section id="dashboard" class="dashboard-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">📊 Panel de Administración</div>
+        <h2>Dashboard Admin</h2>
+        <p>Estadísticas completas de la plataforma en tiempo real.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="dashboard-panel">
+        <div class="dashboard-header">
+          <h3><i class="fas fa-chart-line" style="color:var(--accent);margin-right:8px"></i> ProveedorConecta Admin</h3>
+          <span style="color:rgba(255,255,255,0.4);font-size:12px">Última actualización: hace 5 min</span>
+        </div>
+        <div class="dashboard-tabs">
+          <button class="dashboard-tab active">📊 Resumen</button>
+          <button class="dashboard-tab">💳 Transacciones</button>
+          <button class="dashboard-tab">👥 Usuarios</button>
+          <button class="dashboard-tab">🤝 Ayudantes</button>
+          <button class="dashboard-tab">💰 Comisiones</button>
+          <button class="dashboard-tab">📢 Anuncios</button>
+          <button class="dashboard-tab">📥 Exportar</button>
+        </div>
+        <div class="dashboard-body">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Usuarios</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📦</div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Productos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💰</div>
+              <div class="stat-value">C$0.00</div>
+              <div class="stat-label">Ingresos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💳</div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Transacciones</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">❤️</div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Likes</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💬</div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Mensajes</div>
+            </div>
+          </div>
+          <div class="commission-banner">
+            <i class="fas fa-percentage"></i>
+            <div>
+              <div class="comm-text">Comisión 3% Automática</div>
+              <div class="comm-amount">C$0.00 acumulada</div>
+            </div>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h4><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:6px"></i> Ingresos Mensuales</h4>
+              <canvas id="revenueChart" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+              <h4><i class="fas fa-chart-pie" style="color:var(--accent);margin-right:6px"></i> Estado de Transacciones</h4>
+              <canvas id="transactionChart" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ COTIZACIONES ═══════════════════ -->
+  <section id="quotes">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">📋 Cotizaciones</div>
+        <h2>Sistema de Cotizaciones</h2>
+        <p>Solicita cotizaciones a múltiples proveedores y compara precios.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="quote-cards">
+        <div class="quote-card">
+          <div class="quote-header">
+            <h4 style="color:white;font-size:14px">Cotización #001</h4>
+            <span class="quote-status pending">Pendiente</span>
+          </div>
+          <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:8px">Solicitud de 500 sacos de cemento Portland para proyecto en Managua</p>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.4)">
+            <span><i class="fas fa-store"></i> Ferromax Managua</span>
+            <span>05 Mar 2026</span>
+          </div>
+        </div>
+        <div class="quote-card">
+          <div class="quote-header">
+            <h4 style="color:white;font-size:14px">Cotización #002</h4>
+            <span class="quote-status approved">Aprobada</span>
+          </div>
+          <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:8px">20 laptops Dell para oficina gubernamental, incluye garantía extendida</p>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.4)">
+            <span><i class="fas fa-store"></i> TechNI Solutions</span>
+            <span>03 Mar 2026</span>
+          </div>
+        </div>
+        <div class="quote-card">
+          <div class="quote-header">
+            <h4 style="color:white;font-size:14px">Cotización #003</h4>
+            <span class="quote-status rejected">Rechazada</span>
+          </div>
+          <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:8px">Pedido de fertilizantes al por mayor para cooperativa en León</p>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.4)">
+            <span><i class="fas fa-store"></i> COMETA</span>
+            <span>01 Mar 2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ LOYALTY POINTS ═══════════════════ -->
+  <section id="loyalty">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">🎁 Puntos de Lealtad</div>
+        <h2>Programa de Recompensas</h2>
+        <p>Gana 1 punto por cada C$1 gastado. Canjea por descuentos exclusivos.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="loyalty-card">
+        <div style="position:relative">
+          <p style="color:rgba(255,255,255,0.5);font-size:14px;margin-bottom:4px">Tus Puntos</p>
+          <div class="loyalty-points">0</div>
+          <p style="color:rgba(255,255,255,0.4);font-size:12px">Equivalente a C$0.00 en descuentos</p>
+        </div>
+      </div>
+      <div class="loyalty-grid">
+        <div class="loyalty-item">
+          <div class="value">🥉 Bronce</div>
+          <div class="label">0 - 999 pts</div>
+        </div>
+        <div class="loyalty-item">
+          <div class="value">🥈 Plata</div>
+          <div class="label">1000 - 4999 pts</div>
+        </div>
+        <div class="loyalty-item">
+          <div class="value">🥇 Oro</div>
+          <div class="label">5000+ pts</div>
+        </div>
+        <div class="loyalty-item">
+          <div class="value">💎 Diamante</div>
+          <div class="label">10000+ pts</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ CALENDAR ═══════════════════ -->
+  <section id="calendar">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">📅 Agenda y Citas</div>
+        <h2>Calendario de Entregas</h2>
+        <p>Programa reuniones, entregas y reabastecimiento con recordatorios.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="calendar-card" style="max-width:500px;margin:0 auto">
+        <div class="calendar-nav">
+          <button onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+          <h3 id="calendarTitle">Marzo 2026</h3>
+          <button onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ WEATHER ═══════════════════ -->
+  <section id="weather">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">🌤️ Clima en Tiempo Real</div>
+        <h2>8 Ciudades Nicaragüenses</h2>
+        <p>Planifica entregas y compras según el clima de tu zona.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="weather-grid" id="weatherGrid">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ MAP ═══════════════════ -->
+  <section id="map">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">🗺️ Mapa Interactivo</div>
+        <h2>17 Departamentos de Nicaragua</h2>
+        <p>Encuentra proveedores geolocalizados en todo el país.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="map-container">
+        <div class="map-placeholder">
+          <i class="fas fa-map-marked-alt" style="font-size:48px;color:var(--accent);margin-bottom:12px"></i>
+          <p style="color:white;font-weight:600;font-size:16px">Mapa de Nicaragua</p>
+          <p style="color:rgba(255,255,255,0.5);font-size:13px">Proveedores en 17 departamentos</p>
+          <!-- Animated pins -->
+          <div class="map-pin" style="top:35%;left:40%;animation-delay:0s"></div>
+          <div class="map-pin" style="top:25%;left:30%;animation-delay:0.5s"></div>
+          <div class="map-pin" style="top:45%;left:55%;animation-delay:1s"></div>
+          <div class="map-pin" style="top:55%;left:35%;animation-delay:1.5s"></div>
+          <div class="map-pin" style="top:30%;left:60%;animation-delay:0.3s"></div>
+        </div>
+        <div class="map-depts">
+          <div class="map-dept">Managua</div>
+          <div class="map-dept">León</div>
+          <div class="map-dept">Granada</div>
+          <div class="map-dept">Masaya</div>
+          <div class="map-dept">Chinandega</div>
+          <div class="map-dept">Estelí</div>
+          <div class="map-dept">Matagalpa</div>
+          <div class="map-dept">Bluefields</div>
+          <div class="map-dept">Rivas</div>
+          <div class="map-dept">Carazo</div>
+          <div class="map-dept">Jinotega</div>
+          <div class="map-dept">Nueva Segovia</div>
+          <div class="map-dept">Chontales</div>
+          <div class="map-dept">Boaco</div>
+          <div class="map-dept">Río San Juan</div>
+          <div class="map-dept">RAAN</div>
+          <div class="map-dept">RAAS</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ USER PROFILE ═══════════════════ -->
+  <section id="profile">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">👤 Perfil de Usuario</div>
+        <h2>Tu Cuenta</h2>
+        <p>Configura tu perfil y revisa tus insignias de confianza.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="profile-card" style="max-width:600px;margin:0 auto">
+        <div class="profile-avatar">R</div>
+        <div class="profile-info">
+          <h3>Reynaldo</h3>
+          <div class="email">rey7214935@gmail.com</div>
+          <div class="profile-badges">
+            <span class="profile-badge-item"><i class="fas fa-shield-alt"></i> Verificado</span>
+            <span class="profile-badge-item gold"><i class="fas fa-star"></i> Vendedor Oro</span>
+            <span class="profile-badge-item blue"><i class="fas fa-map-marker-alt"></i> Managua</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ TEAM ═══════════════════ -->
+  <section id="team">
+    <div class="container">
+      <div class="section-header">
+        <div class="badge">👥 Creadores</div>
+        <h2>Nuestro Equipo</h2>
+        <p>El equipo detrás de ProveedorConecta Nicaragua.</p>
+        <div class="section-divider"></div>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar r">R</div>
+          <h4>Reynaldo</h4>
+          <div class="role">Admin / Desarrollador</div>
+          <div class="email">rey7214935@gmail.com</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar m">M</div>
+          <h4>Mychael</h4>
+          <div class="role">Fullstack Developer</div>
+          <div class="email">mychael@proveedorconecta.ni</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar p">P</div>
+          <h4>Pedro</h4>
+          <div class="role">Desarrollador</div>
+          <div class="email">pedro@proveedorconecta.ni</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar a1">A</div>
+          <h4>Apolonio</h4>
+          <div class="role">Marketing</div>
+          <div class="email">apolonio@proveedorconecta.ni</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar a2">A</div>
+          <h4>Arbela</h4>
+          <div class="role">Diseño Gráfico</div>
+          <div class="email">arbela@proveedorconecta.ni</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ CTA ═══════════════════ -->
+  <section class="cta-section" id="cta">
+    <div class="container">
+      <div class="cta-content">
+        <h2>🇳🇮 Únete a ProveedorConecta Nicaragua</h2>
+        <p>La plataforma gratuita que conecta emprendedores, MIPYMES y proveedores en toda Nicaragua. Regístrate hoy y empieza a vender o comprar.</p>
+        <div class="cta-actions">
+          <a href="#" class="btn-accent" onclick="openLogin();return false"><i class="fas fa-rocket"></i> Comenzar Gratis</a>
+          <a href="#hero" class="btn-ghost"><i class="fas fa-book"></i> Conocer Más</a>
+        </div>
+        <div style="margin-top:32px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
+          <span style="color:rgba(255,255,255,0.5);font-size:13px">✓ 100% Gratis</span>
+          <span style="color:rgba(255,255,255,0.5);font-size:13px">✓ Solo 3% comisión</span>
+          <span style="color:rgba(255,255,255,0.5);font-size:13px">✓ 11 métodos de pago</span>
+          <span style="color:rgba(255,255,255,0.5);font-size:13px">✓ Sin tarjeta de crédito</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer>
+    <div class="container">
+      <div>
+        <div class="footer-brand">
+          <div class="logo">PC</div>
+          <span>ProveedorConecta</span>
+        </div>
+        <p style="font-size:13px;max-width:300px;line-height:1.6;color:rgba(255,255,255,0.5)">
+          Marketplace B2B/B2C que conecta emprendedores y MIPYMES con proveedores en toda Nicaragua. Hackathon Nicaragua 2026 – 10ª Edición – Siempre más allá.
+        </p>
+      </div>
+      <div>
+        <h4>Plataforma</h4>
+        <a href="#payments">Métodos de Pago</a>
+        <a href="#products">Productos</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#weather">Clima</a>
+        <a href="#map">Mapa</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Términos de Servicio</a>
+        <a href="#">Política de Privacidad</a>
+        <a href="#">Política de Reembolso</a>
+        <a href="#">Cookies</a>
+      </div>
+      <div>
+        <h4>Contacto</h4>
+        <a href="mailto:rey7214935@gmail.com"><i class="fas fa-envelope" style="margin-right:6px"></i> rey7214935@gmail.com</a>
+        <a href="#"><i class="fas fa-map-marker-alt" style="margin-right:6px"></i> Managua, Nicaragua</a>
+        <a href="#"><i class="fas fa-phone" style="margin-right:6px"></i> +505 0000-0000</a>
+        <a href="https://github.com" target="_blank"><i class="fab fa-github" style="margin-right:6px"></i> GitHub</a>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 ProveedorConecta Nicaragua. Todos los derechos reservados.</span>
+        <span>🇳🇮 Hecho en Nicaragua • Hackathon Nicaragua 2026 – 10ª Edición</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════ LOGIN MODAL ═══════════════════ -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeLogin()"><i class="fas fa-times"></i></button>
+      <div style="text-align:center;margin-bottom:8px">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--primary-light),var(--accent));display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:18px;font-family:'Poppins';margin-bottom:12px">PC</div>
+      </div>
+      <h2 style="text-align:center">Iniciar Sesión</h2>
+      <p class="subtitle" style="text-align:center">Accede a tu cuenta de ProveedorConecta</p>
+      <button class="btn-google" onclick="alert('Demo: Autenticación con Google')">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continuar con Google
+      </button>
+      <div class="divider">o</div>
+      <div class="form-group">
+        <label>Correo Electrónico</label>
+        <input type="email" class="form-input" placeholder="tu@email.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" class="form-input" placeholder="••••••••">
+      </div>
+      <button class="btn-accent" style="width:100%;justify-content:center;margin-top:8px" onclick="alert('Demo: Inicio de sesión exitoso')">Iniciar Sesión</button>
+      <p style="text-align:center;margin-top:16px;font-size:13px;color:rgba(255,255,255,0.5)">
+        ¿No tienes cuenta? <a href="#" style="color:var(--accent);font-weight:600" onclick="alert('Demo: Registro')">Regístrate</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ AI CHATBOX ═══════════════════ -->
+  <button class="chat-fab" id="chatFab" onclick="toggleChat()">
+    <i class="fas fa-robot"></i>
+  </button>
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+        <div>
+          <h4>Asistente ProveedorConecta</h4>
+          <span>En línea • Multi-Agente IA</span>
+        </div>
+      </div>
+      <button class="chat-close" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="chat-msg bot">
+        <div class="chat-bubble">
+          ¡Hola! 👋 Soy el asistente de ProveedorConecta. ¿En qué puedo ayudarte hoy?
+        </div>
+      </div>
+      <div class="chat-capabilities">
+        <h5>🤖 Capacidades Multi-Agente IA</h5>
+        <ul>
+          <li>Búsqueda inteligente de productos</li>
+          <li>Recomendación de proveedores</li>
+          <li>Comparación de precios</li>
+          <li>Asistencia en cotizaciones</li>
+          <li>Información de métodos de pago</li>
+          <li>Soporte técnico 24/7</li>
+          <li>Análisis de mercado</li>
+          <li>Traducción automática</li>
+        </ul>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter')sendChat()">
+      <button class="chat-send" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ JAVASCRIPT ═══════════════════ -->
+  <script>
+    // ── Navbar scroll effect ──
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ── Login Modal ──
+    function openLogin() {
+      document.getElementById('loginModal').classList.add('open');
+    }
+    function closeLogin() {
+      document.getElementById('loginModal').classList.remove('open');
+    }
+    document.getElementById('loginModal').addEventListener('click', function(e) {
+      if (e.target === this) closeLogin();
+    });
+
+    // ── Chat ──
+    function toggleChat() {
+      const panel = document.getElementById('chatPanel');
+      const fab = document.getElementById('chatFab');
+      panel.classList.toggle('open');
+      fab.style.display = panel.classList.contains('open') ? 'none' : 'flex';
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const body = document.getElementById('chatBody');
+      body.innerHTML += `<div class="chat-msg user"><div class="chat-bubble">${escapeHtml(msg)}</div></div>`;
+      input.value = '';
+      body.scrollTop = body.scrollHeight;
+
+      setTimeout(() => {
+        const responses = [
+          '¡Gracias por tu mensaje! Estoy procesando tu solicitud... 🔍',
+          'Puedo ayudarte a encontrar proveedores. ¿Qué producto buscas? 📦',
+          'Conozco los mejores precios en Nicaragua. ¿En qué categoría estás interesado? 💰',
+          '¿Te gustaría ver las ofertas del día? Tenemos descuentos increíbles 🎉',
+          'Recuerda que publicar productos es 100% GRATIS. ¡Solo cobramos 3% por venta! 🏪'
+        ];
+        const reply = responses[Math.floor(Math.random() * responses.length)];
+        body.innerHTML += `<div class="chat-msg bot"><div class="chat-bubble">${reply}</div></div>`;
+        body.scrollTop = body.scrollHeight;
+      }, 1000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ── Sell Form Steps ──
+    let currentSellStep = 0;
+    function showSellStep(step) {
+      currentSellStep = step;
+      for (let i = 0; i < 3; i++) {
+        document.getElementById('sellStep' + i).style.display = i === step ? 'block' : 'none';
+        document.querySelectorAll('.sell-step')[i].classList.toggle('active', i === step);
+      }
+      document.getElementById('prevBtn').disabled = step === 0;
+      document.getElementById('nextBtn').textContent = step === 2 ? '✓ Publicar' : 'Siguiente →';
+      if (step === 2) {
+        document.getElementById('nextBtn').onclick = function() { alert('¡Producto publicado exitosamente! (Demo)'); };
+      } else {
+        document.getElementById('nextBtn').onclick = nextSellStep;
+      }
+    }
+    function nextSellStep() { if (currentSellStep < 2) showSellStep(currentSellStep + 1); }
+    function prevSellStep() { if (currentSellStep > 0) showSellStep(currentSellStep - 1); }
+
+    // ── Calendar ──
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    let calMonth = 2; // March
+    let calYear = 2026;
+    const events = { '2026-3-5': true, '2026-3-12': true, '2026-3-18': true, '2026-3-25': true };
+
+    function renderCalendar() {
+      document.getElementById('calendarTitle').textContent = monthNames[calMonth] + ' ' + calYear;
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const today = new Date();
+      const isCurrentMonth = today.getMonth() === calMonth && today.getFullYear() === calYear;
+      const todayDate = today.getDate();
+
+      let html = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => `<div class="calendar-day-name">${d}</div>`).join('');
+
+      for (let i = 0; i < firstDay; i++) html += '<div class="calendar-day empty"></div>';
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${calYear}-${calMonth+1}-${d}`;
+        const classes = ['calendar-day'];
+        if (isCurrentMonth && d === todayDate) classes.push('today');
+        if (events[key]) classes.push('has-event');
+        html += `<div class="${classes.join(' ')}">${d}</div>`;
+      }
+
+      document.getElementById('calendarGrid').innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      calMonth += delta;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    }
+    renderCalendar();
+
+    // ── Weather ──
+    const cities = [
+      { name: 'Managua', temp: 32, desc: 'soleado', icon: '☀️', humidity: 55, wind: 12 },
+      { name: 'León', temp: 34, desc: 'caluroso', icon: '🌤️', humidity: 48, wind: 8 },
+      { name: 'Granada', temp: 31, desc: 'parcialmente nublado', icon: '⛅', humidity: 60, wind: 10 },
+      { name: 'Masaya', temp: 29, desc: 'nublado', icon: '☁️', humidity: 65, wind: 14 },
+      { name: 'Chinandega', temp: 35, desc: 'muy caluroso', icon: '🔥', humidity: 42, wind: 6 },
+      { name: 'Estelí', temp: 26, desc: 'fresco', icon: '🌿', humidity: 70, wind: 8 },
+      { name: 'Matagalpa', temp: 25, desc: 'lluvia ligera', icon: '🌧️', humidity: 78, wind: 10 },
+      { name: 'Bluefields', temp: 30, desc: 'tormenta tropical', icon: '⛈️', humidity: 82, wind: 22 }
+    ];
+
+    document.getElementById('weatherGrid').innerHTML = cities.map(c => `
+      <div class="weather-card">
+        <div class="city">${c.name}</div>
+        <div class="icon">${c.icon}</div>
+        <div class="temp">${c.temp}°C</div>
+        <div class="desc">${c.desc}</div>
+        <div class="details">
+          <span><i class="fas fa-tint"></i> ${c.humidity}%</span>
+          <span><i class="fas fa-wind"></i> ${c.wind}km/h</span>
+        </div>
+      </div>
+    `).join('');
+
+    // ── Charts ──
+    function initCharts() {
+      // Revenue Chart
+      const revCtx = document.getElementById('revenueChart');
+      if (revCtx) {
+        new Chart(revCtx, {
+          type: 'bar',
+          data: {
+            labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+            datasets: [{
+              label: 'Ingresos (C$)',
+              data: [0,0,0,0,0,0,0,0,0,0,0,0],
+              backgroundColor: 'rgba(46,134,193,0.6)',
+              borderColor: 'rgba(46,134,193,1)',
+              borderWidth: 1,
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 11 } },
+                grid: { color: 'rgba(255,255,255,0.04)' }
+              },
+              x: {
+                ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 11 } },
+                grid: { display: false }
+              }
+            }
+          }
+        });
+      }
+
+      // Transaction Chart
+      const txnCtx = document.getElementById('transactionChart');
+      if (txnCtx) {
+        new Chart(txnCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Completadas', 'Pendientes', 'Canceladas'],
+            datasets: [{
+              data: [0,0,0],
+              backgroundColor: ['rgba(39,174,96,0.7)', 'rgba(243,156,18,0.7)', 'rgba(231,76,60,0.7)'],
+              borderColor: ['rgba(39,174,96,1)', 'rgba(243,156,18,1)', 'rgba(231,76,60,1)'],
+              borderWidth: 2,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: 'rgba(255,255,255,0.6)', font: { size: 12 }, padding: 16 }
+              }
+            }
+          }
+        });
+      }
+    }
+    initCharts();
+
+    // ── Scroll Animations ──
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.payment-card, .product-card, .team-card, .weather-card, .quote-card').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'all 0.5s ease-out';
+      observer.observe(el);
+    });
+
+    // ── Dashboard Tabs ──
+    document.querySelectorAll('.dashboard-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.dashboard-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // ── Favorite hearts toggle ──
+    document.querySelectorAll('.product-fav').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const icon = this.querySelector('i');
+        if (icon.classList.contains('far')) {
+          icon.classList.remove('far');
+          icon.classList.add('fas');
+          this.classList.add('active');
+        } else {
+          icon.classList.remove('fas');
+          icon.classList.add('far');
+          this.classList.remove('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

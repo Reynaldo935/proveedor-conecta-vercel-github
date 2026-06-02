@@ -332,6 +332,7 @@ export function AdminPanel() {
           <TabsTrigger value="commissions">Comisiones</TabsTrigger>
           <TabsTrigger value="ads">Anuncios</TabsTrigger>
           <TabsTrigger value="exports">Exportar</TabsTrigger>
+          <TabsTrigger value="audit" onClick={() => navigate("audit")}>Auditoría</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -662,6 +663,25 @@ export function AdminPanel() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="audit" className="mt-4">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate("audit")}>
+            <CardContent className="p-8 flex flex-col items-center text-center gap-4">
+              <div className="p-4 rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(26,82,118,0.1), rgba(46,134,193,0.1))" }}>
+                <Shield className="h-10 w-10" style={{ color: "#1A5276" }} />
+              </div>
+              <div>
+                <p className="text-lg font-bold">Registro de Auditoría</p>
+                <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                  Accede al registro completo de actividad del sistema. Monitorea inicios de sesión, transacciones, cambios y más.
+                </p>
+              </div>
+              <Button className="gap-2" style={{ background: "linear-gradient(135deg, #1A5276, #2E86C1)" }}>
+                <Activity className="h-4 w-4" /> Abrir Registro de Auditoría
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

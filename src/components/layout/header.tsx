@@ -56,6 +56,9 @@ import {
   FileDown,
   DollarSign,
   Calendar,
+  Megaphone,
+  Eye,
+  ClipboardCheck,
 } from "lucide-react"
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react"
 import { CreatorsDropdown } from "@/components/creators/CreatorsDropdown"
@@ -349,8 +352,22 @@ export function Header() {
                     <DropdownMenuItem onClick={() => handleNav("admin")}>
                       <Shield className="mr-2 h-4 w-4" /> Panel Admin
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNav("audit")}>
+                      <ClipboardCheck className="mr-2 h-4 w-4" /> Auditoría
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNav("backup")}>
                       <DatabaseBackup className="mr-2 h-4 w-4" /> Backup
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {isSeller && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">
+                      Anuncios
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleNav("create-ad")}>
+                      <Megaphone className="mr-2 h-4 w-4" /> Crear Anuncio
                     </DropdownMenuItem>
                   </>
                 )}
@@ -420,6 +437,11 @@ export function Header() {
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => handleNav("admin")}>
                       <Shield className="mr-2 h-4 w-4" /> Panel Admin
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => handleNav("audit")}>
+                      <ClipboardCheck className="mr-2 h-4 w-4" /> Auditoría
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -644,8 +666,26 @@ export function Header() {
                   <Button variant="ghost" className="w-full justify-start h-10 text-destructive hover:text-destructive" onClick={() => handleNav("admin")}>
                     <Shield className="h-4 w-4 mr-3" /> Panel Admin
                   </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10 text-destructive hover:text-destructive" onClick={() => handleNav("audit")}>
+                    <ClipboardCheck className="h-4 w-4 mr-3" /> Auditoría
+                  </Button>
                   <Button variant="ghost" className="w-full justify-start h-10 text-destructive hover:text-destructive" onClick={() => handleNav("backup")}>
                     <DatabaseBackup className="h-4 w-4 mr-3" /> Backup
+                  </Button>
+                </>
+              )}
+
+              {/* ── Ads Section (Seller) ── */}
+              {isAuthenticated && isSeller && (
+                <>
+                  <Separator className="my-2" />
+                  <div className="px-2 pt-1 pb-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-orange-600">
+                      Anuncios
+                    </p>
+                  </div>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("create-ad")}>
+                    <Megaphone className="h-4 w-4 mr-3 text-orange-600" /> Crear Anuncio
                   </Button>
                 </>
               )}

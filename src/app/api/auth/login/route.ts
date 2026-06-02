@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { createAuditLog, getClientIp, getUserAgent } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +43,17 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 500 })
     }
+
+    // Audit log
+    await createAuditLog({
+      userId: user.id,
+      action: 'LOGIN',
+      entity: 'User',
+      entityId: user.id,
+      details: `Inicio de sesión: ${user.email}`,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+    })
 
     const { password: _, ...safeUser } = user
     const response = NextResponse.json({ success: true, data: safeUser })

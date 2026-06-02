@@ -42,6 +42,10 @@ import { authFetch } from "@/lib/client-auth"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { WeatherWidget } from "@/components/weather/weather-widget"
+import dynamic from "next/dynamic"
+
+// Lazy-load AdBanner to reduce initial bundle
+const AdBanner = dynamic(() => import("@/components/ads/ad-banner").then(m => ({ default: m.AdBanner })), { ssr: false })
 
 // ─── Product Interface ────────────────────────────────────────────────────────
 interface Product {
@@ -776,6 +780,11 @@ export function HomeFeed() {
           )}
         </section>
       )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SPONSORED ADS - Paid advertisements
+          ═══════════════════════════════════════════════════════════════════ */}
+      <AdBanner />
 
       {/* ═══════════════════════════════════════════════════════════════════
           PRODUCT GRID - Facebook Marketplace Style Cards

@@ -46,6 +46,8 @@ const LoyaltyDashboard = dynamic(() => import("@/components/loyalty/loyalty-dash
 const ReviewsSection = dynamic(() => import("@/components/reviews/reviews-section").then(m => ({ default: m.ReviewsSection })), { ssr: false })
 const CalendarView = dynamic(() => import("@/components/calendar/calendar-view").then(m => ({ default: m.CalendarView })), { ssr: false })
 const CurrenciesView = dynamic(() => import("@/components/marketplace/currencies-view").then(m => ({ default: m.CurrenciesView })), { ssr: false })
+const AuditPanel = dynamic(() => import("@/components/audit/audit-panel").then(m => ({ default: m.AuditPanel })), { ssr: false })
+const CreateAdForm = dynamic(() => import("@/components/ads/create-ad-form").then(m => ({ default: m.CreateAdForm })), { ssr: false })
 
 // ─── Hydration-safe "mounted" flag ────────────────────────────────────────────
 const emptySubscribe = () => () => {}
@@ -164,6 +166,8 @@ export default function ProveedorConecta() {
       case "reviews": return isAuthenticated ? <ReviewsSection targetId={selectedVendorId ?? user?.id ?? ""} /> : <LoginForm />
       case "calendar": return isAuthenticated ? <CalendarView /> : <LoginForm />
       case "currencies": return <CurrenciesView />
+      case "audit": return isAuthenticated ? <AuditPanel /> : <LoginForm />
+      case "create-ad": return isAuthenticated ? <CreateAdForm /> : <LoginForm />
       default: return <HomeFeed />
     }
   }
