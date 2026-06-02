@@ -120,7 +120,7 @@ export function VerifyEmail({ email, verificationToken, verificationLink }: Veri
         toast.error(data.error || "Error al reenviar correo")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setResending(false)
     }

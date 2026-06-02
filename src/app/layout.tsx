@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { FetchInterceptor } from "@/components/layout/fetch-interceptor";
+import { ConnectionBanner } from "@/components/layout/connection-banner";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -57,6 +58,7 @@ export default function RootLayout({
           storageKey="pc-theme"
         >
           <FetchInterceptor />
+          <ConnectionBanner />
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

@@ -1,29 +1,23 @@
 ---
 Task ID: 1
-Agent: Main Orchestrator
-Task: Full functional enhancement of ProveedorConecta Nicaragua
+Agent: Main Agent
+Task: Fix "Error de conexión" errors and improve API resilience
 
 Work Log:
-- Created /api/upload route for chat media uploads (image, video, audio)
-- Built AuditPanel component with search, filters, pagination, CSV export
-- Built CreateAdForm component with 3-step flow (content, plan, preview)
-- Built AdBanner component with carousel, dismiss, impression tracking
-- Added 'audit' and 'create-ad' views to app store and page.tsx
-- Updated navbar (desktop + mobile) with Auditoría section (admin-only) and Anuncios section (seller)
-- Added Auditoría tab in admin panel
-- Added AdBanner to home feed between featured and product grid
-- Created /api/audit route for fetching audit logs with filtering
-- Created /api/advertisements/public route for displaying active ads
-- Created lib/audit.ts helper with createAuditLog, getClientIp, getUserAgent
-- Added audit logging to login route
-- Fixed duplicate chat route conflict (/api/chat/rooms/[id] vs [roomId])
-- Fixed setup route missing exports (checkDatabaseHealth, isTursoConfigured)
-- Build passes 100% clean, lint passes 100% clean
+- Analyzed user screenshots showing "Error de conexión" toasts on login/register pages
+- Root cause: fetch() calls had no retry logic, no timeout, and generic error messages
+- Created `/src/lib/api-client.ts` - robust API client with retry logic (2 retries), 15s timeout, offline detection, and descriptive error messages
+- Updated `/src/components/auth/login-form.tsx` to use new api client
+- Updated `/src/components/layout/fetch-interceptor.tsx` with retry logic on API failures and offline detection
+- Created `/src/components/layout/connection-banner.tsx` - shows banner when server is unreachable with auto-retry and reload button
+- Added ConnectionBanner to `/src/app/layout.tsx`
+- Replaced all 20+ instances of generic "Error de conexión" across 12 component files with specific, helpful error messages
+- Lint passes clean
+- Server running and all APIs tested successfully
 
 Stage Summary:
-- Chat system: NOW FULLY FUNCTIONAL with upload API (photo, video, audio, location, text)
-- Payments: Already fully functional with 3% commission, 11 methods, validation
-- Auditoría: New admin-only panel with full audit log viewing, filtering, export
-- Ads: Complete system - sellers create ads (3 plans), admin approves, ads display on feed
-- Navbar: Auditoría section for admin, Anuncios section for sellers
-- No build errors, no lint errors, all routes compile
+- API calls now have automatic retry (2 retries with 2s delay)
+- Better error messages in Spanish: "No se pudo conectar al servidor. Intenta de nuevo."
+- Connection banner shows when server is offline with auto-retry indicator
+- All demo accounts verified working: ferreteria@demo.ni, agroserv@demo.ni, tech@demo.ni, comprador@demo.ni
+- Admin login verified: rey7214935@gmail.com / admin123

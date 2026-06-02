@@ -191,7 +191,7 @@ export function RegisterForm() {
         toast.error(data.error || "Error al enviar código")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
     } finally {
       setSmsSending(false)
     }
@@ -219,7 +219,7 @@ export function RegisterForm() {
         toast.error(data.error || "Código incorrecto")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
     } finally {
       setSmsVerifying(false)
     }
@@ -266,7 +266,7 @@ export function RegisterForm() {
         toast.error(data.error || "Error al registrarse")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -339,7 +339,7 @@ export function RegisterForm() {
         toast.error(data.error)
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }

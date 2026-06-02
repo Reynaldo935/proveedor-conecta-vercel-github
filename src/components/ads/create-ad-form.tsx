@@ -238,7 +238,7 @@ export function CreateAdForm() {
         toast.error(d.error || "Error al crear anuncio")
       }
     } catch {
-      toast.error("Error de conexión al crear anuncio")
+      toast.error("No se pudo crear el anuncio. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }

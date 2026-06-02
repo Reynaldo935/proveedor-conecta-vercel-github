@@ -57,7 +57,7 @@ export function MyProducts() {
         toast.error("Error al cambiar estado")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setTogglingId(null)
     }
@@ -75,7 +75,7 @@ export function MyProducts() {
         toast.error("Error al eliminar")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setDeletingId(null)
     }

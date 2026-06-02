@@ -353,7 +353,7 @@ export function AuditPanel() {
         toast.error(result.error || "Error al cargar logs")
       }
     } catch {
-      toast.error("Error de conexión al servidor")
+      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
     } finally {
       setLoading(false)
       setRefreshing(false)

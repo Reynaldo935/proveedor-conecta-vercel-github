@@ -151,7 +151,7 @@ export function VendorProfile() {
         toast.error(d.error || "Error al publicar")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setPosting(false)
     }

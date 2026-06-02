@@ -72,7 +72,7 @@ export function BackupView() {
         toast.error(data.error || "Error al cargar respaldos")
       }
     } catch {
-      toast.error("Error de conexión al cargar respaldos")
+      toast.error("No se pudo cargar respaldos. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -103,7 +103,7 @@ export function BackupView() {
         setStatusMessage(null)
       }
     } catch {
-      toast.error("Error de conexión al crear respaldo")
+      toast.error("No se pudo crear respaldo. Intenta de nuevo.")
       setStatusMessage(null)
     } finally {
       setCreating(false)
@@ -129,7 +129,7 @@ export function BackupView() {
         setStatusMessage(null)
       }
     } catch {
-      toast.error("Error de conexión al restaurar")
+      toast.error("No se pudo restaurar. Intenta de nuevo.")
       setStatusMessage(null)
     } finally {
       setRestoring(null)

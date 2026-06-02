@@ -150,7 +150,7 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
         toast.error(result.error || "Error al votar")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setVotingReviewId(null)
     }
@@ -185,7 +185,7 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
         toast.error(result.error || "Error al publicar reseña")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setSubmitting(false)
     }

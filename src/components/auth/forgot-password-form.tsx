@@ -58,7 +58,7 @@ export function ForgotPasswordForm() {
         toast.error(data.error || "Error al procesar la solicitud")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -99,7 +99,7 @@ export function ForgotPasswordForm() {
         }
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -125,7 +125,7 @@ export function ForgotPasswordForm() {
         toast.info("Si el correo está registrado, recibirás un enlace")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }

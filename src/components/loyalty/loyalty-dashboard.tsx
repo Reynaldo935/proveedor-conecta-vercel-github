@@ -78,7 +78,7 @@ export function LoyaltyDashboard() {
         toast.error("Error al cargar puntos de lealtad")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -116,7 +116,7 @@ export function LoyaltyDashboard() {
         toast.error(result.error || "Error al canjear puntos")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setRedeeming(false)
     }

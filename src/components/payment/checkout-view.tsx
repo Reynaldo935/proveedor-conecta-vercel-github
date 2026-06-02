@@ -596,7 +596,7 @@ export function CheckoutView() {
         }
       }
     } catch {
-      toast.error("Error de conexión al procesar pago")
+      toast.error("No se pudo procesar el pago. Intenta de nuevo.")
     } finally {
       setProcessing(false)
     }

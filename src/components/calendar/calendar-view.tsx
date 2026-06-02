@@ -213,7 +213,7 @@ export function CalendarView() {
         toast.error(result.error || "Error al crear evento")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setCreating(false)
     }
@@ -233,7 +233,7 @@ export function CalendarView() {
         toast.error(result.error || "Error al eliminar")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setDeleting(null)
     }

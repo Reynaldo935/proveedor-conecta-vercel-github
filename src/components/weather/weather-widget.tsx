@@ -222,7 +222,7 @@ export function WeatherWidget() {
         setError("Error al obtener clima")
       }
     } catch {
-      setError("Error de conexión")
+      setError("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }

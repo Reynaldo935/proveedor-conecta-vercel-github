@@ -94,7 +94,7 @@ export function AdminPanel() {
         toast.error(data.error || "Error al cargar estadísticas")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar. Intenta de nuevo.")
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -150,7 +150,7 @@ export function AdminPanel() {
       } else {
         toast.error(data.error || "Error al asignar rol")
       }
-    } catch { toast.error("Error de conexión") }
+    } catch { toast.error("No se pudo conectar. Intenta de nuevo.") }
     finally { setAssigningHelper(false) }
   }
 

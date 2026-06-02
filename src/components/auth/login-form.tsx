@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { Mail, Lock, Eye, EyeOff, Loader2, Sparkles } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, Loader2, Sparkles, WifiOff } from "lucide-react"
 import { VerifyEmail } from "@/components/auth/verify-email"
 import { motion, AnimatePresence } from "framer-motion"
+import { api } from "@/lib/api-client"
 
 const DEMO_ACCOUNTS = [
   { email: "ferreteria@demo.ni", label: "Ferretería", icon: "🏗️", color: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800" },
@@ -44,21 +45,16 @@ export function LoginForm() {
     }
     setLoading(true)
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setUser(data.data)
+      const data = await api.post("auth/login", { email, password })
+      if (data.success && data.data) {
+        setUser(data.data as any)
         toast.success("¡Bienvenido de vuelta!")
         navigate("home")
       } else {
         toast.error(data.error || "Error al iniciar sesión")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar al servidor. Verifica tu conexión e intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -70,21 +66,16 @@ export function LoginForm() {
     setPassword(DEMO_PASSWORD)
     setLoading(true)
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: demoEmail, password: DEMO_PASSWORD }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setUser(data.data)
+      const data = await api.post("auth/login", { email: demoEmail, password: DEMO_PASSWORD })
+      if (data.success && data.data) {
+        setUser(data.data as any)
         toast.success(`¡Bienvenido! (${demoEmail})`)
         navigate("home")
       } else {
         toast.error(data.error || "Cuenta demo no disponible")
       }
     } catch {
-      toast.error("Error de conexión")
+      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
     } finally {
       setLoading(false)
       setDemoLogging(null)
@@ -104,22 +95,18 @@ export function LoginForm() {
 
     // Server-side email validation with account existence check
     try {
-      const validateRes = await fetch("/api/auth/validate-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: googleEmail, checkAccount: true }),
-      })
-      const validateData = await validateRes.json()
+      const validateData = await api.post("auth/validate-email", { email: googleEmail, checkAccount: true })
       if (validateData.success && validateData.data) {
-        if (validateData.data.correoInvalido || !validateData.data.accountExists) {
+        const vd = validateData.data as any
+        if (vd.correoInvalido || !vd.accountExists) {
           toast.error("Correo inválido — la cuenta de Google no existe o no se puede verificar")
           return
         }
-        if (validateData.data.disposable) {
+        if (vd.disposable) {
           toast.error("No se permiten correos de dominios desechables")
           return
         }
-        if (!validateData.data.valid) {
+        if (!vd.valid) {
           toast.error("Correo inválido. Verifica que la dirección de correo exista.")
           return
         }
@@ -130,27 +117,22 @@ export function LoginForm() {
 
     setLoading(true)
     try {
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: googleEmail,
-          name: googleEmail.split("@")[0],
-          googleId: "google_" + Date.now(),
-          avatar: "",
-          role: "BUYER",
-        }),
+      const data = await api.post("auth/google", {
+        email: googleEmail,
+        name: googleEmail.split("@")[0],
+        googleId: "google_" + Date.now(),
+        avatar: "",
+        role: "BUYER",
       })
-      const data = await res.json()
-      if (data.success) {
-        setUser(data.data)
+      if (data.success && data.data) {
+        setUser(data.data as any)
         toast.success("¡Bienvenido con Google!")
         navigate("home")
       } else {
-        toast.error(data.error)
+        toast.error(data.error || "Error con Google")
       }
     } catch {
-      toast.error("Error de conexión con Google")
+      toast.error("No se pudo conectar con Google. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
