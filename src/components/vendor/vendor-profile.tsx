@@ -68,9 +68,9 @@ export function VendorProfile() {
     const loadData = async () => {
       try {
         const [userData, productsData, businessData] = await Promise.all([
-          fetch(`/api/users/${selectedVendorId}`).then(r => r.json()),
-          fetch(`/api/products?sellerId=${selectedVendorId}&limit=50`).then(r => r.json()),
-          fetch(`/api/users/${selectedVendorId}/business`).then(r => r.json()).catch(() => ({ success: false })),
+          authFetch(`/api/users/${selectedVendorId}`).then(r => r.json()),
+          authFetch(`/api/products?sellerId=${selectedVendorId}&limit=50`).then(r => r.json()),
+          authFetch(`/api/users/${selectedVendorId}/business`).then(r => r.json()).catch(() => ({ success: false })),
         ])
 
         if (!cancelled) {
@@ -115,7 +115,7 @@ export function VendorProfile() {
     if (!isAuthenticated || !selectedVendorId) return
     setFollowLoading(true)
     try {
-      const res = await fetch("/api/follow", {
+      const res = await authFetch("/api/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ followingId: selectedVendorId }),
@@ -160,7 +160,7 @@ export function VendorProfile() {
   const handleChat = async () => {
     if (!selectedVendorId) return
     try {
-      await fetch("/api/chat/rooms", {
+      await authFetch("/api/chat/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sellerId: selectedVendorId, message: "Hola, me interesa tu negocio" }),

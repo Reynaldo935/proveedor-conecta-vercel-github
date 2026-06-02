@@ -29,8 +29,6 @@ import {
   Clock,
   CalendarDays,
   Calendar,
-  Upload,
-  Play,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 

@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/client-auth"
 
 // ─── Product Interface ──────────────────────────────────────────────────────
 interface Product {
@@ -160,7 +161,7 @@ export function FeaturedView() {
       return
     }
     try {
-      const res = await fetch("/api/likes", {
+      const res = await authFetch("/api/likes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId }),

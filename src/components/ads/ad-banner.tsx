@@ -14,8 +14,6 @@ import {
   ChevronRight,
   Volume2,
   VolumeX,
-  Play,
-  Pause,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 

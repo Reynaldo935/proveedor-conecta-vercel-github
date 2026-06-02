@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Edit2, Trash2, Pause, Play, ChevronLeft, Plus, Search, Filter, Package, Loader2, ToggleLeft, ToggleRight } from "lucide-react"
 import { PRODUCT_CATEGORIES } from "@/lib/validators"
+import { authFetch } from "@/lib/client-auth"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -28,7 +29,7 @@ export function MyProducts() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const res = await fetch(`/api/products?sellerId=${user?.id}&limit=100`)
+        const res = await authFetch(`/api/products?sellerId=${user?.id}&limit=100`)
         const d = await res.json()
         if (d.success) setProducts(d.data)
       } catch {
@@ -44,7 +45,7 @@ export function MyProducts() {
     const newStatus = currentStatus === "ACTIVE" ? "PAUSED" : "ACTIVE"
     setTogglingId(id)
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await authFetch(`/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -66,7 +67,7 @@ export function MyProducts() {
   const handleDelete = async (id: string) => {
     setDeletingId(id)
     try {
-      const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
+      const res = await authFetch(`/api/products/${id}`, { method: "DELETE" })
       const d = await res.json()
       if (d.success) {
         setProducts(ps => ps.filter(p => p.id !== id))

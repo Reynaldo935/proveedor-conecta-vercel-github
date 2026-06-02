@@ -311,7 +311,7 @@ export function BuyerDashboard() {
                             onClick={async (e) => {
                               e.stopPropagation()
                               try {
-                                const res = await fetch("/api/saved", {
+                                const res = await authFetch("/api/saved", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({ productId: s.product.id }),
@@ -387,7 +387,7 @@ export function BuyerDashboard() {
                           onClick={async (e) => {
                             e.stopPropagation()
                             try {
-                              const res = await fetch("/api/follow", {
+                              const res = await authFetch("/api/follow", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ followingId: v.id }),

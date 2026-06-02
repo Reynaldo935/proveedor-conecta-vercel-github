@@ -152,7 +152,7 @@ export function AIChatbot({
 
   const injectProductContext = async (productId: string) => {
     try {
-      const res = await fetch(`/api/products?id=${productId}`)
+      const res = await authFetch(`/api/products?id=${productId}`)
       const data = await res.json()
       if (data.success && data.data) {
         const product = data.data
@@ -228,7 +228,7 @@ export function AIChatbot({
     setLoading(true)
 
     try {
-      const res = await fetch("/api/ai", {
+      const res = await authFetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg }),

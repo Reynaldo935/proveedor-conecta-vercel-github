@@ -414,7 +414,7 @@ export function LoyaltyDashboard() {
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     <AnimatePresence>
                       {data.history.map((entry, i) => {
-                        const config = TYPE_CONFIG[entry.type] || TYPE_CONFIG.OTHER
+                        const config = TYPE_CONFIG[entry.type] || TYPE_CONFIG.EARN
                         const Icon = config.icon
                         return (
                           <motion.div

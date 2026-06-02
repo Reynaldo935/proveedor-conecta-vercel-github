@@ -751,7 +751,7 @@ export function AuditPanel() {
                             mode="single"
                             selected={startDate}
                             onSelect={handleStartDate}
-                            initialFocus
+                            autoFocus
                           />
                         </PopoverContent>
                       </Popover>
@@ -774,7 +774,7 @@ export function AuditPanel() {
                             mode="single"
                             selected={endDate}
                             onSelect={handleEndDate}
-                            initialFocus
+                            autoFocus
                           />
                         </PopoverContent>
                       </Popover>

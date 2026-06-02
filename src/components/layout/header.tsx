@@ -62,6 +62,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react"
 import { CreatorsDropdown } from "@/components/creators/CreatorsDropdown"
+import { authFetch } from "@/lib/client-auth"
 
 // ─── Hydration-safe "mounted" flag via useSyncExternalStore ─────────────────
 // Returns false during SSR and true on the client – avoids both hydration
@@ -114,7 +115,7 @@ export function Header() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetch("/api/notifications")
+      authFetch("/api/notifications")
         .then(r => r.json())
         .then(d => {
           if (d.success) {
@@ -280,10 +281,10 @@ export function Header() {
                     <FileDown className="mr-2 h-4 w-4" /> Centro de Descargas
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => { fetch("/api/export?type=products&format=xlsx").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "productos.xlsx"; a.click(); URL.revokeObjectURL(u); }) }}>
+                  <DropdownMenuItem onClick={() => { authFetch("/api/export?type=products&format=xlsx").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "productos.xlsx"; a.click(); URL.revokeObjectURL(u); }) }}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (.xlsx)
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { fetch("/api/export?type=transactions&format=csv").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "transacciones.csv"; a.click(); URL.revokeObjectURL(u); }) }}>
+                  <DropdownMenuItem onClick={() => { authFetch("/api/export?type=transactions&format=csv").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "transacciones.csv"; a.click(); URL.revokeObjectURL(u); }) }}>
                     <FileText className="mr-2 h-4 w-4" /> CSV Transacciones
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -618,10 +619,10 @@ export function Header() {
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("downloads")}>
                     <Download className="h-4 w-4 mr-3 text-primary" /> Centro de Descargas
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => { fetch("/api/export?type=products&format=xlsx").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "productos.xlsx"; a.click(); URL.revokeObjectURL(u); }) }}>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => { authFetch("/api/export?type=products&format=xlsx").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "productos.xlsx"; a.click(); URL.revokeObjectURL(u); }) }}>
                     <FileSpreadsheet className="h-4 w-4 mr-3 text-primary" /> Exportar Excel
                   </Button>
-                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => { fetch("/api/export?type=transactions&format=csv").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "transacciones.csv"; a.click(); URL.revokeObjectURL(u); }) }}>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => { authFetch("/api/export?type=transactions&format=csv").then(r => r.blob()).then(b => { const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "transacciones.csv"; a.click(); URL.revokeObjectURL(u); }) }}>
                     <FileText className="h-4 w-4 mr-3 text-primary" /> Exportar CSV
                   </Button>
                 </>

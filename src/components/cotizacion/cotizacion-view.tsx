@@ -20,6 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { PRODUCT_CATEGORIES } from "@/lib/validators"
+import { authFetch } from "@/lib/client-auth"
 import {
   FileText,
   Plus,
@@ -90,7 +91,7 @@ export function CotizacionView() {
 
   const loadCotizaciones = async () => {
     try {
-      const res = await fetch(`/api/cotizacion?role=${viewMode}`)
+      const res = await authFetch(`/api/cotizacion?role=${viewMode}`)
       const d = await res.json()
       if (d.success) setCotizaciones(d.data)
     } catch {
@@ -117,7 +118,7 @@ export function CotizacionView() {
     }
     setSubmitting(true)
     try {
-      const res = await fetch("/api/cotizacion", {
+      const res = await authFetch("/api/cotizacion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -145,7 +146,7 @@ export function CotizacionView() {
     }
     setResponding(true)
     try {
-      const res = await fetch(`/api/cotizacion/${cotizacionId}`, {
+      const res = await authFetch(`/api/cotizacion/${cotizacionId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(responseForm),

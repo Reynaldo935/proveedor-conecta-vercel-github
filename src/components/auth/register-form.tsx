@@ -336,7 +336,7 @@ export function RegisterForm() {
         toast.success("¡Registro con Google exitoso! Bienvenido a ProveedorConecta.")
         navigate("home")
       } else {
-        toast.error(data.error)
+        toast.error(data.error || "Error al registrarse")
       }
     } catch {
       toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
