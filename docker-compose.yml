@@ -1,0 +1,147 @@
+# ProveedorConecta Nicaragua - Docker Compose
+# Polyglot microservices architecture
+#
+# Services:
+#   - chatbot-service:    Python FastAPI (port 8001)
+#   - validation-service: Go HTTP server (port 8080)
+#   - payment-engine:     Java Spring Boot (port 8081)
+#   - admin-service:      C# .NET 8 (port 8082)
+#   - email-service:      PHP Slim (port 8083)
+
+version: "3.9"
+
+services:
+  # ============================================
+  # Chatbot Service - Python FastAPI
+  # ============================================
+  chatbot-service:
+    build:
+      context: ./services/chatbot-service
+      dockerfile: Dockerfile
+    container_name: proveedorconecta-chatbot
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
+      - ZAI_BASE_URL=${ZAI_BASE_URL:-https://api.z.ai/v1}
+      - ZAI_MODEL=${ZAI_MODEL:-z-ai-chat}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_BASE_URL=${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-chat}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    networks:
+      - proveedorconecta
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # Validation Service - Go
+  # ============================================
+  validation-service:
+    build:
+      context: ./services/validation-service
+      dockerfile: Dockerfile
+    container_name: proveedorconecta-validation
+    ports:
+      - "8080:8080"
+    networks:
+      - proveedorconecta
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # ============================================
+  # Payment Engine - Java Spring Boot
+  # ============================================
+  payment-engine:
+    build:
+      context: ./services/payment-engine
+      dockerfile: Dockerfile
+    container_name: proveedorconecta-payment
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_PROFILES_ACTIVE=production
+    networks:
+      - proveedorconecta
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/api/payments/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ============================================
+  # Admin Service - C# .NET 8
+  # ============================================
+  admin-service:
+    build:
+      context: ./services/admin-service
+      dockerfile: Dockerfile
+    container_name: proveedorconecta-admin
+    ports:
+      - "8082:8082"
+    environment:
+      - ASPNETCORE_URLS=http://+:8082
+      - ASPNETCORE_ENVIRONMENT=Production
+    networks:
+      - proveedorconecta
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/api/admin/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # Email Service - PHP Slim
+  # ============================================
+  email-service:
+    build:
+      context: ./services/email-service
+      dockerfile: Dockerfile
+    container_name: proveedorconecta-email
+    ports:
+      - "8083:8083"
+    environment:
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@proveedorconecta.ni}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-ProveedorConecta Nicaragua}
+      - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-tls}
+      - APP_BASE_URL=${APP_BASE_URL:-https://proveedorconecta.ni}
+    networks:
+      - proveedorconecta
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/api/email/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  proveedorconecta:
+    driver: bridge
+    name: proveedorconecta-network

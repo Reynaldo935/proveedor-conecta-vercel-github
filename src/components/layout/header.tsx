@@ -263,6 +263,34 @@ export function Header() {
               </Button>
             )}
 
+            {/* Reviews */}
+            {isAuthenticated && (
+              <Button variant="ghost" size="sm" onClick={() => handleNav("reviews")}>
+                <Star className="h-4 w-4 mr-1.5" /> Reseñas
+              </Button>
+            )}
+
+            {/* Calendar */}
+            {isAuthenticated && (
+              <Button variant="ghost" size="sm" onClick={() => handleNav("calendar")}>
+                <Calendar className="h-4 w-4 mr-1.5" /> Agenda
+              </Button>
+            )}
+
+            {/* Admin: Auditoría - Prominent */}
+            {isAuthenticated && isAdmin && (
+              <Button variant="ghost" size="sm" onClick={() => handleNav("audit")} className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/20">
+                <ClipboardCheck className="h-4 w-4 mr-1.5" /> Auditoría
+              </Button>
+            )}
+
+            {/* Seller: Ads */}
+            {isAuthenticated && isSeller && (
+              <Button variant="ghost" size="sm" onClick={() => handleNav("create-ad")}>
+                <Megaphone className="h-4 w-4 mr-1.5" /> Anuncios
+              </Button>
+            )}
+
             {/* Descargar Dropdown */}
             {isAuthenticated && (
               <DropdownMenu>
@@ -584,13 +612,13 @@ export function Header() {
                 </Button>
               )}
 
-              {/* ── Communication Section ── */}
+              {/* ── Communication & Social Section ── */}
               {isAuthenticated && (
                 <>
                   <Separator className="my-2" />
                   <div className="px-2 pt-1 pb-1">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Comunicación
+                      Comunicación y Social
                     </p>
                   </div>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("chat-list")}>
@@ -603,6 +631,12 @@ export function Header() {
                         {notifCount > 9 ? "9+" : notifCount}
                       </Badge>
                     )}
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("reviews")}>
+                    <Star className="h-4 w-4 mr-3 text-primary" /> Reseñas
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("calendar")}>
+                    <Calendar className="h-4 w-4 mr-3 text-primary" /> Agenda y Citas
                   </Button>
                 </>
               )}
@@ -648,9 +682,6 @@ export function Header() {
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("loyalty")}>
                     <Star className="h-4 w-4 mr-3 text-primary" /> Puntos de Lealtad
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("calendar")}>
-                    <Calendar className="h-4 w-4 mr-3 text-primary" /> Agenda y Citas
                   </Button>
                 </>
               )}

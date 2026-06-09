@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
 import { useAuthStore } from "@/store/auth-store"
 import { useAppStore } from "@/store/app-store"
 import { authFetch } from "@/lib/client-auth"
@@ -15,14 +14,16 @@ import {
   Bot,
   Search,
   CreditCard,
-  HeadphonesIcon,
   Package,
-  User,
-  ShoppingCart,
-  HelpCircle,
+  FileText,
+  MapPin,
+  Minus,
+  Sparkles,
+  RotateCcw,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface ChatMessage {
   role: "user" | "assistant"
   content: string
@@ -30,70 +31,72 @@ interface ChatMessage {
   timestamp: number
 }
 
-const CHAT_HISTORY_KEY = "pc_chat_history"
+interface ConversationMsg {
+  role: "user" | "assistant"
+  content: string
+}
 
-// Quick action buttons with structured behavior
-const QUICK_ACTIONS = [
+// ─── Constants ────────────────────────────────────────────────────────────────
+const CHAT_HISTORY_KEY = "pc_chat_history_v2"
+const MAX_HISTORY_MESSAGES = 10
+
+const QUICK_SUGGESTIONS = [
   {
-    id: "search",
-    label: "🔍 Buscar proveedor",
+    id: "find-supplier",
+    label: "¿Cómo encontrar proveedores?",
     icon: Search,
-    prompt: "Buscar proveedor",
-    color: "text-primary",
-    bg: "bg-primary/10",
-    action: "search" as const,
+    prompt: "¿Cómo puedo encontrar proveedores en ProveedorConecta?",
   },
   {
-    id: "track",
-    label: "📦 Rastrear pedido",
-    icon: Package,
-    prompt: "Rastrear pedido",
-    color: "text-green-600",
-    bg: "bg-green-100 dark:bg-green-900/30",
-    action: "track" as const,
-  },
-  {
-    id: "payment",
-    label: "💳 Ayuda con pagos",
+    id: "payment-methods",
+    label: "¿Métodos de pago?",
     icon: CreditCard,
-    prompt: "Ayuda con pagos",
-    color: "text-amber-600",
-    bg: "bg-amber-50 dark:bg-amber-900/30",
-    action: "payment" as const,
+    prompt: "¿Qué métodos de pago aceptan en ProveedorConecta?",
   },
   {
-    id: "seller",
-    label: "👤 Hablar con vendedor",
-    icon: User,
-    prompt: "Hablar con vendedor",
-    color: "text-purple-600",
-    bg: "bg-purple-50 dark:bg-purple-900/30",
-    action: "seller" as const,
+    id: "publish-product",
+    label: "¿Cómo publicar un producto?",
+    icon: Package,
+    prompt: "¿Cómo publico un producto para vender en ProveedorConecta?",
   },
-]
-
-const PAYMENT_FAQ = [
-  { q: "¿Qué métodos de pago aceptan?", a: "Aceptamos: BANPRO, BAC, LAFISE, Billetera Móvil, PayPal, PixelPay, Pagadito, Google Pay, Kash y Western Union." },
-  { q: "¿Es seguro pagar en línea?", a: "Sí, todas las transacciones están protegidas con encriptación SSL. Tu información financiera nunca se almacena en nuestros servidores." },
-  { q: "¿Cómo recargo mi billetera?", a: "Ve a Mi Perfil → Billetera → Recargar. Cada recarga es de C$10,000." },
-  { q: "¿Puedo obtener reembolso?", a: "Sí, dentro de los 7 días posteriores a la compra. Ve a la transacción y selecciona 'Solicitar reembolso'." },
+  {
+    id: "cotizacion",
+    label: "¿Qué es una cotización?",
+    icon: FileText,
+    prompt: "¿Qué es una cotización y cómo funciona en ProveedorConecta?",
+  },
+  {
+    id: "map",
+    label: "¿Cómo funciona el mapa?",
+    icon: MapPin,
+    prompt: "¿Cómo funciona el mapa interactivo de proveedores?",
+  },
 ]
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "¡Hola! Soy tu asistente virtual. Puedo ayudarte a encontrar proveedores, resolver dudas de pago o conectarte con un vendedor. ¿Qué necesitas?",
+    "¡Hola! 👋 Soy el asistente virtual de ProveedorConecta Nicaragua. Estoy aquí para ayudarte con todo lo que necesites sobre la plataforma.\n\nPuedo ayudarte a:\n🔍 Encontrar proveedores\n💰 Conocer métodos de pago\n📦 Publicar productos\n📋 Solicitar cotizaciones\n🗺️ Usar el mapa\n\n¿En qué te puedo ayudar?",
   model: "Sistema",
   timestamp: Date.now(),
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString("es-NI", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  })
 }
 
 function loadChatHistory(): ChatMessage[] {
   try {
     const raw = localStorage.getItem(CHAT_HISTORY_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw)
+      const parsed: ChatMessage[] = JSON.parse(raw)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
+        return parsed.slice(-MAX_HISTORY_MESSAGES)
       }
     }
   } catch {
@@ -104,14 +107,14 @@ function loadChatHistory(): ChatMessage[] {
 
 function saveChatHistory(messages: ChatMessage[]) {
   try {
-    // Keep last 50 messages to avoid storage overflow
-    const toSave = messages.slice(-50)
+    const toSave = messages.slice(-MAX_HISTORY_MESSAGES)
     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(toSave))
   } catch {
     // localStorage not available
   }
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export function AIChatbot({
   isOpen,
   onToggle,
@@ -124,23 +127,36 @@ export function AIChatbot({
   const [messages, setMessages] = useState<ChatMessage[]>(loadChatHistory)
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [showQuickActions, setShowQuickActions] = useState(true)
+  const [isMinimized, setIsMinimized] = useState(false)
   const [productContextInjected, setProductContextInjected] = useState(false)
-  const [awaitingOrderId, setAwaitingOrderId] = useState(false)
-  const [showPaymentFAQ, setShowPaymentFAQ] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Save chat history on message change
   useEffect(() => {
     saveChatHistory(messages)
   }, [messages])
 
-  // Auto-scroll
-  useEffect(() => {
+  // Smooth scroll to bottom
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      })
     }
-  }, [messages, loading])
+  }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, loading, scrollToBottom])
+
+  // Auto-focus input when chat opens
+  useEffect(() => {
+    if (isOpen && !isMinimized) {
+      setTimeout(() => inputRef.current?.focus(), 300)
+    }
+  }, [isOpen, isMinimized])
 
   // Auto-inject product context when opened from product page
   useEffect(() => {
@@ -158,9 +174,13 @@ export function AIChatbot({
         const product = data.data
         const sellerName =
           product.seller?.businessProfile?.businessName || product.seller?.name || "el vendedor"
+        const formattedPrice = new Intl.NumberFormat("es-NI", {
+          style: "currency",
+          currency: "NIO",
+        }).format(product.price)
         const contextMsg: ChatMessage = {
           role: "assistant",
-          content: `Veo que estás interesado en **${product.title}** de **${sellerName}** (${new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(product.price)}). ¿Quieres que te ayude a contactarlo?`,
+          content: `Veo que estás interesado en **${product.title}** de **${sellerName}** (${formattedPrice}). ¿Quieres que te ayude a contactarlo o tienes alguna pregunta sobre el producto?`,
           model: "Contexto automático",
           timestamp: Date.now(),
         }
@@ -168,27 +188,6 @@ export function AIChatbot({
       }
     } catch {
       // Silently fail
-    }
-  }
-
-  const handleQuickAction = (actionId: string) => {
-    switch (actionId) {
-      case "search":
-        // Auto-navigate to search
-        addBotMessage("¡Te llevo a la búsqueda! Puedes filtrar por categoría, departamento o precio.")
-        setTimeout(() => navigate("search"), 800)
-        break
-      case "track":
-        setAwaitingOrderId(true)
-        addBotMessage("Por favor, ingresa el ID de tu pedido para rastrearlo. Lo encontrarás en tu historial de compras.")
-        break
-      case "payment":
-        setShowPaymentFAQ(true)
-        addBotMessage("Aquí tienes las preguntas frecuentes sobre pagos. Selecciona una opción:")
-        break
-      case "seller":
-        addBotMessage("He marcado esta conversación para que un vendedor te responda pronto. Mientras tanto, ¿puedo ayudarte con algo más?")
-        break
     }
   }
 
@@ -204,12 +203,22 @@ export function AIChatbot({
     ])
   }
 
+  // Build conversation history for API (last N user/assistant exchanges)
+  const buildConversationHistory = (): ConversationMsg[] => {
+    return messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .slice(-8) // Last 8 messages for context
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+      }))
+  }
+
   const sendMessage = async (messageText?: string) => {
     const msg = messageText || input.trim()
     if (!msg || loading) return
     setInput("")
-    setShowQuickActions(false)
-    setShowPaymentFAQ(false)
+    setLoading(true)
 
     const userMessage: ChatMessage = {
       role: "user",
@@ -218,33 +227,29 @@ export function AIChatbot({
     }
     setMessages((prev) => [...prev, userMessage])
 
-    // Handle awaiting order ID
-    if (awaitingOrderId) {
-      setAwaitingOrderId(false)
-      addBotMessage(`Buscando el pedido "${msg}"... Si no encuentras tu pedido, revisa tu historial en el panel de comprador.`)
-      return
-    }
-
-    setLoading(true)
-
     try {
       const res = await authFetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg }),
+        body: JSON.stringify({
+          message: msg,
+          model: "zai",
+          conversationHistory: buildConversationHistory(),
+          context: user?.name ? `Usuario: ${user.name}` : undefined,
+        }),
       })
       const data = await res.json()
       if (data.success) {
         addBotMessage(data.data.message, data.data.model)
       } else {
         addBotMessage(
-          "Estamos experimentando alta demanda. Un vendedor te responderá pronto.",
+          "Estamos experimentando alta demanda. Intenta de nuevo en unos momentos. 🙏",
           "Fallback"
         )
       }
     } catch {
       addBotMessage(
-        "Estamos experimentando alta demanda. Un vendedor te responderá pronto.",
+        "No pude conectar con el servidor. Verifica tu conexión e intenta de nuevo. 📡",
         "Fallback"
       )
     } finally {
@@ -252,114 +257,170 @@ export function AIChatbot({
     }
   }
 
-  // Floating button when closed
+  const handleSuggestionClick = (prompt: string) => {
+    sendMessage(prompt)
+  }
+
+  const clearChat = () => {
+    setMessages([INITIAL_MESSAGE])
+  }
+
+  const handleMinimize = () => {
+    setIsMinimized(true)
+  }
+
+  const handleRestore = () => {
+    setIsMinimized(false)
+  }
+
+  // Determine if suggestions should show (only at start with few messages)
+  const showSuggestions = messages.length <= 2 && !loading
+
+  // ─── Floating button when closed ──────────────────────────────────────────
   if (!isOpen) {
     return (
       <motion.button
         onClick={onToggle}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 flex items-center justify-center"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        aria-label="Abrir asistente"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg hover:shadow-xl flex items-center justify-center group"
+        style={{
+          background: "linear-gradient(135deg, #1A5276, #2E86C1)",
+          boxShadow: "0 4px 20px rgba(26, 82, 118, 0.4)",
+        }}
+        whileHover={{ scale: 1.1, boxShadow: "0 6px 28px rgba(26, 82, 118, 0.5)" }}
+        whileTap={{ scale: 0.9 }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.3 }}
+        aria-label="Abrir asistente virtual"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
         <motion.span
-          className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#F4D03F]"
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#F4D03F] border-2 border-white"
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
       </motion.button>
     )
   }
 
+  // ─── Minimized state ──────────────────────────────────────────────────────
+  if (isMinimized) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        className="fixed bottom-6 right-6 z-50"
+      >
+        <button
+          onClick={handleRestore}
+          className="flex items-center gap-2 px-4 py-3 rounded-full text-white shadow-lg hover:shadow-xl transition-shadow"
+          style={{
+            background: "linear-gradient(135deg, #1A5276, #2E86C1)",
+            boxShadow: "0 4px 20px rgba(26, 82, 118, 0.4)",
+          }}
+          aria-label="Restaurar asistente"
+        >
+          <Bot className="h-4 w-4" />
+          <span className="text-sm font-medium">Asistente</span>
+          <motion.span
+            className="h-2 w-2 rounded-full bg-green-400"
+            animate={{ opacity: [1, 0.4, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+        </button>
+      </motion.div>
+    )
+  }
+
+  // ─── Full chat window ─────────────────────────────────────────────────────
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.9 }}
-      transition={{ duration: 0.2 }}
-      className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-3rem)]"
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-2rem)]"
     >
-      <Card className="shadow-2xl border-2 overflow-hidden">
-        {/* Header */}
+      <div className="rounded-2xl shadow-2xl overflow-hidden border border-border bg-card flex flex-col"
+        style={{ height: "min(560px, 70vh)" }}
+      >
+        {/* ─── Header ─────────────────────────────────────────────────────── */}
         <div
-          className="flex items-center justify-between p-4 border-b text-white"
+          className="flex items-center justify-between px-4 py-3 text-white shrink-0"
           style={{ background: "linear-gradient(135deg, #1A5276, #2E86C1)" }}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center">
-              <Bot className="h-5 w-5" />
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+              <Sparkles className="h-4 w-4" />
             </div>
             <div>
-              <p className="font-semibold text-sm">Asistente ProveedorConecta</p>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                <p className="text-[10px] opacity-80">En línea · IA Multi-agente</p>
+              <p className="font-semibold text-sm leading-tight">Asistente ProveedorConecta</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <motion.span
+                  className="h-1.5 w-1.5 rounded-full bg-green-400"
+                  animate={{ opacity: [1, 0.4, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                <p className="text-[10px] opacity-80">En línea · IA Multi-modelo</p>
               </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-white hover:bg-white/20"
-            onClick={onToggle}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
+              onClick={clearChat}
+              title="Limpiar chat"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
+              onClick={handleMinimize}
+              title="Minimizar"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
+              onClick={onToggle}
+              title="Cerrar"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
 
-        {/* Quick action buttons - shown when few messages */}
-        {showQuickActions && messages.length <= 2 && (
-          <div className="p-3 border-b bg-muted/30">
-            <p className="text-[10px] text-muted-foreground font-medium mb-2 uppercase tracking-wider">
-              Acciones rápidas
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {QUICK_ACTIONS.map((action) => (
-                <motion.button
-                  key={action.id}
-                  onClick={() => handleQuickAction(action.id)}
-                  className={`flex items-center gap-1.5 p-2 rounded-lg ${action.bg} hover:opacity-80 transition-opacity`}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <action.icon className={`h-4 w-4 ${action.color}`} />
-                  <span className="text-[11px] font-medium text-left leading-tight">
-                    {action.label}
-                  </span>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Payment FAQ */}
+        {/* ─── Quick Suggestions ──────────────────────────────────────────── */}
         <AnimatePresence>
-          {showPaymentFAQ && (
+          {showSuggestions && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="p-3 border-b bg-amber-50/50 dark:bg-amber-900/10"
+              className="shrink-0 border-b bg-muted/30 px-3 py-2.5"
             >
-              <p className="text-[10px] text-muted-foreground font-medium mb-2 uppercase tracking-wider">
-                Preguntas frecuentes sobre pagos
+              <p className="text-[10px] text-muted-foreground font-semibold mb-2 uppercase tracking-wider">
+                Preguntas frecuentes
               </p>
-              <div className="space-y-1.5">
-                {PAYMENT_FAQ.map((faq, i) => (
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_SUGGESTIONS.map((suggestion, i) => (
                   <motion.button
-                    key={i}
-                    initial={{ opacity: 0, x: -5 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    key={suggestion.id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    onClick={() => {
-                      addBotMessage(faq.a, "FAQ")
-                      setShowPaymentFAQ(false)
-                    }}
-                    className="w-full text-left text-xs px-3 py-2 rounded-lg border hover:bg-primary/5 hover:border-primary/30 transition-colors flex items-center gap-2"
+                    onClick={() => handleSuggestionClick(suggestion.prompt)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/30 transition-colors dark:bg-primary/10 dark:text-primary-foreground dark:hover:bg-primary/20"
                   >
-                    <HelpCircle className="h-3 w-3 text-amber-500 shrink-0" />
-                    {faq.q}
+                    <suggestion.icon className="h-3 w-3 shrink-0" />
+                    <span className="whitespace-nowrap">{suggestion.label}</span>
                   </motion.button>
                 ))}
               </div>
@@ -367,105 +428,156 @@ export function AIChatbot({
           )}
         </AnimatePresence>
 
-        {/* Messages */}
+        {/* ─── Messages Area ──────────────────────────────────────────────── */}
         <div
           ref={scrollRef}
-          className="h-72 overflow-y-auto p-4 space-y-3"
+          className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 min-h-0"
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "rgba(26, 82, 118, 0.2) transparent",
+          }}
         >
           <AnimatePresence mode="popLayout">
             {messages.map((msg, i) => (
               <motion.div
                 key={`${msg.timestamp}-${i}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.2 }}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div
-                  className={`max-w-[85%] px-3 py-2.5 rounded-xl text-sm ${
-                    msg.role === "user"
-                      ? "text-white chat-bubble-sent"
-                      : "bg-muted chat-bubble-received"
-                  }`}
-                  style={
-                    msg.role === "user"
-                      ? { background: "linear-gradient(135deg, #1A5276, #2E86C1)" }
-                      : {}
-                  }
-                >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
-                  {msg.model && msg.role === "assistant" && (
-                    <p className="text-[9px] mt-1 opacity-50">🤖 {msg.model}</p>
-                  )}
+                <div className="flex flex-col max-w-[85%]">
+                  {/* Message bubble */}
+                  <div
+                    className={`px-3.5 py-2.5 text-sm leading-relaxed ${
+                      msg.role === "user"
+                        ? "rounded-2xl rounded-br-md text-white"
+                        : "rounded-2xl rounded-bl-md bg-muted text-foreground"
+                    }`}
+                    style={
+                      msg.role === "user"
+                        ? { background: "linear-gradient(135deg, #1A5276, #2E86C1)" }
+                        : {}
+                    }
+                  >
+                    {/* Bot avatar for assistant messages */}
+                    {msg.role === "assistant" && (
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <div className="h-4 w-4 rounded-full flex items-center justify-center"
+                          style={{ background: "linear-gradient(135deg, #1A5276, #2E86C1)" }}
+                        >
+                          <Bot className="h-2.5 w-2.5 text-white" />
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground">
+                          {msg.model || "Asistente"}
+                        </span>
+                      </div>
+                    )}
+                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  </div>
+                  {/* Timestamp */}
+                  <p
+                    className={`text-[9px] mt-0.5 px-1 ${
+                      msg.role === "user"
+                        ? "text-right text-muted-foreground"
+                        : "text-left text-muted-foreground"
+                    }`}
+                  >
+                    {formatTime(msg.timestamp)}
+                  </p>
                 </div>
               </motion.div>
             ))}
           </AnimatePresence>
 
-          {/* Typing indicator - animated 3 dots */}
-          {loading && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-start"
-            >
-              <div className="bg-muted px-4 py-3 rounded-xl flex items-center gap-1.5">
-                <motion.span
-                  className="inline-block w-2 h-2 bg-primary rounded-full"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                />
-                <motion.span
-                  className="inline-block w-2 h-2 bg-primary rounded-full"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
-                />
-                <motion.span
-                  className="inline-block w-2 h-2 bg-primary rounded-full"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
-                />
-                <span className="text-xs text-muted-foreground ml-1">Pensando...</span>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Awaiting order ID prompt */}
-          {awaitingOrderId && !loading && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-start"
-            >
-              <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-xl text-sm border border-green-200 dark:border-green-800">
-                <p className="text-xs text-green-700 dark:text-green-400">
-                  📦 Escribe el ID de tu pedido:
-                </p>
-              </div>
-            </motion.div>
-          )}
+          {/* ─── Typing indicator ────────────────────────────────────────── */}
+          <AnimatePresence>
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="flex justify-start"
+              >
+                <div className="flex flex-col max-w-[85%]">
+                  <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="h-4 w-4 rounded-full flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg, #1A5276, #2E86C1)" }}
+                      >
+                        <Bot className="h-2.5 w-2.5 text-white" />
+                      </div>
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        Escribiendo...
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <motion.span
+                        className="inline-block w-2 h-2 bg-primary/60 rounded-full"
+                        animate={{ y: [0, -5, 0], scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                      />
+                      <motion.span
+                        className="inline-block w-2 h-2 bg-primary/60 rounded-full"
+                        animate={{ y: [0, -5, 0], scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                      />
+                      <motion.span
+                        className="inline-block w-2 h-2 bg-primary/60 rounded-full"
+                        animate={{ y: [0, -5, 0], scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Input */}
-        <div className="p-3 border-t flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder={awaitingOrderId ? "Ingresa el ID del pedido..." : "Escribe tu consulta..."}
-            className="flex-1 text-sm"
-            style={{ backgroundColor: "#fff !important", color: "#000 !important" }}
-          />
-          <Button
-            size="icon"
-            onClick={() => sendMessage()}
-            disabled={loading || !input.trim()}
-            style={{ background: "linear-gradient(135deg, #1A5276, #2E86C1)" }}
+        {/* ─── Input Area ────────────────────────────────────────────────── */}
+        <div className="shrink-0 px-3 py-2.5 border-t bg-card">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              sendMessage()
+            }}
+            className="flex gap-2 items-center"
           >
-            <Send className="h-4 w-4" />
-          </Button>
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Escribe tu consulta..."
+              disabled={loading}
+              className="flex-1 text-sm h-9 bg-background border-border focus-visible:ring-primary/30"
+              maxLength={500}
+            />
+            <motion.div whileTap={{ scale: 0.9 }}>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={loading || !input.trim()}
+                className="h-9 w-9 shrink-0"
+                style={{
+                  background: input.trim()
+                    ? "linear-gradient(135deg, #1A5276, #2E86C1)"
+                    : undefined,
+                }}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          </form>
+          {isAuthenticated && (
+            <div className="flex items-center justify-center mt-1.5">
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-normal text-muted-foreground border-border/50">
+                🔒 Chat privado · {user?.name || "Usuario"}
+              </Badge>
+            </div>
+          )}
         </div>
-      </Card>
+      </div>
     </motion.div>
   )
 }
