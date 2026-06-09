@@ -40,9 +40,37 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // User-specific statistics
+    // User-specific statistics (falls back to platform stats if not authenticated)
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) {
+      // Not authenticated — fall back to platform stats instead of 401
+      // This prevents the homepage from breaking when the user is not logged in
+      const totalProducts = await db.product.count()
+      const activeProducts = await db.product.count({ where: { status: 'ACTIVE' } })
+      const totalUsers = await db.user.count()
+      const totalSellers = await db.user.count({ where: { role: 'SELLER' } })
+      const totalTransactions = await db.transaction.count({ where: { status: 'COMPLETED' } })
+
+      const completedTransactions = await db.transaction.findMany({
+        where: { status: 'COMPLETED' },
+        select: { amount: true },
+      })
+      const totalRevenue = completedTransactions.reduce((sum, t) => sum + t.amount, 0)
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          scope: 'platform',
+          totalProducts,
+          activeProducts,
+          totalUsers,
+          totalSellers,
+          totalBuyers: totalUsers - totalSellers,
+          totalTransactions,
+          totalRevenue,
+        },
+      })
+    }
     await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })

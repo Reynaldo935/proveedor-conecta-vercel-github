@@ -1,2 +1,2 @@
-$ bun index.ts
+[ChatService] WebSocket chat service running on port 3003
 [ChatService] WebSocket chat service running on port 3003
