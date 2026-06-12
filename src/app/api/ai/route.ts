@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
+import { getAIResponse } from '@/lib/ai-orchestrator'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ConversationMessage {
@@ -10,6 +11,7 @@ interface ConversationMessage {
 interface AIRequestBody {
   message: string
   model?: 'zai' | 'fallback'
+  preferredProvider?: 'zai' | 'openai' | 'gemini' | 'deepseek' | 'grok' | 'blackbox' | 'notebooklm'
   conversationHistory?: ConversationMessage[]
   context?: string
 }
@@ -20,7 +22,7 @@ const PRO_NICARAGUA_SYSTEM_PROMPT = `Eres el asistente virtual de ProveedorConec
 ## Sobre ProveedorConecta
 ProveedorConecta es una plataforma integral que ofrece:
 - **Marketplace**: Compra y venta de productos con categorías (Ferretería, Agropecuaria, Tecnología, Construcción, Alimentos, Textiles, Automotriz, Energía Solar, Industrial y más)
-- **Chat en tiempo real**: Comunicación directa entre compradores y vendedores vía Socket.IO
+- **Chat en tiempo real**: Comunicación directa entre compradores y vendedores vía Pusher
 - **Cotizaciones (RFQ)**: Los compradores pueden solicitar cotizaciones describiendo sus necesidades y recibir propuestas de múltiples vendedores
 - **Mapa interactivo**: Visualización geográfica de proveedores por departamento
 - **Pagos seguros**: Múltiples métodos de pago con comisión del 3%
@@ -99,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (userId) await setAuthCookie(userId)
 
     const body: AIRequestBody = await request.json()
-    const { message, model = 'zai', conversationHistory = [], context } = body
+    const { message, model = 'zai', preferredProvider, conversationHistory = [], context } = body
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json({ success: false, error: 'Mensaje requerido' }, { status: 400 })
@@ -114,63 +116,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: fallback })
     }
 
-    // Try using z-ai-web-dev-sdk LLM with timeout
+    // Build messages array with conversation history
+    const authContext = userId
+      ? '\n- El usuario está autenticado en la plataforma'
+      : '\n- El usuario no ha iniciado sesión'
+
+    const userContext = context ? `\n- Contexto adicional del usuario: ${context}` : ''
+
+    const messages = [
+      { role: 'system' as const, content: PRO_NICARAGUA_SYSTEM_PROMPT + authContext + userContext },
+      // Include conversation history for multi-turn context
+      ...trimmedHistory.map((msg) => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      })),
+      { role: 'user' as const, content: message },
+    ]
+
+    // Try using the multi-provider AI orchestrator
     try {
-      const ZAI = (await import('z-ai-web-dev-sdk')).default
-      const zai = await ZAI.create()
-
-      const authContext = userId
-        ? '- El usuario está autenticado en la plataforma'
-        : '- El usuario no ha iniciado sesión'
-
-      const userContext = context ? `\n- Contexto adicional del usuario: ${context}` : ''
-
-      // Build messages array with conversation history
-      const messages = [
-        { role: 'assistant' as const, content: PRO_NICARAGUA_SYSTEM_PROMPT + '\n' + authContext + userContext },
-        // Include conversation history for multi-turn context
-        ...trimmedHistory.map((msg) => ({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content,
-        })),
-        { role: 'user' as const, content: message },
-      ]
-
-      const completionPromise = zai.chat.completions.create({
+      const aiResponse = await getAIResponse({
         messages,
-        thinking: { type: 'disabled' },
+        preferredProvider: preferredProvider || 'zai',
       })
-
-      // 10-second timeout to prevent server crashes from hung outbound HTTP
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('LLM timeout')), 10000)
-      )
-
-      const completion = await Promise.race([completionPromise, timeoutPromise])
-
-      const responseText = completion?.choices?.[0]?.message?.content
-
-      if (!responseText) {
-        throw new Error('Empty LLM response')
-      }
 
       return NextResponse.json({
         success: true,
         data: {
-          message: responseText,
-          model: 'Z.ai LLM',
+          message: aiResponse.content,
+          model: `${aiResponse.model} (${aiResponse.provider})`,
         },
       })
-    } catch (llmError) {
-      // LLM failed or timed out — use local fallback (no outbound HTTP)
-      const errMsg = llmError instanceof Error ? llmError.message : String(llmError)
-      console.error('LLM error, using fallback:', errMsg)
+    } catch (orchestratorError) {
+      // All AI providers failed — use local fallback (no outbound HTTP)
+      const errMsg = orchestratorError instanceof Error ? orchestratorError.message : String(orchestratorError)
+      console.error('All AI providers failed, using fallback:', errMsg)
       const fallback = getFallbackResponse(message, userId)
       return NextResponse.json({
         success: true,
         data: {
           ...fallback,
-          model: `Asistente Local (LLM: ${errMsg.includes('timeout') ? 'tiempo agotado' : 'no disponible'})`,
+          model: `Asistente Local (LLM: no disponible)`,
         },
       })
     }

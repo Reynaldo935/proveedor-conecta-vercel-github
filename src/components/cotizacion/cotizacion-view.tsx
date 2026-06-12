@@ -130,7 +130,7 @@ export function CotizacionView() {
         setForm({ title: "", description: "", category: "" })
         toast.success("Cotización creada exitosamente")
       } else {
-        toast.error(d.error)
+        toast.error(d.error || "Error al crear cotización")
       }
     } catch {
       toast.error("Error al crear cotización")
@@ -165,7 +165,7 @@ export function CotizacionView() {
         setResponseForm({ price: "", description: "", deliveryTime: "" })
         toast.success("Respuesta enviada")
       } else {
-        toast.error(d.error)
+        toast.error(d.error || "Error al enviar respuesta")
       }
     } catch {
       toast.error("Error al enviar respuesta")

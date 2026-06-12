@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  serverExternalPackages: ["bcryptjs", "sharp"],
+  serverExternalPackages: ["bcryptjs", "sharp", "pusher", "nodemailer"],
   // Dev origins only used locally; harmless in production
   allowedDevOrigins: [
     "preview-chat-209caf1c-61ef-4935-aa21-0ed59ca5f08a.space-z.ai",
@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "**.vercel.app",
+      },
+      {
+        protocol: "https",
+        hostname: "api.open-meteo.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.googleapis.com",
       },
     ],
   },

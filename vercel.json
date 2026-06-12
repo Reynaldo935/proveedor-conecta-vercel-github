@@ -3,6 +3,12 @@
   "framework": "nextjs",
   "installCommand": "bun install",
   "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/commission-payout",
+      "schedule": "0 2 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

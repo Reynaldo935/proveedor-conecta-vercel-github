@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 // ─── Password Hashing ────────────────────────────────────────────────────────
 const SALT_ROUNDS = 12
-const passwordHash = await bcrypt.hash('password123', SALT_ROUNDS)
+const passwordHash = await bcrypt.hash('admin123', SALT_ROUNDS)
 
 // ─── 32 REAL Nicaraguan Suppliers ─────────────────────────────────────────────
 const suppliers = [
@@ -946,9 +946,9 @@ async function main() {
   console.log(`  🏪 Business Profiles: ${totalBusinessProfiles}`)
   console.log(`  📅 Calendar Events: ${totalHolidays}`)
   console.log(`\n📧 Login Credentials:`)
-  console.log(`  Admin:  rey7214935@gmail.com / password123`)
-  console.log(`  Sellers: {supplier email} / password123`)
-  console.log(`  Buyers:  {buyer email} / password123`)
+  console.log(`  Admin:  rey7214935@gmail.com / admin123`)
+  console.log(`  Sellers: {supplier email} / admin123`)
+  console.log(`  Buyers:  {buyer email} / admin123`)
   console.log('')
 }
 

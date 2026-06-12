@@ -154,7 +154,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
         setForm((f) => ({ ...f, images: [...f.images, ...d.data] }))
         toast.success("Imágenes subidas")
         if (fileInputRef.current) fileInputRef.current.value = ""
-      } else toast.error(d.error)
+      } else toast.error(d.error || "Error al subir imágenes")
     } catch {
       toast.error("Error al subir")
     } finally {
@@ -226,7 +226,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
       if (d.success) {
         toast.success(editMode ? "Producto actualizado" : "Producto publicado")
         navigate("my-products")
-      } else toast.error(d.error)
+      } else toast.error(d.error || "Error al guardar producto")
     } catch {
       toast.error("Error al guardar")
     } finally {
