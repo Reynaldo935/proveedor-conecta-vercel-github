@@ -220,10 +220,13 @@ export function HomeFeed() {
 
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  const loadingRef = useRef(false)
 
   // ─── Load Products ──────────────────────────────────────────────────────
   const loadProducts = useCallback(async (reset = false) => {
     if (!reset && !hasMore) return
+    if (!reset && loadingRef.current) return
+    loadingRef.current = true
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -243,9 +246,20 @@ export function HomeFeed() {
       if (data.success && Array.isArray(data.data)) {
         const newProducts = data.data
         if (reset) {
-          setProducts(newProducts)
+          // Deduplicate by ID in case API returns duplicates
+          const seen = new Set<string>()
+          const unique = newProducts.filter(p => {
+            if (seen.has(p.id)) return false
+            seen.add(p.id)
+            return true
+          })
+          setProducts(unique)
         } else {
-          setProducts(prev => [...prev, ...newProducts])
+          setProducts(prev => {
+            const existing = new Set(prev.map(p => p.id))
+            const filtered = newProducts.filter(p => !existing.has(p.id))
+            return [...prev, ...filtered]
+          })
         }
         setCursor(data.nextCursor ?? null)
         setHasMore(!!data.nextCursor && newProducts.length > 0)
@@ -254,6 +268,7 @@ export function HomeFeed() {
       // Network or parsing error — silently handle so the UI
       // shows the empty state instead of crashing
     } finally {
+      loadingRef.current = false
       setLoading(false)
     }
   }, [cursor, selectedCategory, hasMore])
@@ -271,7 +286,7 @@ export function HomeFeed() {
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
+        if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
           loadProducts()
         }
       },
@@ -616,7 +631,7 @@ export function HomeFeed() {
                 }`}
               >
                 <span>{CATEGORY_ICONS[cat] || "📦"}</span>
-                <span className="max-w-[140px] truncate">{cat}</span>
+                <span className="whitespace-nowrap">{cat}</span>
               </button>
             ))}
           </div>
@@ -681,7 +696,7 @@ export function HomeFeed() {
                 }`}
               >
                 <span>{DEPARTMENT_EMOJIS[dept] || "📍"}</span>
-                <span className="max-w-[120px] truncate">{dept}</span>
+                <span className="whitespace-nowrap">{dept}</span>
               </button>
             ))}
           </div>
@@ -712,7 +727,7 @@ export function HomeFeed() {
             >
               <CarouselContent className="-ml-3">
                 {featuredProducts.map((product) => (
-                  <CarouselItem key={product.id} className="pl-3 basis-[260px]">
+                  <CarouselItem key={`featured-${product.id}`} className="pl-3 basis-[260px]">
                     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
                       <Card
                         className="overflow-hidden border border-border/50 shadow-sm cursor-pointer group"
