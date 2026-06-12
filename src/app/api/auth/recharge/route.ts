@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request)
 
     if (!user) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     const userId = user.id as string
@@ -45,6 +45,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Recharge error:', error)
-    return NextResponse.json({ success: false, error: 'Error al recargar saldo' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al recargar saldo' }, { status: 200 })
   }
 }

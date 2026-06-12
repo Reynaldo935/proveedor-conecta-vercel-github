@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const businessProfileId = searchParams.get('businessProfileId')
-    if (!businessProfileId) return NextResponse.json({ success: false, error: 'businessProfileId requerido' }, { status: 400 })
+    if (!businessProfileId) return NextResponse.json({ success: false, error: 'businessProfileId requerido' }, { status: 200 })
 
     const limit = parseInt(searchParams.get('limit') || '20')
     const cursor = searchParams.get('cursor') || ''
@@ -32,25 +32,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: items, nextCursor })
   } catch (error) {
     console.error('Get wall posts error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener publicaciones' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener publicaciones' }, { status: 200 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const body = await request.json()
     const { content, imageUrl, videoUrl, postType } = body
 
     if (!content && !imageUrl && !videoUrl) {
-      return NextResponse.json({ success: false, error: 'Contenido, imagen o video requerido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Contenido, imagen o video requerido' }, { status: 200 })
     }
 
     const profile = await db.businessProfile.findUnique({ where: { userId } })
-    if (!profile) return NextResponse.json({ success: false, error: 'Perfil de negocio no encontrado' }, { status: 404 })
+    if (!profile) return NextResponse.json({ success: false, error: 'Perfil de negocio no encontrado' }, { status: 200 })
 
     // Determine post type automatically if not provided
     let resolvedPostType = postType || 'text'
@@ -77,25 +77,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: post })
   } catch (error) {
     console.error('Create wall post error:', error)
-    return NextResponse.json({ success: false, error: 'Error al crear publicación' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al crear publicación' }, { status: 200 })
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const { searchParams } = new URL(request.url)
     const postId = searchParams.get('id')
-    if (!postId) return NextResponse.json({ success: false, error: 'id de publicación requerido' }, { status: 400 })
+    if (!postId) return NextResponse.json({ success: false, error: 'id de publicación requerido' }, { status: 200 })
 
     const post = await db.wallPost.findUnique({ where: { id: postId }, include: { businessProfile: true } })
-    if (!post) return NextResponse.json({ success: false, error: 'Publicación no encontrada' }, { status: 404 })
+    if (!post) return NextResponse.json({ success: false, error: 'Publicación no encontrada' }, { status: 200 })
 
     if (post.businessProfile.userId !== userId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
 
     await db.wallPost.delete({ where: { id: postId } })
@@ -103,6 +103,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete wall post error:', error)
-    return NextResponse.json({ success: false, error: 'Error al eliminar publicación' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al eliminar publicación' }, { status: 200 })
   }
 }

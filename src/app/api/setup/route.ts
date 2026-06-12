@@ -1,11 +1,24 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getAuthenticatedUserId } from '@/lib/auth'
 
 /**
  * GET /api/setup — Check the database setup status.
+ * Requires admin authentication.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Require admin auth
+    const userId = await getAuthenticatedUserId(request)
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
+    }
+
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado - Solo administrador' }, { status: 200 })
+    }
+
     const userCount = await db.user.count()
     const productCount = await db.product.count()
 
@@ -39,9 +52,21 @@ export async function GET() {
 
 /**
  * POST /api/setup — Trigger database setup (auto-seed if empty).
+ * Requires admin authentication.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Require admin auth
+    const userId = await getAuthenticatedUserId(request)
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
+    }
+
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado - Solo administrador' }, { status: 200 })
+    }
+
     const userCount = await db.user.count()
 
     if (userCount === 0) {
@@ -49,7 +74,7 @@ export async function POST() {
         success: false,
         error: 'Database is empty. Run seed script.',
         hint: 'Run "bun run db:push && bun run db:seed" locally, or set up Turso and redeploy.',
-      }, { status: 400 })
+      }, { status: 200 })
     }
 
     return NextResponse.json({
@@ -65,6 +90,6 @@ export async function POST() {
     return NextResponse.json({
       success: false,
       error: `Setup failed: ${msg}`,
-    }, { status: 500 })
+    }, { status: 200 })
   }
 }

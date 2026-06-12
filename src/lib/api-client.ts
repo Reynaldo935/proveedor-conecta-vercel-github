@@ -57,11 +57,7 @@ export async function apiCall<T = unknown>(
   // Ensure path starts with /api/
   const url = path.startsWith('/') ? path : `/api/${path}`
 
-  // Add auth header from localStorage
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('pc_user_id') : null
-  if (userId && !headers['X-User-Id']) {
-    headers['X-User-Id'] = userId
-  }
+  // Add auth header from localStorage — only used client-side for reference, not sent as X-User-Id
 
   if (body && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json'

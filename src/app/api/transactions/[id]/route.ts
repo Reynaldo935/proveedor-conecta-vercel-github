@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -24,11 +24,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     if (!transaction) {
-      return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 200 })
     }
 
     if (transaction.buyerId !== userId && transaction.sellerId !== userId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
 
     return NextResponse.json({
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   } catch (error) {
     console.error('Get transaction error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener transacción' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener transacción' }, { status: 200 })
   }
 }
 
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -63,17 +63,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
     if (!existing) {
-      return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 200 })
     }
 
     if (existing.buyerId !== userId && existing.sellerId !== userId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
 
     const body = await request.json()
     const validStatuses = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED']
     if (!body.status || !validStatuses.includes(body.status)) {
-      return NextResponse.json({ success: false, error: 'Estado no válido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Estado no válido' }, { status: 200 })
     }
 
     // ── PENDING → COMPLETED transition with commission split ──────────────
@@ -282,12 +282,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         success: false,
         error: '💸 Sin fondos — Dinero insuficiente para completar la transacción.',
         errorCode: 'INSUFFICIENT_FUNDS',
-      }, { status: 400 })
+      }, { status: 200 })
     }
     if (error instanceof Error && error.message === 'BUYER_NOT_FOUND') {
-      return NextResponse.json({ success: false, error: 'Comprador no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Comprador no encontrado' }, { status: 200 })
     }
     console.error('Update transaction error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar transacción' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar transacción' }, { status: 200 })
   }
 }

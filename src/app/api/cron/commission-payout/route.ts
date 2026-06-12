@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
  * Cron Job: Commission Payout Processor
  *
  * Runs daily to process pending commission payouts.
- * Protected with CRON_SECRET env var check.
+ * Protected with CRON_SECRET env var check — CRON_SECRET is always required.
  *
  * GET /api/cron/commission-payout
  * 1. Find all PENDING commission logs older than 24 hours
@@ -15,22 +15,24 @@ import { db } from '@/lib/db'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret to prevent unauthorized access
+    // Verify cron secret to prevent unauthorized access — always required
     const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
+      console.error('[Cron] CRON_SECRET is not configured — refusing to run')
+      return NextResponse.json(
+        { success: false, error: 'CRON_SECRET is not configured. Set the CRON_SECRET environment variable.' },
+        { status: 200 }
+      )
+    }
+
     const authHeader = request.headers.get('authorization')
     const urlSecret = new URL(request.url).searchParams.get('secret')
-
-    if (cronSecret) {
-      const providedSecret = authHeader?.replace('Bearer ', '') || urlSecret
-      if (providedSecret !== cronSecret) {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized: invalid cron secret' },
-          { status: 401 }
-        )
-      }
-    } else {
-      // In development (no CRON_SECRET set), allow access but log warning
-      console.warn('[Cron] CRON_SECRET not set — allowing unauthenticated cron access (development only)')
+    const providedSecret = authHeader?.replace('Bearer ', '') || urlSecret
+    if (providedSecret !== cronSecret) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: invalid cron secret' },
+        { status: 200 }
+      )
     }
 
     // Calculate the cutoff: 24 hours ago
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: 'Failed to process commission payouts',
       },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

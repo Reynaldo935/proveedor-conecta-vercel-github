@@ -6,19 +6,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user || user.email !== 'rey7214935@gmail.com') {
-      return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 403 })
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 200 })
     }
 
     const body = await request.json()
     const { status } = body
 
     if (!['PAID', 'PENDING', 'FAILED'].includes(status)) {
-      return NextResponse.json({ success: false, error: 'Estado inválido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Estado inválido' }, { status: 200 })
     }
 
     const commission = await db.commissionLog.update({
@@ -29,6 +29,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ success: true, data: commission })
   } catch (error) {
     console.error('Update commission error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar comisión' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar comisión' }, { status: 200 })
   }
 }

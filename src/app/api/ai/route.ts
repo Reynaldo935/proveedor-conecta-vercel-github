@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     const { message, model = 'zai', preferredProvider, conversationHistory = [], context } = body
 
     if (!message || typeof message !== 'string') {
-      return NextResponse.json({ success: false, error: 'Mensaje requerido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Mensaje requerido' }, { status: 200 })
     }
 
     // Trim conversation history to last 20 messages for token management

@@ -20,7 +20,6 @@ const DEMO_ACCOUNTS = [
   { email: "tech@demo.ni", label: "Tech", icon: "💻", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
   { email: "comprador@demo.ni", label: "Comprador", icon: "🛒", color: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" },
 ]
-const DEMO_PASSWORD = "demo123"
 
 export function LoginForm() {
   const { navigate } = useAppStore()
@@ -63,10 +62,10 @@ export function LoginForm() {
   const handleDemoLogin = async (demoEmail: string) => {
     setDemoLogging(demoEmail)
     setEmail(demoEmail)
-    setPassword(DEMO_PASSWORD)
     setLoading(true)
     try {
-      const data = await api.post("auth/login", { email: demoEmail, password: DEMO_PASSWORD })
+      // Use server-side demo login endpoint to avoid exposing passwords in client bundle
+      const data = await api.post("auth/demo-login", { email: demoEmail })
       if (data.success && data.data) {
         setUser(data.data as any)
         toast.success(`¡Bienvenido! (${demoEmail})`)

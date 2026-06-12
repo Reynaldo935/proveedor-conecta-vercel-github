@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     if (!product || product.status === 'DELETED') {
-      return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 200 })
     }
 
     // Check if user saved this product
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   } catch (error) {
     console.error('Get product error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener producto' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener producto' }, { status: 200 })
   }
 }
 
@@ -72,13 +72,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
     const product = await db.product.findUnique({ where: { id } })
     if (!product || product.sellerId !== userId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
 
     const body = await request.json()
@@ -127,7 +127,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: true, data: { ...updated, images: (() => { try { return JSON.parse(updated.images) } catch { return [] } })() } })
   } catch (error) {
     console.error('Update product error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar producto' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar producto' }, { status: 200 })
   }
 }
 
@@ -137,13 +137,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
     const product = await db.product.findUnique({ where: { id } })
     if (!product || product.sellerId !== userId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
 
     // Soft delete
@@ -156,6 +156,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete product error:', error)
-    return NextResponse.json({ success: false, error: 'Error al eliminar producto' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al eliminar producto' }, { status: 200 })
   }
 }

@@ -182,19 +182,24 @@ const ALLOWED_ORIGINS = new Set([
 function getCorsHeaders(origin: string | null): Record<string, string> {
   const allowOrigin = origin && ALLOWED_ORIGINS.has(origin)
     ? origin
-    : (ALLOWED_ORIGINS.values().next().value || '*')
+    : (ALLOWED_ORIGINS.values().next().value || '')
 
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id, X-CSRF-Token, X-Requested-With',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   }
 }
 
-// ─── Middleware Main ─────────────────────────────────────────────────────────────
+// ─── Proxy Main ─────────────────────────────────────────────────────────────────
 
+/**
+ * Next.js 16 proxy handler.
+ * Replaces the deprecated `middleware` named export with a default export
+ * following the new proxy convention.
+ */
 export function middleware(request: NextRequest) {
   // Only process API routes
   if (!request.nextUrl.pathname.startsWith('/api/')) {
@@ -230,7 +235,7 @@ export function middleware(request: NextRequest) {
         retryAfter,
       },
       {
-        status: 429,
+        status: 200,
         headers: {
           'Retry-After': String(retryAfter),
           'X-RateLimit-Limit': '60',
@@ -273,7 +278,7 @@ export function middleware(request: NextRequest) {
         success: false,
         error: 'Solicitud bloqueada por seguridad.',
       },
-      { status: 403 }
+      { status: 200 }
     )
 
     const origin = request.headers.get('origin')
@@ -311,7 +316,7 @@ export function middleware(request: NextRequest) {
   return response
 }
 
-// ─── Middleware Config ───────────────────────────────────────────────────────────
+// ─── Middleware Config ──────────────────────────────────────────────────────────
 
 export const config = {
   matcher: '/api/:path*',

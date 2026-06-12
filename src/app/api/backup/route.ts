@@ -20,14 +20,14 @@ async function verifyAdmin(request?: Request) {
   const userId = await getAuthenticatedUserId(request)
 
   if (!userId) {
-    return { error: NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 }), user: null, userId: null }
+    return { error: NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 }), user: null, userId: null }
   }
 
   await setAuthCookie(userId)
 
   const user = await db.user.findUnique({ where: { id: userId } })
-  if (!user || user.email !== 'rey7214935@gmail.com') {
-    return { error: NextResponse.json({ success: false, error: 'Acceso denegado - Solo administrador' }, { status: 403 }), user: null, userId: null }
+  if (!user || user.role !== 'ADMIN') {
+    return { error: NextResponse.json({ success: false, error: 'Acceso denegado - Solo administrador' }, { status: 200 }), user: null, userId: null }
   }
 
   return { error: null, user, userId }
@@ -73,7 +73,7 @@ async function handleGet(request: NextRequest) {
     })
   } catch (error) {
     console.error('Backup list error:', error)
-    return NextResponse.json({ success: false, error: 'Error al listar respaldos' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al listar respaldos' }, { status: 200 })
   }
 }
 
@@ -89,7 +89,7 @@ async function handlePost(request: NextRequest) {
     if (!action || !['create', 'restore'].includes(action)) {
       return NextResponse.json(
         { success: false, error: 'Acción no válida. Use "create" o "restore"' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -100,7 +100,7 @@ async function handlePost(request: NextRequest) {
     }
   } catch (error) {
     console.error('Backup operation error:', error)
-    return NextResponse.json({ success: false, error: 'Error en operación de respaldo' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error en operación de respaldo' }, { status: 200 })
   }
 }
 
@@ -206,12 +206,12 @@ async function restoreBackup(body: { backupId?: string; data?: Record<string, un
         success: false,
         error: 'Para restaurar, debe proporcionar los datos del respaldo en el campo "data". Los respaldos en memoria no almacenan los datos completos del respaldo.',
       },
-      { status: 400 }
+      { status: 200 }
     )
   } else {
     return NextResponse.json(
       { success: false, error: 'Debe proporcionar backupId o data para restaurar' },
-      { status: 400 }
+      { status: 200 }
     )
   }
 
@@ -390,7 +390,7 @@ async function restoreBackup(body: { backupId?: string; data?: Record<string, un
     console.error('Restore error:', error)
     return NextResponse.json(
       { success: false, error: 'Error durante la restauración del respaldo' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

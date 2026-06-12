@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { success: false, error: 'Token de verificación requerido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!verificationToken) {
       return NextResponse.json(
         { success: false, error: 'Token de verificación inválido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       await db.verificationToken.delete({ where: { id: verificationToken.id } })
       return NextResponse.json(
         { success: false, error: 'El token de verificación ha expirado. Solicita uno nuevo.', expired: true },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Usuario no encontrado' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     console.error('Verify error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al verificar correo' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { success: false, error: 'Token de verificación requerido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     if (!verificationToken) {
       return NextResponse.json(
         { success: false, error: 'Token de verificación inválido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     if (email && verificationToken.email !== email) {
       return NextResponse.json(
         { success: false, error: 'El token no corresponde a este correo' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       await db.verificationToken.delete({ where: { id: verificationToken.id } })
       return NextResponse.json(
         { success: false, error: 'El token de verificación ha expirado. Solicita uno nuevo.', expired: true },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Usuario no encontrado' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     console.error('Verify error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al verificar correo' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

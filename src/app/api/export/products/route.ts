@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Authentication check
     const userId = await getAuthenticatedUserId(request)
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     const where: Record<string, unknown> = { status: 'ACTIVE' }
     if (sellerId) where.sellerId = sellerId
@@ -114,6 +114,6 @@ ${products.map(p => `<tr><td>${escapeHtml(p.title)}</td><td class="price">C$ ${p
     })
   } catch (error) {
     console.error('Export products error:', error)
-    return NextResponse.json({ success: false, error: 'Error exporting products' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error exporting products' }, { status: 200 })
   }
 }

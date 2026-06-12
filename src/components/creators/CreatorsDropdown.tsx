@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion"
 export function CreatorsDropdown() {
   const { creators, loading, refreshCreators } = useCreators()
   const { user } = useAuthStore()
-  const isAdmin = user?.email === "rey7214935@gmail.com"
+  const isAdmin = user?.role === "ADMIN"
 
   return (
     <Popover>

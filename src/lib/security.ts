@@ -173,7 +173,7 @@ const ALLOWED_ORIGINS = [
  * Allows requests from configured origins.
  */
 export function getCorsHeaders(origin?: string): Record<string, string> {
-  let allowOrigin = ALLOWED_ORIGINS[0] || '*'
+  let allowOrigin = ALLOWED_ORIGINS[0] || ''
 
   if (origin) {
     const isAllowed = ALLOWED_ORIGINS.some(allowed => {
@@ -192,7 +192,7 @@ export function getCorsHeaders(origin?: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id, X-CSRF-Token, X-Requested-With',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   }

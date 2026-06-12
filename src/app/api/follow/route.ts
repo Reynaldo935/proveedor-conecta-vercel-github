@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'followers' // followers or following
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'userId requerido o iniciar sesión' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'userId requerido o iniciar sesión' }, { status: 200 })
     }
 
     if (type === 'following') {
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('Get follow error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener seguidores' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener seguidores' }, { status: 200 })
   }
 }
 
@@ -88,21 +88,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const body = await request.json()
     const { followingId } = body
-    if (!followingId) return NextResponse.json({ success: false, error: 'followingId requerido' }, { status: 400 })
+    if (!followingId) return NextResponse.json({ success: false, error: 'followingId requerido' }, { status: 200 })
 
     if (followingId === userId) {
-      return NextResponse.json({ success: false, error: 'No puedes seguirte a ti mismo' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'No puedes seguirte a ti mismo' }, { status: 200 })
     }
 
     // Verify target user exists
     const targetUser = await db.user.findUnique({ where: { id: followingId } })
     if (!targetUser) {
-      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 200 })
     }
 
     const existing = await db.follow.findUnique({
@@ -130,6 +130,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Toggle follow error:', error)
-    return NextResponse.json({ success: false, error: 'Error al seguir' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al seguir' }, { status: 200 })
   }
 }

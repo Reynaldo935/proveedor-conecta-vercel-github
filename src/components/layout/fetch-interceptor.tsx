@@ -4,7 +4,7 @@ import { useEffect } from "react"
 
 /**
  * Global fetch interceptor that:
- * 1. Adds X-User-Id header to all /api/ requests for auth
+ * 1. Ensures credentials: 'include' for all /api/ requests (cookie-based auth)
  * 2. Detects offline state and notifies the connection banner
  * 3. Adds retry logic for failed API requests (1 retry)
  */
@@ -37,11 +37,6 @@ export function FetchInterceptor() {
       if (url.startsWith("/api/") || url.includes("/api/")) {
         const userId = localStorage.getItem("pc_user_id")
         const headers = new Headers(init?.headers || {})
-
-        // Add X-User-Id header if not already present
-        if (userId && !headers.has("X-User-Id")) {
-          headers.set("X-User-Id", userId)
-        }
 
         // Ensure credentials: 'include' for cookie sending
         const newInit = {

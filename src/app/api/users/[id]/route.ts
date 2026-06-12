@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
 
-    if (!user) return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+    if (!user) return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 200 })
 
     const { password: _, ...safeUser } = user
     const isFollowing = currentUserId ? user.followers.some(f => f.followerId === currentUserId) : false
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   } catch (error) {
     console.error('Get user error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 200 })
   }
 }
 
@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId || userId !== id) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -75,6 +75,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: true, data: safeUser })
   } catch (error) {
     console.error('Update user error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar usuario' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar usuario' }, { status: 200 })
   }
 }

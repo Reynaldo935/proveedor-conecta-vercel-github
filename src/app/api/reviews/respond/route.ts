@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (!reviewId || !response || typeof response !== 'string' || response.trim().length === 0) {
       return NextResponse.json(
         { success: false, error: 'reviewId y response son requeridos' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!review) {
       return NextResponse.json(
         { success: false, error: 'Reseña no encontrada' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     if (review.targetId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Solo el destinatario de la reseña puede responder' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     if (review.response && review.response.trim().length > 0) {
       return NextResponse.json(
         { success: false, error: 'Ya has respondido a esta reseña' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     console.error('Respond to review error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al responder reseña' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Get chat rooms error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener chats' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener chats' }, { status: 200 })
   }
 }
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -60,24 +60,24 @@ export async function POST(request: NextRequest) {
     const { sellerId, productId, message } = body
 
     if (!sellerId) {
-      return NextResponse.json({ success: false, error: 'sellerId es requerido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'sellerId es requerido' }, { status: 200 })
     }
 
     if (sellerId === userId) {
-      return NextResponse.json({ success: false, error: 'No puedes iniciar un chat contigo mismo' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'No puedes iniciar un chat contigo mismo' }, { status: 200 })
     }
 
     // Verify seller exists
     const seller = await db.user.findUnique({ where: { id: sellerId } })
     if (!seller) {
-      return NextResponse.json({ success: false, error: 'Vendedor no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Vendedor no encontrado' }, { status: 200 })
     }
 
     // If productId provided, verify it exists and belongs to seller
     if (productId) {
       const product = await db.product.findUnique({ where: { id: productId } })
       if (!product || product.status === 'DELETED') {
-        return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 })
+        return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 200 })
       }
     }
 
@@ -153,6 +153,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Create chat room error:', error)
-    return NextResponse.json({ success: false, error: 'Error al crear chat' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al crear chat' }, { status: 200 })
   }
 }

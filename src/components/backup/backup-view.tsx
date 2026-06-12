@@ -58,7 +58,7 @@ export function BackupView() {
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
-  const isAdmin = user?.email === "rey7214935@gmail.com"
+  const isAdmin = user?.role === "ADMIN"
 
   const loadBackups = useCallback(async () => {
     setLoading(true)

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     if (!targetId) {
       return NextResponse.json(
         { success: false, error: 'targetId es requerido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     console.error('Get reviews error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener reseñas' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     if (!targetId || !transactionId || !rating || !reviewType) {
       return NextResponse.json(
         { success: false, error: 'Todos los campos son requeridos' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     if (typeof rating !== 'number' || rating < 1 || rating > 5) {
       return NextResponse.json(
         { success: false, error: 'La calificación debe ser entre 1 y 5' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     if (!['SELLER_REVIEW', 'BUYER_REVIEW'].includes(reviewType)) {
       return NextResponse.json(
         { success: false, error: 'Tipo de reseña inválido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -155,14 +155,14 @@ export async function POST(request: NextRequest) {
     if (!transaction) {
       return NextResponse.json(
         { success: false, error: 'Transacción no encontrada' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
     if (transaction.status !== 'COMPLETED') {
       return NextResponse.json(
         { success: false, error: 'Solo se pueden reseñar transacciones completadas' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -172,13 +172,13 @@ export async function POST(request: NextRequest) {
       if (transaction.buyerId !== userId) {
         return NextResponse.json(
           { success: false, error: 'Solo el comprador puede reseñar al vendedor' },
-          { status: 400 }
+          { status: 200 }
         )
       }
       if (transaction.sellerId !== targetId) {
         return NextResponse.json(
           { success: false, error: 'El objetivo no es el vendedor de esta transacción' },
-          { status: 400 }
+          { status: 200 }
         )
       }
     } else {
@@ -186,13 +186,13 @@ export async function POST(request: NextRequest) {
       if (transaction.sellerId !== userId) {
         return NextResponse.json(
           { success: false, error: 'Solo el vendedor puede reseñar al comprador' },
-          { status: 400 }
+          { status: 200 }
         )
       }
       if (transaction.buyerId !== targetId) {
         return NextResponse.json(
           { success: false, error: 'El objetivo no es el comprador de esta transacción' },
-          { status: 400 }
+          { status: 200 }
         )
       }
     }
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
     if (existingReview) {
       return NextResponse.json(
         { success: false, error: 'Ya has reseñado esta transacción' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
     console.error('Create review error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al crear reseña' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

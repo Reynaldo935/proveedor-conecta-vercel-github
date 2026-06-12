@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { error: 'No autenticado' },
-        { status: 403 }
+        { status: 200 }
       )
     }
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (!socketId || !channelName) {
       return NextResponse.json(
         { error: 'socket_id y channel_name son requeridos' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       if (!authorized) {
         return NextResponse.json(
           { error: 'No autorizado para este canal' },
-          { status: 403 }
+          { status: 200 }
         )
       }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       if (!auth) {
         return NextResponse.json(
           { error: 'Error de autenticación Pusher' },
-          { status: 500 }
+          { status: 200 }
         )
       }
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       if (!user) {
         return NextResponse.json(
           { error: 'Usuario no encontrado' },
-          { status: 403 }
+          { status: 200 }
         )
       }
 
@@ -88,13 +88,13 @@ export async function POST(request: NextRequest) {
     // Public channels don't need authentication
     return NextResponse.json(
       { error: 'Los canales públicos no requieren autenticación' },
-      { status: 400 }
+      { status: 200 }
     )
   } catch (error) {
     console.error('[Pusher Auth API] Error:', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

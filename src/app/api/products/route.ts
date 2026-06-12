@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Get products error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener productos' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener productos' }, { status: 200 })
   }
 }
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     // Re-set auth cookie
@@ -97,18 +97,18 @@ export async function POST(request: NextRequest) {
 
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user || user.role !== 'SELLER') {
-      return NextResponse.json({ success: false, error: 'Solo vendedores pueden publicar productos' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Solo vendedores pueden publicar productos' }, { status: 200 })
     }
 
     const body = await request.json()
     const { title, description, price, discountPrice, discountPercent, category, tags, images, videoUrl, quantity, discountStart, discountEnd, quantityDiscounts } = body
 
     if (!title || !price) {
-      return NextResponse.json({ success: false, error: 'Título y precio son requeridos' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Título y precio son requeridos' }, { status: 200 })
     }
 
     if (parseFloat(price) <= 0) {
-      return NextResponse.json({ success: false, error: 'El precio debe ser mayor que 0' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'El precio debe ser mayor que 0' }, { status: 200 })
     }
 
     const product = await db.product.create({
@@ -160,6 +160,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Create product error:', error)
-    return NextResponse.json({ success: false, error: 'Error al crear producto' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al crear producto' }, { status: 200 })
   }
 }

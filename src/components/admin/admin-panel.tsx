@@ -177,7 +177,7 @@ export function AdminPanel() {
   }, [])
 
   // Verify admin access (after hooks)
-  if (user?.email !== "rey7214935@gmail.com") {
+  if (user?.role !== "ADMIN") {
     return (
       <div className="text-center py-16">
         <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />

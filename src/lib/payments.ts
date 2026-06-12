@@ -38,7 +38,7 @@ export async function processPixelPay(params: PixelPayParams): Promise<PixelPayR
     return {
       success: true,
       transactionId: `PX-SIM-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/success?gateway=pixelpay&order=${params.orderId}&simulated=1`,
+      redirectUrl: `${(() => { const u = process.env.NEXT_PUBLIC_APP_URL; if (!u) throw new Error('NEXT_PUBLIC_APP_URL is required in production'); return u })()}/payment/success?gateway=pixelpay&order=${params.orderId}&simulated=1`,
     }
   }
 
@@ -113,7 +113,7 @@ export async function processPagadito(params: PagaditoParams): Promise<PagaditoR
     return {
       success: true,
       transactionId: `PG-SIM-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/success?gateway=pagadito&order=${params.orderId}&simulated=1`,
+      redirectUrl: `${(() => { const u = process.env.NEXT_PUBLIC_APP_URL; if (!u) throw new Error('NEXT_PUBLIC_APP_URL is required in production'); return u })()}/payment/success?gateway=pagadito&order=${params.orderId}&simulated=1`,
     }
   }
 
@@ -261,7 +261,7 @@ export async function createPayPalOrder(params: PayPalOrderParams): Promise<PayP
     return {
       success: true,
       orderId: simOrderId,
-      approveUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/success?gateway=paypal&orderId=${simOrderId}&simulated=1`,
+      approveUrl: `${(() => { const u = process.env.NEXT_PUBLIC_APP_URL; if (!u) throw new Error('NEXT_PUBLIC_APP_URL is required in production'); return u })()}/payment/success?gateway=paypal&orderId=${simOrderId}&simulated=1`,
     }
   }
 
@@ -407,7 +407,7 @@ export async function createStripeCheckoutSession(params: StripeCheckoutParams):
     return {
       success: true,
       sessionId: simSessionId,
-      url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/payment/success?gateway=stripe&session_id=${simSessionId}&simulated=1`,
+      url: `${(() => { const u = process.env.NEXT_PUBLIC_APP_URL; if (!u) throw new Error('NEXT_PUBLIC_APP_URL is required in production'); return u })()}/payment/success?gateway=stripe&session_id=${simSessionId}&simulated=1`,
     }
   }
 

@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { postId } = await params
-    if (!postId) return NextResponse.json({ success: false, error: 'postId requerido' }, { status: 400 })
+    if (!postId) return NextResponse.json({ success: false, error: 'postId requerido' }, { status: 200 })
 
     const comments = await db.postComment.findMany({
       where: { postId },
@@ -18,6 +18,6 @@ export async function GET(
     return NextResponse.json({ success: true, data: comments })
   } catch (error) {
     console.error('Get wall comments error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener comentarios' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener comentarios' }, { status: 200 })
   }
 }

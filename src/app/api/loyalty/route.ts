@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     console.error('Get loyalty points error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener puntos de lealtad' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     if (!points || typeof points !== 'number' || points <= 0) {
       return NextResponse.json(
         { success: false, error: 'Cantidad de puntos inválida' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     if (points < 100) {
       return NextResponse.json(
         { success: false, error: 'Mínimo 100 puntos para canjear' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     if (loyaltyPoint.balance < points) {
       return NextResponse.json(
         { success: false, error: 'Puntos insuficientes' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     console.error('Redeem loyalty points error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al canjear puntos' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

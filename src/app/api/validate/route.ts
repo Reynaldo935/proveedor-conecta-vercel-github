@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (!body.type || !body.value) {
       return NextResponse.json(
         { success: false, valid: false, message: 'Se requiere "type" y "value"' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           valid: false,
           message: `Tipo de validación inválido. Tipos válidos: ${VALID_TYPES.join(', ')}`,
         },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
         valid: false,
         message: 'Error interno de validación',
       },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

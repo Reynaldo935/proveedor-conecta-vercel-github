@@ -22,7 +22,7 @@ export async function GET(
     // Authentication check
     const userId = await getAuthenticatedUserId(request)
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     const transaction = await db.transaction.findUnique({
       where: { id },
@@ -34,13 +34,13 @@ export async function GET(
     })
 
     if (!transaction) {
-      return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 200 })
     }
 
     // Authorization check: only buyer, seller, or admin can view the voucher
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (transaction.buyerId !== userId && transaction.sellerId !== userId && user?.email !== 'rey7214935@gmail.com') {
-      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    if (transaction.buyerId !== userId && transaction.sellerId !== userId && user?.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 200 })
     }
 
     const businessName = transaction.seller.businessProfile?.businessName || transaction.seller.name
@@ -82,7 +82,7 @@ export async function GET(
     })
   } catch (error) {
     console.error('Export voucher error:', error)
-    return NextResponse.json({ success: false, error: 'Error generando comprobante' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error generando comprobante' }, { status: 200 })
   }
 }
 

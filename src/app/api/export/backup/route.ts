@@ -8,7 +8,7 @@ async function handleGet(request: NextRequest) {
     // Authentication check
     const userId = await getAuthenticatedUserId(request)
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     const [users, products, transactions, businessProfiles, chatRooms, messages, cotizaciones, notifications, likes, savedProducts, follows, auditLogs, advertisements, quantityDiscounts, commissionLogs] = await Promise.all([
@@ -79,7 +79,7 @@ async function handleGet(request: NextRequest) {
     })
   } catch (error) {
     console.error('Backup error:', error)
-    return NextResponse.json({ success: false, error: 'Error creating backup' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error creating backup' }, { status: 200 })
   }
 }
 

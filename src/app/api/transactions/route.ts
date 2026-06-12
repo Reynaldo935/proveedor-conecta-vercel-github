@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     // Re-set auth cookie
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Get transactions error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener transacciones' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener transacciones' }, { status: 200 })
   }
 }
 
@@ -53,35 +53,35 @@ export async function POST(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     // Re-set auth cookie
     await setAuthCookie(userId)
 
     const body = await request.json()
-    const { productId, paymentMethod, cedula, cardLast4, paymentDetails, amount } = body
+    const { productId, paymentMethod, cedula, cardLast4, paymentDetails } = body
 
     if (!productId || !paymentMethod) {
-      return NextResponse.json({ success: false, error: 'Producto y método de pago son requeridos' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Producto y método de pago son requeridos' }, { status: 200 })
     }
 
     const validPaymentMethods = ['PAYPAL', 'BANPRO', 'BAC', 'LAFISE', 'BILLETERA', 'PIXELPAY', 'PAGADITO', 'GOOGLE_PAY', 'BANPRO_BILLETERA', 'KASH', 'WESTERN_UNION']
     if (!validPaymentMethods.includes(paymentMethod)) {
-      return NextResponse.json({ success: false, error: 'Método de pago no válido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Método de pago no válido' }, { status: 200 })
     }
 
     const product = await db.product.findUnique({ where: { id: productId } })
     if (!product || product.status === 'DELETED') {
-      return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 200 })
     }
 
     if (product.sellerId === userId) {
-      return NextResponse.json({ success: false, error: 'No puedes comprar tu propio producto' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'No puedes comprar tu propio producto' }, { status: 200 })
     }
 
     if (product.quantity <= 0) {
-      return NextResponse.json({ success: false, error: 'Producto agotado' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Producto agotado' }, { status: 200 })
     }
 
     // Check if buyer already has a pending/completed transaction for this product
@@ -93,10 +93,10 @@ export async function POST(request: NextRequest) {
       },
     })
     if (existingTransaction) {
-      return NextResponse.json({ success: false, error: 'Ya tienes una compra pendiente o completada para este producto' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Ya tienes una compra pendiente o completada para este producto' }, { status: 200 })
     }
 
-    const finalAmount = amount || (product.discountPrice || product.price)
+    const finalAmount = product.discountPrice || product.price
     const COMMISSION_RATE = 0.03
     const commission = Math.round(finalAmount * COMMISSION_RATE * 100) / 100
     const sellerPayout = Math.round((finalAmount - commission) * 100) / 100
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     // ============================================================
     const buyer = await db.user.findUnique({ where: { id: userId } })
     if (!buyer) {
-      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 200 })
     }
 
     const isDemoAccount = buyer?.email?.endsWith('@demo.ni') || false
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
             amount: finalAmount,
             currency: 'NIO',
           },
-        }, { status: 400 })
+        }, { status: 200 })
       }
     }
 
@@ -314,12 +314,12 @@ export async function POST(request: NextRequest) {
         success: false,
         error: `💸 Sin fondos — Dinero insuficiente. Recarga tu cuenta o intenta con otro método de pago.`,
         errorCode: 'INSUFFICIENT_FUNDS',
-      }, { status: 400 })
+      }, { status: 200 })
     }
     if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
-      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 200 })
     }
     console.error('Create transaction error:', error)
-    return NextResponse.json({ success: false, error: 'Error al crear transacción' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al crear transacción' }, { status: 200 })
   }
 }

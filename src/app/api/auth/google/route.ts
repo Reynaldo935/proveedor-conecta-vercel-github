@@ -10,7 +10,8 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 const REDIRECT_PATH = '/api/auth/google'
 
 function getRedirectUri(request: NextRequest): string {
-  const host = request.headers.get('host') || 'localhost:3000'
+  const host = request.headers.get('host')
+  if (!host) throw new Error('Host header is required for OAuth redirect URI')
   const protocol = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https')
   return `${protocol}://${host}${REDIRECT_PATH}`
 }
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
           success: false,
           error: 'Google OAuth no está configurado. El administrador debe configurar GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET.',
         },
-        { status: 503 }
+        { status: 200 }
       )
     }
 
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
     const { email, name, googleId, avatar, role, phone, department, address } = body
 
     if (!email) {
-      return NextResponse.json({ success: false, error: 'Email es requerido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Email es requerido' }, { status: 200 })
     }
 
     // If Google env vars are not set, we still allow the POST method
@@ -278,6 +279,6 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error('[Google Auth POST] Error:', error)
-    return NextResponse.json({ success: false, error: 'Error al autenticar con Google' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al autenticar con Google' }, { status: 200 })
   }
 }

@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { email, password } = body
 
     if (!email || !password) {
-      return NextResponse.json({ success: false, error: 'Email y contraseña son requeridos' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Email y contraseña son requeridos' }, { status: 200 })
     }
 
     const foundUser = await db.user.findUnique({
@@ -18,21 +18,15 @@ export async function POST(request: NextRequest) {
     })
 
     if (!foundUser || !foundUser.password) {
-      return NextResponse.json({ success: false, error: 'Credenciales inválidas' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'Credenciales inválidas' }, { status: 200 })
     }
 
     const valid = await bcrypt.compare(password, foundUser.password)
     if (!valid) {
-      return NextResponse.json({ success: false, error: 'Credenciales inválidas' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'Credenciales inválidas' }, { status: 200 })
     }
 
-    // Auto-verify email on login for demo/hackathon
-    if (!foundUser.emailVerified) {
-      await db.user.update({
-        where: { id: foundUser.id },
-        data: { emailVerified: true },
-      })
-    }
+    // Auto-verify email on login removed — users must verify through the proper flow
 
     // Re-fetch user to get updated emailVerified status and balance
     const user = await db.user.findUnique({
@@ -41,7 +35,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 200 })
     }
 
     // Audit log
@@ -67,6 +61,6 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Login error:', error)
-    return NextResponse.json({ success: false, error: 'Error al iniciar sesión' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al iniciar sesión' }, { status: 200 })
   }
 }

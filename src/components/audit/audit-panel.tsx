@@ -478,7 +478,7 @@ export function AuditPanel() {
 
   // ─── Verify Admin Access ────────────────────────────────────────────────────
 
-  if (user?.role !== "ADMIN" && user?.email !== "rey7214935@gmail.com") {
+  if (user?.role !== "ADMIN") {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}

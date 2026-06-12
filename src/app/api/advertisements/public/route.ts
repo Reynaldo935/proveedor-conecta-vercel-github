@@ -35,7 +35,7 @@ export async function GET() {
     console.error('Public advertisements error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener anuncios' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (!adId || !event) {
       return NextResponse.json(
         { success: false, error: 'adId and event are required' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (!ad || ad.status !== 'ACTIVE') {
       return NextResponse.json(
         { success: false, error: 'Anuncio no encontrado o inactivo' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     console.error('Ad event tracking error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al registrar evento' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (!amount || typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json(
         { success: false, error: 'Monto inválido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     console.error('Earn loyalty points error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al otorgar puntos' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

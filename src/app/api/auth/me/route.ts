@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request)
 
     if (!user) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     // Re-set the auth cookie to ensure it persists
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Get current user error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener usuario' }, { status: 200 })
   }
 }
 
@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest) {
     const user = await getAuthenticatedUser(request)
 
     if (!user) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     const userId = user.id as string
@@ -67,6 +67,6 @@ export async function PUT(request: NextRequest) {
     })
   } catch (error) {
     console.error('Update user error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar usuario' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar usuario' }, { status: 200 })
   }
 }

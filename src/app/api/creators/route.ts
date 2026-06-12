@@ -63,7 +63,7 @@ export async function GET() {
     console.error('Get creators error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener equipo' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -73,19 +73,19 @@ export async function PUT(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
-    // Only admin (rey7214935@gmail.com) can update creators
+    // Only admin can update creators
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user || user.email !== 'rey7214935@gmail.com') {
-      return NextResponse.json({ success: false, error: 'Solo el administrador puede actualizar el equipo' }, { status: 403 })
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Solo el administrador puede actualizar el equipo' }, { status: 200 })
     }
 
     const body = await request.json()
     if (!Array.isArray(body)) {
-      return NextResponse.json({ success: false, error: 'Formato inválido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Formato inválido' }, { status: 200 })
     }
 
     // Store in-memory (no filesystem on Vercel)
@@ -94,6 +94,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true, data: body })
   } catch (error) {
     console.error('Update creators error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar equipo' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar equipo' }, { status: 200 })
   }
 }

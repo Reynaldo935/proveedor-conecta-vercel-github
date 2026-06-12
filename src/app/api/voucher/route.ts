@@ -14,12 +14,12 @@ function escapeHtml(str: string): string {
 export async function GET(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const { searchParams } = new URL(request.url)
     const transactionId = searchParams.get('transactionId')
-    if (!transactionId) return NextResponse.json({ success: false, error: 'transactionId requerido' }, { status: 400 })
+    if (!transactionId) return NextResponse.json({ success: false, error: 'transactionId requerido' }, { status: 200 })
 
     const transaction = await db.transaction.findUnique({
       where: { id: transactionId },
@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    if (!transaction) return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 404 })
+    if (!transaction) return NextResponse.json({ success: false, error: 'Transacción no encontrada' }, { status: 200 })
     
     // Only buyer or seller of the transaction (or admin) can view voucher
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (transaction.buyerId !== userId && transaction.sellerId !== userId && user?.email !== 'rey7214935@gmail.com') {
-      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    if (transaction.buyerId !== userId && transaction.sellerId !== userId && user?.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 200 })
     }
 
     const formatPrice = (n: number) => new Intl.NumberFormat('es-NI', { style: 'currency', currency: 'NIO' }).format(n)
@@ -103,6 +103,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Voucher error:', error)
-    return NextResponse.json({ success: false, error: 'Error al generar comprobante' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al generar comprobante' }, { status: 200 })
   }
 }

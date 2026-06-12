@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!email) {
       return NextResponse.json(
         { success: false, error: 'Correo electrónico requerido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (user.emailVerified) {
       return NextResponse.json(
         { success: false, error: 'Este correo ya está verificado' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     console.error('Send verification error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al enviar correo de verificación' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

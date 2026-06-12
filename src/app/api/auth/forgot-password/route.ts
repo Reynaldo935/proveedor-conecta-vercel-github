@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       if (!email) {
         return NextResponse.json(
           { success: false, error: 'El correo electrónico es requerido' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       if (!token || !password) {
         return NextResponse.json(
           { success: false, error: 'Token y nueva contraseña son requeridos' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       if (password.length < 6) {
         return NextResponse.json(
           { success: false, error: 'La contraseña debe tener al menos 6 caracteres' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       if (!verificationToken) {
         return NextResponse.json(
           { success: false, error: 'Token inválido o expirado' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         await db.verificationToken.delete({ where: { token } })
         return NextResponse.json(
           { success: false, error: 'El token ha expirado. Solicita uno nuevo.', expired: true },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       if (!user) {
         return NextResponse.json(
           { success: false, error: 'Usuario no encontrado' },
-          { status: 404 }
+          { status: 200 }
         )
       }
 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       if (!token) {
         return NextResponse.json(
           { success: false, error: 'Token es requerido' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -157,14 +157,14 @@ export async function POST(request: NextRequest) {
       if (!verificationToken) {
         return NextResponse.json(
           { success: false, error: 'Token inválido', valid: false },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
       if (verificationToken.expiresAt < new Date()) {
         return NextResponse.json(
           { success: false, error: 'El token ha expirado', valid: false, expired: true },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -180,13 +180,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, error: 'Acción no válida' },
-      { status: 400 }
+      { status: 200 }
     )
   } catch (error) {
     console.error('Forgot password error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al procesar la solicitud' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

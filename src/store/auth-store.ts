@@ -76,16 +76,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (storedUser.id) setCurrentUserId(storedUser.id as string)
     }
 
-    // Then verify with the server using the X-User-Id header as fallback
+    // Then verify with the server
     try {
-      const headers: Record<string, string> = {}
-      if (storedUserId) {
-        headers['X-User-Id'] = storedUserId
-      }
-
       const res = await fetch('/api/auth/me', {
         credentials: 'include',
-        headers,
       })
       const data = await res.json()
       if (data.success && data.data) {

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (!body.gateway || !body.productId || !body.amount) {
       return NextResponse.json(
         { success: false, error: 'Se requiere gateway, productId y amount' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     if (!VALID_GATEWAYS.includes(body.gateway)) {
       return NextResponse.json(
         { success: false, error: `Gateway inválido. Válidos: ${VALID_GATEWAYS.join(', ')}` },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     if (body.amount <= 0) {
       return NextResponse.json(
         { success: false, error: 'El monto debe ser mayor a 0' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!product) {
       return NextResponse.json(
         { success: false, error: 'Producto no encontrado' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
@@ -80,12 +80,14 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Usuario no encontrado' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
     const currency = body.currency || 'NIO'
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+    if (!APP_URL) throw new Error('NEXT_PUBLIC_APP_URL is required in production');
+    const appUrl = APP_URL
     const orderId = `ORD-${Date.now()}-${body.productId.slice(0, 8)}`
 
     let result: { success: boolean; redirectUrl?: string; orderId?: string; sessionId?: string; url?: string; error?: string }
@@ -168,7 +170,7 @@ export async function POST(request: NextRequest) {
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: result.error || 'Error procesando el pago' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -189,7 +191,7 @@ export async function POST(request: NextRequest) {
     console.error('[Payment Gateways API] Error:', error)
     return NextResponse.json(
       { success: false, error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

@@ -10,13 +10,13 @@ export async function GET(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user || user.email !== 'rey7214935@gmail.com') {
-      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 200 })
     }
 
     const commissionLogs = await db.commissionLog.findMany({
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Commissions error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener comisiones' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener comisiones' }, { status: 200 })
   }
 }
 
@@ -74,19 +74,19 @@ export async function POST(request: NextRequest) {
     const calculatedSignature = createHmac('sha256', WEBHOOK_SECRET).update(payload).digest('hex')
 
     if (receivedSignature && !timingSafeEqual(receivedSignature, calculatedSignature)) {
-      return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 200 })
     }
 
     const body = JSON.parse(payload)
     const { transactionId, status } = body
 
     if (!transactionId) {
-      return NextResponse.json({ success: false, error: 'transactionId required' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'transactionId required' }, { status: 200 })
     }
 
     const commission = await db.commissionLog.findFirst({ where: { transactionId } })
     if (!commission) {
-      return NextResponse.json({ success: false, error: 'Commission not found' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Commission not found' }, { status: 200 })
     }
 
     await db.commissionLog.update({
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: { id: commission.id, status: status || 'PAID' } })
   } catch (error) {
     console.error('Commission webhook error:', error)
-    return NextResponse.json({ success: false, error: 'Webhook processing error' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Webhook processing error' }, { status: 200 })
   }
 }
 

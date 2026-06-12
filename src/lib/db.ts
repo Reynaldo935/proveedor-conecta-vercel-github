@@ -29,15 +29,16 @@ function createPrismaClient(): PrismaClient {
       })
 
       const adapter = new PrismaLibSql(libsql)
-      console.log('☁️ Connected to Turso Cloud database')
+      console.log('Connected to Turso Cloud database')
       return new PrismaClient({ adapter })
     } catch (err) {
-      console.error('⚠️ Turso adapter failed, falling back to local SQLite:', err)
+      console.error('Turso adapter failed, falling back to local SQLite:', err)
     }
   }
 
   // Development / build-phase / fallback: local SQLite
-  return new PrismaClient()
+  const databaseUrl = process.env.DATABASE_URL ?? 'file:./db/custom.db'
+  return new PrismaClient({ datasourceUrl: databaseUrl })
 }
 
 // Use global singleton in development to avoid hot-reload issues

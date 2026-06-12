@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     console.error('Get calendar events error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener eventos del calendario' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     if (!title || !eventDate) {
       return NextResponse.json(
         { success: false, error: 'Título y fecha son requeridos' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     if (eventType && !validEventTypes.includes(eventType)) {
       return NextResponse.json(
         { success: false, error: 'Tipo de evento inválido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
     console.error('Create calendar event error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al crear evento' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -171,7 +171,7 @@ export async function DELETE(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -183,7 +183,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { success: false, error: 'ID del evento es requerido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -195,14 +195,14 @@ export async function DELETE(request: NextRequest) {
     if (!event) {
       return NextResponse.json(
         { success: false, error: 'Evento no encontrado' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
     if (event.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para eliminar este evento' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -218,7 +218,7 @@ export async function DELETE(request: NextRequest) {
     console.error('Delete calendar event error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al eliminar evento' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

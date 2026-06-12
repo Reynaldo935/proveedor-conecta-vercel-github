@@ -204,7 +204,7 @@ export async function cloudinaryUpload(
     } else {
       // Buffer — send as multipart/form-data
       const body = new FormData();
-      const blob = new Blob([file]);
+      const blob = new Blob([new Uint8Array(file)]);
       body.append("file", blob, `upload.${extensionForResourceType(resourceType)}`);
       body.append("api_key", API_KEY);
       body.append("timestamp", timestamp);

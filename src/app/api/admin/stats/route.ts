@@ -7,13 +7,13 @@ export async function GET(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user || user.email !== 'rey7214935@gmail.com') {
-      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 200 })
     }
 
     // Get platform-wide stats
@@ -82,6 +82,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Admin stats error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener estadísticas' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener estadísticas' }, { status: 200 })
   }
 }

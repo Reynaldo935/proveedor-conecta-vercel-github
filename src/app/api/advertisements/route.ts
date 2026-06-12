@@ -20,13 +20,13 @@ export async function GET(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user || user.email !== 'rey7214935@gmail.com') {
-      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 200 })
     }
 
     const ads = await db.advertisement.findMany({
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: ads })
   } catch (error) {
     console.error('Advertisements error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener anuncios' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener anuncios' }, { status: 200 })
   }
 }
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -61,21 +61,21 @@ export async function POST(request: NextRequest) {
     if (!title || typeof title !== 'string' || title.trim().length < 3) {
       return NextResponse.json(
         { success: false, error: 'El título es obligatorio (mínimo 3 caracteres)' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
     if (!plan || !PLAN_AMOUNTS[plan]) {
       return NextResponse.json(
         { success: false, error: 'Plan inválido. Opciones: THREE_DAYS, WEEKLY, MONTHLY' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
     if (!type || type !== 'PUBLISH') {
       return NextResponse.json(
         { success: false, error: 'Tipo de anuncio inválido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -84,20 +84,20 @@ export async function POST(request: NextRequest) {
     if (amount !== expectedAmount) {
       return NextResponse.json(
         { success: false, error: `El monto no coincide con el plan seleccionado. Esperado: C$${expectedAmount}` },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
     // Check user balance
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
-      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 200 })
     }
 
     if (user.balance < expectedAmount) {
       return NextResponse.json(
         { success: false, error: `Saldo insuficiente. Necesitas C$${expectedAmount} y tienes C$${Math.floor(user.balance)}` },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     console.error('Create advertisement error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al crear anuncio' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

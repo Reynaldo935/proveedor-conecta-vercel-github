@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     if (!phone) {
       return NextResponse.json(
         { success: false, error: 'Teléfono es requerido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     if (!phoneValidation.valid) {
       return NextResponse.json(
         { success: false, error: phoneValidation.message },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       if (!code) {
         return NextResponse.json(
           { success: false, error: 'Código de verificación es requerido' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       if (!record) {
         return NextResponse.json(
           { success: false, error: 'No se encontró código de verificación para este teléfono' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       if (record.verified) {
         return NextResponse.json(
           { success: false, error: 'Este teléfono ya fue verificado' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         await db.phoneVerification.delete({ where: { id: record.id } })
         return NextResponse.json(
           { success: false, error: 'El código ha expirado. Solicita uno nuevo.', expired: true },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       if (record.code !== code) {
         return NextResponse.json(
           { success: false, error: 'Código de verificación incorrecto' },
-          { status: 400 }
+          { status: 200 }
         )
       }
 
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     console.error('Phone verification error:', error)
     return NextResponse.json(
       { success: false, error: 'Error en la verificación de teléfono' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

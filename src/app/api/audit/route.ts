@@ -6,12 +6,12 @@ export async function GET(req: NextRequest) {
   try {
     const user = await getAuthenticatedUser(req)
     if (!user) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     // Only admin can access audit logs
-    if (user.email !== 'rey7214935@gmail.com' && user.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 403 })
+    if (user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 200 })
     }
 
     const { searchParams } = new URL(req.url)
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     console.error('[Audit API] Error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener logs de auditoría' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

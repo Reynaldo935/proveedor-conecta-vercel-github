@@ -95,7 +95,6 @@ export function clearAuthData() {
 /**
  * Enhanced fetch that automatically includes auth credentials.
  * - Always sends cookies (credentials: 'include')
- * - Also sends X-User-Id header from localStorage/memory as fallback
  * - If the server returns 401, attempts one retry after re-verifying auth
  */
 export async function authFetch(
@@ -105,11 +104,6 @@ export async function authFetch(
   const userId = getStoredUserId()
   
   const headers = new Headers(options.headers || {})
-  
-  // Add X-User-Id header as fallback for cookie-based auth
-  if (userId) {
-    headers.set('X-User-Id', userId)
-  }
   
   // Don't override Content-Type for FormData (browser sets boundary automatically)
   if (options.body instanceof FormData) {
@@ -129,14 +123,12 @@ export async function authFetch(
     try {
       const verifyRes = await fetch('/api/auth/me', {
         credentials: 'include',
-        headers: { 'X-User-Id': userId },
       })
       const verifyData = await verifyRes.json()
       if (verifyData.success && verifyData.data?.id) {
         // Auth is still valid — retry the original request
         storeAuthData(verifyData.data)
         const retryHeaders = new Headers(options.headers || {})
-        retryHeaders.set('X-User-Id', verifyData.data.id)
         if (!(options.body instanceof FormData) && !retryHeaders.has('Content-Type')) {
           retryHeaders.set('Content-Type', 'application/json')
         }

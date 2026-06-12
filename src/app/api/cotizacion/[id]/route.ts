@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
 
-    if (!cotizacion) return NextResponse.json({ success: false, error: 'Cotización no encontrada' }, { status: 404 })
+    if (!cotizacion) return NextResponse.json({ success: false, error: 'Cotización no encontrada' }, { status: 200 })
 
     // If user is logged in, check if they have access (buyer, seller who responded, or seller in same category)
     let canRespond = false
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: true, data: { ...cotizacion, canRespond } })
   } catch (error) {
     console.error('Get cotizacion error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener cotización' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener cotización' }, { status: 200 })
   }
 }
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const { id } = await params
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     // Verify cotizacion exists and is open
@@ -58,30 +58,30 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
 
     if (!cotizacion) {
-      return NextResponse.json({ success: false, error: 'Cotización no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Cotización no encontrada' }, { status: 200 })
     }
 
     if (cotizacion.status !== 'OPEN') {
-      return NextResponse.json({ success: false, error: 'Esta cotización ya está cerrada' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Esta cotización ya está cerrada' }, { status: 200 })
     }
 
     // Check if seller already responded
     const existingResponse = cotizacion.responses.find(r => r.sellerId === userId)
     if (existingResponse) {
-      return NextResponse.json({ success: false, error: 'Ya has respondido a esta cotización' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Ya has respondido a esta cotización' }, { status: 200 })
     }
 
     // Verify user is a seller
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user || user.role !== 'SELLER') {
-      return NextResponse.json({ success: false, error: 'Solo vendedores pueden responder cotizaciones' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Solo vendedores pueden responder cotizaciones' }, { status: 200 })
     }
 
     const body = await request.json()
     const { price, description, deliveryTime, productId } = body
 
     if (!price || parseFloat(price) <= 0) {
-      return NextResponse.json({ success: false, error: 'Precio válido es requerido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Precio válido es requerido' }, { status: 200 })
     }
 
     const response = await db.cotizacionResponse.create({
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: true, data: response })
   } catch (error) {
     console.error('Create cotizacion response error:', error)
-    return NextResponse.json({ success: false, error: 'Error al responder cotización' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al responder cotización' }, { status: 200 })
   }
 }
 
@@ -121,16 +121,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const cotizacion = await db.cotizacion.findUnique({ where: { id } })
     if (!cotizacion) {
-      return NextResponse.json({ success: false, error: 'Cotización no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Cotización no encontrada' }, { status: 200 })
     }
 
     if (cotizacion.buyerId !== userId) {
-      return NextResponse.json({ success: false, error: 'Solo el comprador puede modificar la cotización' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Solo el comprador puede modificar la cotización' }, { status: 200 })
     }
 
     const body = await request.json()
@@ -142,6 +142,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: true, data: updated })
   } catch (error) {
     console.error('Update cotizacion error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar cotización' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar cotización' }, { status: 200 })
   }
 }

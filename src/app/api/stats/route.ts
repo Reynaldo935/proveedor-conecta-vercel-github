@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     await setAuthCookie(userId)
 
     const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user) return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+    if (!user) return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 200 })
 
     if (user.role === 'SELLER') {
       const totalProducts = await db.product.count({ where: { sellerId: userId } })
@@ -130,6 +130,6 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('Stats error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener estadísticas' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener estadísticas' }, { status: 200 })
   }
 }

@@ -5,7 +5,7 @@ import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const { searchParams } = new URL(request.url)
@@ -27,14 +27,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: notifications, unreadCount })
   } catch (error) {
     console.error('Get notifications error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener notificaciones' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener notificaciones' }, { status: 200 })
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const body = await request.json()
@@ -46,18 +46,18 @@ export async function PUT(request: NextRequest) {
       // Verify notification belongs to the user
       const notification = await db.notification.findUnique({ where: { id: body.id } })
       if (!notification) {
-        return NextResponse.json({ success: false, error: 'Notificación no encontrada' }, { status: 404 })
+        return NextResponse.json({ success: false, error: 'Notificación no encontrada' }, { status: 200 })
       }
       if (notification.userId !== userId) {
-        return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+        return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
       }
       await db.notification.update({ where: { id: body.id }, data: { isRead: true } })
       return NextResponse.json({ success: true, data: { id: body.id, isRead: true } })
     }
 
-    return NextResponse.json({ success: false, error: 'Se requiere id o markAll' }, { status: 400 })
+    return NextResponse.json({ success: false, error: 'Se requiere id o markAll' }, { status: 200 })
   } catch (error) {
     console.error('Update notifications error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar notificaciones' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar notificaciones' }, { status: 200 })
   }
 }

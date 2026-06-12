@@ -1,9 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
-import { headers as nextHeaders } from 'next/headers';
 import { db } from './db';
 
-const SALT_ROUNDS = 4; // Reduced for hackathon/demo performance (was 12)
+const SALT_ROUNDS = 12;
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
@@ -14,12 +13,10 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 /**
- * Get the authenticated user ID from either cookie or X-User-Id header.
- * This dual approach ensures auth works even when cookies don't persist
- * (common in sandbox/iframe environments).
+ * Get the authenticated user ID from the cookie.
+ * Only cookie-based auth is supported — header-based auth is a security risk.
  */
-export async function getAuthenticatedUserId(request?: Request): Promise<string | null> {
-  // Method 1: Check cookie
+export async function getAuthenticatedUserId(_request?: Request): Promise<string | null> {
   try {
     const cookieStore = await cookies();
     const cookieUserId = cookieStore.get('pc_user_id')?.value;
@@ -32,33 +29,11 @@ export async function getAuthenticatedUserId(request?: Request): Promise<string 
     // Cookie reading failed
   }
 
-  // Method 2: Check X-User-Id header (fallback for when cookies don't persist)
-  if (request) {
-    const headerUserId = request.headers.get('X-User-Id');
-    if (headerUserId) {
-      const user = await db.user.findUnique({ where: { id: headerUserId } });
-      if (user) return headerUserId;
-    }
-  } else {
-    // Try to read from next/headers
-    try {
-      const headersList = await nextHeaders();
-      const headerUserId = headersList.get('X-User-Id');
-      if (headerUserId) {
-        const user = await db.user.findUnique({ where: { id: headerUserId } });
-        if (user) return headerUserId;
-      }
-    } catch {
-      // Header reading failed
-    }
-  }
-
   return null;
 }
 
 /**
  * Get the full authenticated user object (without password).
- * Checks both cookie and X-User-Id header.
  */
 export async function getAuthenticatedUser(request?: Request) {
   const userId = await getAuthenticatedUserId(request);
@@ -80,7 +55,7 @@ export async function setAuthCookie(userId: string) {
   const isProduction = process.env.NODE_ENV === 'production';
   cookieStore.set('pc_user_id', userId, {
     httpOnly: true,
-    secure: isProduction, // True on Vercel (HTTPS), false locally
+    secure: isProduction,
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 30, // 30 days

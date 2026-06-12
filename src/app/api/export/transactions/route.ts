@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     const where: Record<string, unknown> = {}
@@ -93,6 +93,6 @@ ${transactions.map(t => `<tr><td>${new Date(t.createdAt).toLocaleDateString('es-
     })
   } catch (error) {
     console.error('Export transactions error:', error)
-    return NextResponse.json({ success: false, error: 'Error exporting transactions' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error exporting transactions' }, { status: 200 })
   }
 }

@@ -8,18 +8,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
     // Verify user is part of the room
     const room = await db.chatRoom.findUnique({ where: { id: roomId } })
     if (!room) {
-      return NextResponse.json({ success: false, error: 'Sala de chat no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Sala de chat no encontrada' }, { status: 200 })
     }
 
     if (room.buyerId !== userId && room.sellerId !== userId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   } catch (error) {
     console.error('Get messages error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener mensajes' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener mensajes' }, { status: 200 })
   }
 }
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -78,18 +78,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     })
     if (!room) {
-      return NextResponse.json({ success: false, error: 'Sala de chat no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Sala de chat no encontrada' }, { status: 200 })
     }
 
     if (room.buyerId !== userId && room.sellerId !== userId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
 
     const body = await request.json()
     const { content, imageUrl, messageType, mediaUrl, locationLat, locationLng, locationName } = body
 
     if (!content && !imageUrl && !mediaUrl && !locationLat) {
-      return NextResponse.json({ success: false, error: 'Mensaje, imagen o ubicación requerido' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Mensaje, imagen o ubicación requerido' }, { status: 200 })
     }
 
     const msgType = messageType || (imageUrl ? 'image' : 'text')
@@ -138,6 +138,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ success: true, data: message })
   } catch (error) {
     console.error('Send message error:', error)
-    return NextResponse.json({ success: false, error: 'Error al enviar mensaje' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al enviar mensaje' }, { status: 200 })
   }
 }

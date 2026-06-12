@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     if (!email) {
       return NextResponse.json(
         { success: false, error: 'Correo electrónico requerido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
     console.error('Email validation error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al validar correo' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

@@ -5,7 +5,7 @@ import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const { searchParams } = new URL(request.url)
@@ -70,21 +70,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: cotizaciones })
   } catch (error) {
     console.error('Get cotizaciones error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener cotizaciones' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener cotizaciones' }, { status: 200 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId(request)
-    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     await setAuthCookie(userId)
 
     const body = await request.json()
     const { title, description, category } = body
 
-    if (!title) return NextResponse.json({ success: false, error: 'Título es requerido' }, { status: 400 })
-    if (title.length < 5) return NextResponse.json({ success: false, error: 'El título debe tener al menos 5 caracteres' }, { status: 400 })
+    if (!title) return NextResponse.json({ success: false, error: 'Título es requerido' }, { status: 200 })
+    if (title.length < 5) return NextResponse.json({ success: false, error: 'El título debe tener al menos 5 caracteres' }, { status: 200 })
 
     const cotizacion = await db.cotizacion.create({
       data: { buyerId: userId, title, description: description || '', category: category || '', status: 'OPEN' },
@@ -96,6 +96,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: cotizacion })
   } catch (error) {
     console.error('Create cotizacion error:', error)
-    return NextResponse.json({ success: false, error: 'Error al crear cotización' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al crear cotización' }, { status: 200 })
   }
 }

@@ -112,7 +112,7 @@ export async function GET() {
     console.error('[Currencies API] Error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener tasas de cambio' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

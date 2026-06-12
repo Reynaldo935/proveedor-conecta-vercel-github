@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
 
-    if (!profile) return NextResponse.json({ success: false, error: 'Perfil no encontrado' }, { status: 404 })
+    if (!profile) return NextResponse.json({ success: false, error: 'Perfil no encontrado' }, { status: 200 })
 
     const isFollowing = currentUserId ? profile.user.followers.some(f => f.followerId === currentUserId) : false
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   } catch (error) {
     console.error('Get business profile error:', error)
-    return NextResponse.json({ success: false, error: 'Error al obtener perfil de negocio' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al obtener perfil de negocio' }, { status: 200 })
   }
 }
 
@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const userId = await getAuthenticatedUserId(request)
 
     if (!userId || userId !== id) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 200 })
     }
     await setAuthCookie(userId)
 
@@ -103,6 +103,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: true, data: profile })
   } catch (error) {
     console.error('Update business profile error:', error)
-    return NextResponse.json({ success: false, error: 'Error al actualizar perfil de negocio' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al actualizar perfil de negocio' }, { status: 200 })
   }
 }

@@ -150,8 +150,8 @@ async function getAuthUser(request?: Request) {
   return user
 }
 
-function isAdmin(email: string | undefined | null): boolean {
-  return email === 'rey7214935@gmail.com'
+function isAdmin(role: string | undefined | null): boolean {
+  return role === 'ADMIN'
 }
 
 // ─── Data Fetchers ──────────────────────────────────────────────────────────
@@ -424,13 +424,13 @@ async function handleGet(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
     if (!user) {
-      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
 
     const { searchParams } = new URL(request.url)
     const format = searchParams.get('format') || 'csv'
     const type = searchParams.get('type') || 'transactions'
-    const admin = isAdmin(user.email)
+    const admin = isAdmin(user.role)
 
     // ─── CSV FORMAT ──────────────────────────────────────────────────────
     if (format === 'csv') {
@@ -447,7 +447,7 @@ async function handleGet(request: NextRequest) {
 
         case 'commissions': {
           if (!admin) {
-            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 403 })
+            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 200 })
           }
           const commissionLogs = await getCommissionData()
           csvContent = generateCommissionsCsv(commissionLogs)
@@ -457,7 +457,7 @@ async function handleGet(request: NextRequest) {
 
         case 'users': {
           if (!admin) {
-            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 403 })
+            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 200 })
           }
           const users = await getUserData()
           csvContent = generateUsersCsv(users)
@@ -473,7 +473,7 @@ async function handleGet(request: NextRequest) {
         }
 
         default:
-          return NextResponse.json({ success: false, error: 'Tipo de exportación no válido' }, { status: 400 })
+          return NextResponse.json({ success: false, error: 'Tipo de exportación no válido' }, { status: 200 })
       }
 
       return new NextResponse(csvContent, {
@@ -496,7 +496,7 @@ async function handleGet(request: NextRequest) {
         }
         case 'commissions': {
           if (!admin) {
-            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 403 })
+            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 200 })
           }
           const commissionLogs = await getCommissionData()
           csvContent = generateCommissionsCsv(commissionLogs)
@@ -504,7 +504,7 @@ async function handleGet(request: NextRequest) {
         }
         case 'users': {
           if (!admin) {
-            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 403 })
+            return NextResponse.json({ success: false, error: 'Solo el administrador' }, { status: 200 })
           }
           const users = await getUserData()
           csvContent = generateUsersCsv(users)
@@ -516,7 +516,7 @@ async function handleGet(request: NextRequest) {
           break
         }
         default:
-          return NextResponse.json({ success: false, error: 'Tipo de exportación no válido' }, { status: 400 })
+          return NextResponse.json({ success: false, error: 'Tipo de exportación no válido' }, { status: 200 })
       }
 
       const lines = csvContent.split('\n').filter(Boolean)
@@ -555,7 +555,7 @@ async function handleGet(request: NextRequest) {
         default:
           return NextResponse.json(
             { success: false, error: 'Tipo de exportación Excel no válido. Use: products, transactions' },
-            { status: 400 }
+            { status: 200 }
           )
       }
 
@@ -574,7 +574,7 @@ async function handleGet(request: NextRequest) {
       switch (type) {
         case 'report': {
           if (!admin) {
-            return NextResponse.json({ success: false, error: 'Solo el administrador puede generar reportes' }, { status: 403 })
+            return NextResponse.json({ success: false, error: 'Solo el administrador puede generar reportes' }, { status: 200 })
           }
           const docxContent = await generateReportDocx()
           const filename = `reporte_proveedorconecta_${new Date().toISOString().split('T')[0]}.doc`
@@ -592,7 +592,7 @@ async function handleGet(request: NextRequest) {
         default:
           return NextResponse.json(
             { success: false, error: 'Tipo de documento no válido. Use: report' },
-            { status: 400 }
+            { status: 200 }
           )
       }
     }
@@ -600,11 +600,11 @@ async function handleGet(request: NextRequest) {
     // Unknown format
     return NextResponse.json(
       { success: false, error: 'Formato no válido. Use: csv, json, xlsx, docx' },
-      { status: 400 }
+      { status: 200 }
     )
   } catch (error) {
     console.error('Export error:', error)
-    return NextResponse.json({ success: false, error: 'Error al exportar datos' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Error al exportar datos' }, { status: 200 })
   }
 }
 

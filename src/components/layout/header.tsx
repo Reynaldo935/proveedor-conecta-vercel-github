@@ -140,7 +140,7 @@ export function Header() {
     setMobileMenuOpen(false)
   }, [navigate])
 
-  const isAdmin = user?.email === "rey7214935@gmail.com"
+  const isAdmin = user?.role === "ADMIN"
   const isSeller = user?.role === "SELLER"
 
   return (

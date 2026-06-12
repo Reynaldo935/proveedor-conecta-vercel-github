@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (!reviewId || typeof isHelpful !== 'boolean') {
       return NextResponse.json(
         { success: false, error: 'reviewId e isHelpful son requeridos' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!review) {
       return NextResponse.json(
         { success: false, error: 'Reseña no encontrada' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     console.error('Vote review error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al votar reseña' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

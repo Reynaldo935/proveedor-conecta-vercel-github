@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     console.error('Get appointments error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al obtener citas' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     if (!sellerId || !title || !eventDate) {
       return NextResponse.json(
         { success: false, error: 'Vendedor, título y fecha son requeridos' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -89,14 +89,14 @@ export async function POST(request: NextRequest) {
     if (!seller) {
       return NextResponse.json(
         { success: false, error: 'Vendedor no encontrado' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
     if (seller.role !== 'SELLER' && seller.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, error: 'El usuario no es un vendedor' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     if (sellerId === userId) {
       return NextResponse.json(
         { success: false, error: 'No puedes pedir una cita contigo mismo' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     console.error('Create appointment error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al crear cita' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }
@@ -162,7 +162,7 @@ export async function PUT(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -174,7 +174,7 @@ export async function PUT(request: NextRequest) {
     if (!id || !status) {
       return NextResponse.json(
         { success: false, error: 'ID y estado son requeridos' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -182,7 +182,7 @@ export async function PUT(request: NextRequest) {
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { success: false, error: 'Estado inválido' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -194,7 +194,7 @@ export async function PUT(request: NextRequest) {
     if (!appointment) {
       return NextResponse.json(
         { success: false, error: 'Cita no encontrada' },
-        { status: 404 }
+        { status: 200 }
       )
     }
 
@@ -202,7 +202,7 @@ export async function PUT(request: NextRequest) {
     if (status === 'CONFIRMED' && appointment.sellerId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Solo el vendedor puede confirmar la cita' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -211,7 +211,7 @@ export async function PUT(request: NextRequest) {
       if (appointment.buyerId !== userId && appointment.sellerId !== userId) {
         return NextResponse.json(
           { success: false, error: 'No tienes permiso para cancelar esta cita' },
-          { status: 400 }
+          { status: 200 }
         )
       }
     }
@@ -220,7 +220,7 @@ export async function PUT(request: NextRequest) {
     if (status === 'COMPLETED' && appointment.sellerId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Solo el vendedor puede completar la cita' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -228,14 +228,14 @@ export async function PUT(request: NextRequest) {
     if (appointment.status === 'CANCELLED') {
       return NextResponse.json(
         { success: false, error: 'La cita ya fue cancelada' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
     if (appointment.status === 'COMPLETED') {
       return NextResponse.json(
         { success: false, error: 'La cita ya fue completada' },
-        { status: 400 }
+        { status: 200 }
       )
     }
 
@@ -280,7 +280,7 @@ export async function PUT(request: NextRequest) {
     console.error('Update appointment error:', error)
     return NextResponse.json(
       { success: false, error: 'Error al actualizar cita' },
-      { status: 500 }
+      { status: 200 }
     )
   }
 }

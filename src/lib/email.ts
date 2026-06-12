@@ -90,8 +90,9 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
  * Send verification email with a token/code
  */
 export async function sendVerificationEmail(email: string, token: string): Promise<EmailResult> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const verifyUrl = `${appUrl}/verify-email?token=${token}`
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+  if (!APP_URL) throw new Error('NEXT_PUBLIC_APP_URL is required in production');
+  const verifyUrl = `${APP_URL}/verify-email?token=${token}`
 
   const html = `
     <!DOCTYPE html>
@@ -167,8 +168,9 @@ export async function sendVerificationEmail(email: string, token: string): Promi
  * Send password reset email
  */
 export async function sendPasswordResetEmail(email: string, token: string): Promise<EmailResult> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const resetUrl = `${appUrl}/reset-password?token=${token}`
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+  if (!APP_URL) throw new Error('NEXT_PUBLIC_APP_URL is required in production');
+  const resetUrl = `${APP_URL}/reset-password?token=${token}`
 
   const html = `
     <!DOCTYPE html>
