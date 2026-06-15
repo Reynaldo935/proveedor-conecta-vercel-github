@@ -1,16 +1,29 @@
 "use client"
 
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useEffect, useState, useSyncExternalStore, lazy, Suspense } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ViewErrorBoundary } from "@/components/layout/view-error-boundary"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { ViewRenderer } from "@/components/view-renderer"
-import { AIChatbot } from "@/components/chatbot/ai-chatbot"
 import { motion } from "framer-motion"
 import { Plus } from "lucide-react"
+
+// ─── Lazy-loaded heavy components ────────────────────────────────────────────
+// ViewRenderer is only loaded AFTER mount + auth init, avoiding the OOM crash
+// that occurs when Turbopack tries to compile all 30+ view components at once.
+const LazyViewRenderer = lazy(() =>
+  import("@/components/view-renderer").then((m) => ({
+    default: m.ViewRenderer,
+  }))
+)
+
+const LazyAIChatbot = lazy(() =>
+  import("@/components/chatbot/ai-chatbot").then((m) => ({
+    default: m.AIChatbot,
+  }))
+)
 
 // ─── Hydration-safe "mounted" flag ────────────────────────────────────────────
 const emptySubscribe = () => () => {}
@@ -18,26 +31,24 @@ function useMounted() {
   return useSyncExternalStore(emptySubscribe, () => true, () => false)
 }
 
-// Loading fallback
+// ─── Loading fallback for the main view area ─────────────────────────────────
 function ViewLoader() {
   return (
-    <div className="space-y-6 p-4">
-      <Skeleton className="h-12 w-3/4" />
-      <Skeleton className="h-6 w-1/2" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-48 w-full rounded-xl" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        ))}
+    <div className="flex items-center justify-center py-20">
+      <div className="text-center space-y-3">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+        <p className="text-sm text-muted-foreground">Cargando...</p>
       </div>
     </div>
   )
 }
 
-// Auth initialization skeleton
+// ─── Minimal chatbot placeholder ─────────────────────────────────────────────
+function ChatbotLoader() {
+  return null
+}
+
+// ─── Auth initialization skeleton (shown before mount / during auth check) ────
 function AuthInitSkeleton() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -56,12 +67,24 @@ function AuthInitSkeleton() {
         </div>
       </header>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <ViewLoader />
+        <div className="space-y-6 p-4">
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-6 w-1/2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-48 w-full rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        </div>
       </main>
       <footer className="border-t bg-card mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-            {[1, 2, 3, 4, 5].map(i => (
+            {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-3 w-28" />
@@ -76,6 +99,7 @@ function AuthInitSkeleton() {
   )
 }
 
+// ─── Main application component ──────────────────────────────────────────────
 export default function ProveedorConecta() {
   const { currentView, navigate } = useAppStore()
   const { isAuthenticated, user, initAuth, isLoading } = useAuthStore()
@@ -88,6 +112,7 @@ export default function ProveedorConecta() {
     initAuth()
   }, [initAuth])
 
+  // Before mount or while checking auth, show the skeleton — no JS heavy loads
   if (!mounted || isLoading) {
     return <AuthInitSkeleton />
   }
@@ -97,12 +122,19 @@ export default function ProveedorConecta() {
       <Header />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <ViewErrorBoundary viewName={currentView}>
-          <ViewRenderer />
+          <Suspense fallback={<ViewLoader />}>
+            <LazyViewRenderer />
+          </Suspense>
         </ViewErrorBoundary>
       </main>
       <Footer />
-      <AIChatbot isOpen={showChatbot} onToggle={() => setShowChatbot(!showChatbot)} />
 
+      {/* AI Chatbot — lazy loaded so it doesn't compete with the view chunk */}
+      <Suspense fallback={<ChatbotLoader />}>
+        <LazyAIChatbot isOpen={showChatbot} onToggle={() => setShowChatbot(!showChatbot)} />
+      </Suspense>
+
+      {/* Floating "Vender" button for sellers */}
       {isSeller && (
         <motion.button
           initial={{ scale: 0, opacity: 0 }}

@@ -37,6 +37,7 @@ interface ConversationMsg {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+const N8N_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || ''
 const CHAT_HISTORY_KEY = "pc_chat_history_v2"
 const MAX_HISTORY_MESSAGES = 10
 
@@ -228,6 +229,33 @@ export function AIChatbot({
     setMessages((prev) => [...prev, userMessage])
 
     try {
+      // Try n8n webhook first if URL is configured
+      if (N8N_WEBHOOK_URL) {
+        try {
+          const n8nRes = await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: msg,
+              sessionId: user?.id || 'anonymous',
+              userName: user?.name || 'Visitante',
+              conversationHistory: buildConversationHistory(),
+              source: 'proveedorconecta-chatbot',
+            }),
+          })
+          
+          if (n8nRes.ok) {
+            const n8nData = await n8nRes.json()
+            const responseText = n8nData.response || n8nData.message || n8nData.output || n8nData.text || JSON.stringify(n8nData)
+            addBotMessage(responseText, 'n8n')
+            return // Success - don't fall through
+          }
+        } catch (n8nError) {
+          console.warn('n8n webhook failed, falling back to AI API:', n8nError)
+        }
+      }
+
+      // Fallback to internal AI API
       const res = await authFetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
