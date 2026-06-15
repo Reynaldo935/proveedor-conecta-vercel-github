@@ -1,0 +1,1003 @@
+     1→"use client"
+     2→
+     3→import { useState, useMemo, useCallback, useRef, useEffect } from "react"
+     4→import { useAppStore } from "@/store/app-store"
+     5→import { useAuthStore } from "@/store/auth-store"
+     6→import { Card, CardContent } from "@/components/ui/card"
+     7→import { Button } from "@/components/ui/button"
+     8→import { Input } from "@/components/ui/input"
+     9→import { Label } from "@/components/ui/label"
+    10→import { Badge } from "@/components/ui/badge"
+    11→import { Progress } from "@/components/ui/progress"
+    12→import { toast } from "sonner"
+    13→import {
+    14→  Mail, Lock, User, Eye, EyeOff, Phone, MapPin, Store, ShoppingBag,
+    15→  ArrowRight, ArrowLeft, Loader2, Check, X, ShieldCheck, Smartphone,
+    16→  MessageSquare, RefreshCw, Clock
+    17→} from "lucide-react"
+    18→import { validateEmail, validatePhoneNicaragua, formatPhoneNicaragua, NICARAGUA_DEPARTMENTS } from "@/lib/validators"
+    19→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+    20→import { VerifyEmail } from "@/components/auth/verify-email"
+    21→import { motion, AnimatePresence } from "framer-motion"
+    22→
+    23→const STEPS = [
+    24→  { id: 1, title: "Tipo de Cuenta", subtitle: "¿Cómo usarás ProveedorConecta?" },
+    25→  { id: 2, title: "Datos Personales", subtitle: "Cuéntanos sobre ti" },
+    26→  { id: 3, title: "Verificar Teléfono", subtitle: "Confirma tu número" },
+    27→  { id: 4, title: "Contraseña", subtitle: "Protege tu cuenta" },
+    28→]
+    29→
+    30→function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+    31→  let score = 0
+    32→  if (password.length >= 6) score++
+    33→  if (password.length >= 8) score++
+    34→  if (/[A-Z]/.test(password)) score++
+    35→  if (/[0-9]/.test(password)) score++
+    36→  if (/[^A-Za-z0-9]/.test(password)) score++
+    37→
+    38→  if (score <= 1) return { score: 20, label: "Muy débil", color: "bg-red-500" }
+    39→  if (score === 2) return { score: 40, label: "Débil", color: "bg-orange-500" }
+    40→  if (score === 3) return { score: 60, label: "Regular", color: "bg-yellow-500" }
+    41→  if (score === 4) return { score: 80, label: "Fuerte", color: "bg-green-500" }
+    42→  return { score: 100, label: "Muy fuerte", color: "bg-emerald-500" }
+    43→}
+    44→
+    45→export function RegisterForm() {
+    46→  const { navigate } = useAppStore()
+    47→  const { setUser } = useAuthStore()
+    48→  const [step, setStep] = useState(1)
+    49→  const [loading, setLoading] = useState(false)
+    50→  const [showPassword, setShowPassword] = useState(false)
+    51→  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    52→  const [form, setForm] = useState({
+    53→    name: "",
+    54→    email: "",
+    55→    password: "",
+    56→    confirmPassword: "",
+    57→    phone: "",
+    58→    department: "",
+    59→    address: "",
+    60→    role: "BUYER" as "BUYER" | "SELLER",
+    61→  })
+    62→  const [errors, setErrors] = useState<Record<string, string>>({})
+    63→  const [touched, setTouched] = useState<Record<string, boolean>>({})
+    64→
+    65→  // Phone verification state
+    66→  const [smsCode, setSmsCode] = useState("")
+    67→  const [smsSent, setSmsSent] = useState(false)
+    68→  const [smsVerified, setSmsVerified] = useState(false)
+    69→  const [smsSending, setSmsSending] = useState(false)
+    70→  const [smsVerifying, setSmsVerifying] = useState(false)
+    71→  const [smsCountdown, setSmsCountdown] = useState(0)
+    72→  const [receivedCode, setReceivedCode] = useState("")
+    73→
+    74→  const [verificationState, setVerificationState] = useState<{
+    75→    show: boolean
+    76→    email: string
+    77→    token?: string
+    78→    link?: string
+    79→  }>({ show: false, email: "" })
+    80→
+    81→  // Ref for SMS countdown interval to clean up on unmount
+    82→  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+    83→
+    84→  // Cleanup interval on unmount
+    85→  useEffect(() => {
+    86→    return () => {
+    87→      if (intervalRef.current) clearInterval(intervalRef.current)
+    88→    }
+    89→  }, [])
+    90→
+    91→  const passwordStrength = useMemo(() => getPasswordStrength(form.password), [form.password])
+    92→
+    93→  // Countdown timer for SMS resend
+    94→  const startCountdown = useCallback(() => {
+    95→    setSmsCountdown(60)
+    96→    if (intervalRef.current) clearInterval(intervalRef.current)
+    97→    intervalRef.current = setInterval(() => {
+    98→      setSmsCountdown(prev => {
+    99→        if (prev <= 1) {
+   100→          if (intervalRef.current) clearInterval(intervalRef.current)
+   101→          return 0
+   102→        }
+   103→        return prev - 1
+   104→      })
+   105→    }, 1000)
+   106→  }, [])
+   107→
+   108→  // Real-time validation
+   109→  const getFieldError = (field: string): string | undefined => {
+   110→    if (!touched[field]) return undefined
+   111→    switch (field) {
+   112→      case "name":
+   113→        return form.name.trim().length >= 3 ? undefined : "Nombre es requerido (mínimo 3 caracteres)"
+   114→      case "email": {
+   115→        const check = validateEmail(form.email)
+   116→        return check.valid ? undefined : check.message
+   117→      }
+   118→      case "phone": {
+   119→        const check = validatePhoneNicaragua(form.phone)
+   120→        return check.valid ? undefined : check.message
+   121→      }
+   122→      case "department":
+   123→        return form.department ? undefined : "Selecciona un departamento"
+   124→      case "address":
+   125→        return form.address.trim().length >= 5 ? undefined : "Dirección es requerida (mínimo 5 caracteres)"
+   126→      case "password":
+   127→        return form.password.length >= 6 ? undefined : "Mínimo 6 caracteres"
+   128→      case "confirmPassword":
+   129→        return form.password === form.confirmPassword ? undefined : "Las contraseñas no coinciden"
+   130→      default:
+   131→        return undefined
+   132→    }
+   133→  }
+   134→
+   135→  const validateStep = (s: number): boolean => {
+   136→    const errs: Record<string, string> = {}
+   137→    if (s === 1) {
+   138→      // Role is always valid
+   139→    } else if (s === 2) {
+   140→      if (!form.name.trim() || form.name.trim().length < 3) errs.name = "Nombre es requerido (mínimo 3 caracteres)"
+   141→      const emailCheck = validateEmail(form.email)
+   142→      if (!emailCheck.valid) errs.email = emailCheck.message
+   143→      const phoneCheck = validatePhoneNicaragua(form.phone)
+   144→      if (!phoneCheck.valid) errs.phone = phoneCheck.message
+   145→      if (!form.department) errs.department = "Selecciona un departamento"
+   146→      if (!form.address.trim() || form.address.trim().length < 5) errs.address = "Dirección es requerida (mínimo 5 caracteres)"
+   147→    } else if (s === 3) {
+   148→      if (!smsVerified) errs.sms = "Debes verificar tu número de teléfono"
+   149→    } else if (s === 4) {
+   150→      if (form.password.length < 6) errs.password = "Mínimo 6 caracteres"
+   151→      if (form.password !== form.confirmPassword) errs.confirmPassword = "Las contraseñas no coinciden"
+   152→    }
+   153→    setErrors(errs)
+   154→    const fieldsToTouch = s === 2 ? ["name", "email", "phone", "department", "address"] : s === 4 ? ["password", "confirmPassword"] : []
+   155→    setTouched(t => ({ ...t, ...Object.fromEntries(fieldsToTouch.map(f => [f, true])) }))
+   156→    return Object.keys(errs).length === 0
+   157→  }
+   158→
+   159→  const handleNext = () => {
+   160→    if (validateStep(step)) {
+   161→      setStep(s => Math.min(s + 1, 4))
+   162→    }
+   163→  }
+   164→
+   165→  const handleBack = () => {
+   166→    setStep(s => Math.max(s - 1, 1))
+   167→  }
+   168→
+   169→  // Send SMS verification code
+   170→  const handleSendSms = async () => {
+   171→    const phoneCheck = validatePhoneNicaragua(form.phone)
+   172→    if (!phoneCheck.valid) {
+   173→      toast.error(phoneCheck.message)
+   174→      return
+   175→    }
+   176→
+   177→    setSmsSending(true)
+   178→    try {
+   179→      const res = await fetch("/api/auth/phone-verify", {
+   180→        method: "POST",
+   181→        headers: { "Content-Type": "application/json" },
+   182→        body: JSON.stringify({ phone: form.phone }),
+   183→      })
+   184→      const data = await res.json()
+   185→      if (data.success) {
+   186→        setSmsSent(true)
+   187→        setReceivedCode(data.data.code) // For demo: show the code
+   188→        startCountdown()
+   189→        toast.success("Código de verificación enviado a tu teléfono")
+   190→      } else {
+   191→        toast.error(data.error || "Error al enviar código")
+   192→      }
+   193→    } catch {
+   194→      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
+   195→    } finally {
+   196→      setSmsSending(false)
+   197→    }
+   198→  }
+   199→
+   200→  // Verify SMS code
+   201→  const handleVerifySms = async () => {
+   202→    if (!smsCode || smsCode.length !== 6) {
+   203→      toast.error("Ingresa el código de 6 dígitos")
+   204→      return
+   205→    }
+   206→
+   207→    setSmsVerifying(true)
+   208→    try {
+   209→      const res = await fetch("/api/auth/phone-verify", {
+   210→        method: "POST",
+   211→        headers: { "Content-Type": "application/json" },
+   212→        body: JSON.stringify({ phone: form.phone, code: smsCode, action: "verify" }),
+   213→      })
+   214→      const data = await res.json()
+   215→      if (data.success) {
+   216→        setSmsVerified(true)
+   217→        toast.success("¡Teléfono verificado exitosamente!")
+   218→      } else {
+   219→        toast.error(data.error || "Código incorrecto")
+   220→      }
+   221→    } catch {
+   222→      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
+   223→    } finally {
+   224→      setSmsVerifying(false)
+   225→    }
+   226→  }
+   227→
+   228→  const handleSubmit = async (e: React.FormEvent) => {
+   229→    e.preventDefault()
+   230→    if (!validateStep(4)) return
+   231→
+   232→    // Double-check phone verification
+   233→    if (!smsVerified) {
+   234→      toast.error("Debes verificar tu número de teléfono primero")
+   235→      setStep(3)
+   236→      return
+   237→    }
+   238→
+   239→    setLoading(true)
+   240→    try {
+   241→      const res = await fetch("/api/auth/register", {
+   242→        method: "POST",
+   243→        headers: { "Content-Type": "application/json" },
+   244→        body: JSON.stringify({
+   245→          ...form,
+   246→          phoneVerified: true,
+   247→        }),
+   248→      })
+   249→      const data = await res.json()
+   250→      if (data.success) {
+   251→        // If API indicates email verification is needed, show verification step
+   252→        if (data.requireEmailVerification || data.data?.emailVerified === false) {
+   253→          setVerificationState({
+   254→            show: true,
+   255→            email: form.email,
+   256→            token: data.verificationToken || data.data?.verificationToken,
+   257→            link: data.verificationLink || data.data?.verificationLink,
+   258→          })
+   259→          toast.success("¡Cuenta creada! Por favor verifica tu correo electrónico.")
+   260→        } else {
+   261→          setUser(data.data)
+   262→          toast.success("¡Cuenta creada exitosamente! Bienvenido a ProveedorConecta.")
+   263→          navigate("home")
+   264→        }
+   265→      } else {
+   266→        toast.error(data.error || "Error al registrarse")
+   267→      }
+   268→    } catch {
+   269→      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
+   270→    } finally {
+   271→      setLoading(false)
+   272→    }
+   273→  }
+   274→
+   275→  const handleGoogleRegister = async () => {
+   276→    const googleEmail = prompt("Ingresa tu correo de Google (simulación OAuth):")
+   277→    if (!googleEmail) return
+   278→
+   279→    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+   280→    if (!emailRegex.test(googleEmail)) {
+   281→      toast.error("Formato de correo inválido")
+   282→      return
+   283→    }
+   284→
+   285→    // Server-side email validation with account existence check
+   286→    try {
+   287→      const validateRes = await fetch("/api/auth/validate-email", {
+   288→        method: "POST",
+   289→        headers: { "Content-Type": "application/json" },
+   290→        body: JSON.stringify({ email: googleEmail, checkAccount: true }),
+   291→      })
+   292→      const validateData = await validateRes.json()
+   293→      if (validateData.success && validateData.data) {
+   294→        if (validateData.data.correoInvalido || !validateData.data.accountExists) {
+   295→          toast.error("Correo inválido — la cuenta de Google no existe o no se puede verificar")
+   296→          return
+   297→        }
+   298→        if (validateData.data.disposable) {
+   299→          toast.error("No se permiten correos de dominios desechables")
+   300→          return
+   301→        }
+   302→        if (!validateData.data.valid) {
+   303→          toast.error("Correo inválido. Verifica que la dirección de correo exista.")
+   304→          return
+   305→        }
+   306→      }
+   307→    } catch {
+   308→      // If validation endpoint fails, proceed anyway
+   309→    }
+   310→
+   311→    // For Google OAuth, still require phone verification
+   312→    if (!smsVerified) {
+   313→      toast.error("Primero completa el formulario y verifica tu teléfono antes de registrarte con Google")
+   314→      return
+   315→    }
+   316→
+   317→    setLoading(true)
+   318→    try {
+   319→      const res = await fetch("/api/auth/google", {
+   320→        method: "POST",
+   321→        headers: { "Content-Type": "application/json" },
+   322→        body: JSON.stringify({
+   323→          email: googleEmail,
+   324→          name: form.name || googleEmail.split("@")[0],
+   325→          googleId: "google_" + Date.now(),
+   326→          avatar: "",
+   327→          role: form.role,
+   328→          phone: form.phone,
+   329→          department: form.department,
+   330→          address: form.address,
+   331→        }),
+   332→      })
+   333→      const data = await res.json()
+   334→      if (data.success) {
+   335→        setUser(data.data)
+   336→        toast.success("¡Registro con Google exitoso! Bienvenido a ProveedorConecta.")
+   337→        navigate("home")
+   338→      } else {
+   339→        toast.error(data.error || "Error al registrarse")
+   340→      }
+   341→    } catch {
+   342→      toast.error("No se pudo conectar al servidor. Intenta de nuevo.")
+   343→    } finally {
+   344→      setLoading(false)
+   345→    }
+   346→  }
+   347→
+   348→  // Show verification step if registration succeeded
+   349→  if (verificationState.show) {
+   350→    return (
+   351→      <VerifyEmail
+   352→        email={verificationState.email}
+   353→        verificationToken={verificationState.token}
+   354→        verificationLink={verificationState.link}
+   355→      />
+   356→    )
+   357→  }
+   358→
+   359→  const progressValue = (step / 4) * 100
+   360→
+   361→  return (
+   362→    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+   363→      <motion.div
+   364→        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+   365→        animate={{ opacity: 1, y: 0, scale: 1 }}
+   366→        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+   367→        className="w-full max-w-md"
+   368→      >
+   369→        {/* Header */}
+   370→        <div className="relative -mb-6 z-10">
+   371→          <motion.div
+   372→            initial={{ opacity: 0, y: -20 }}
+   373→            animate={{ opacity: 1, y: 0 }}
+   374→            transition={{ delay: 0.2, duration: 0.5 }}
+   375→            className="bg-gradient-to-br from-[#1A5276] via-[#2471A3] to-[#3498DB] rounded-2xl p-6 text-center shadow-xl"
+   376→          >
+   377→            <motion.div
+   378→              initial={{ scale: 0 }}
+   379→              animate={{ scale: 1 }}
+   380→              transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
+   381→              className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-3 border border-white/30"
+   382→            >
+   383→              <span className="text-white font-bold text-xl">PC</span>
+   384→            </motion.div>
+   385→            <h1 className="text-xl font-bold text-white font-[family-name:var(--font-poppins)]">
+   386→              Crear Cuenta
+   387→            </h1>
+   388→            <p className="text-white/80 text-sm mt-1">Únete a ProveedorConecta Nicaragua</p>
+   389→
+   390→            {/* Step Progress */}
+   391→            <div className="mt-4 space-y-2">
+   392→              <div className="flex justify-between text-xs text-white/70">
+   393→                <span>Paso {step} de 4</span>
+   394→                <span>{STEPS[step - 1].title}</span>
+   395→              </div>
+   396→              <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+   397→                <motion.div
+   398→                  className="h-full bg-white/90 rounded-full"
+   399→                  initial={{ width: 0 }}
+   400→                  animate={{ width: `${progressValue}%` }}
+   401→                  transition={{ duration: 0.4, ease: "easeOut" }}
+   402→                />
+   403→              </div>
+   404→              {/* Step indicators */}
+   405→              <div className="flex justify-between mt-2">
+   406→                {STEPS.map((s, i) => (
+   407→                  <div key={s.id} className="flex flex-col items-center">
+   408→                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+   409→                      step > i + 1 ? "bg-white/90 text-[#1A5276]" :
+   410→                      step === i + 1 ? "bg-white/40 text-white border-2 border-white" :
+   411→                      "bg-white/10 text-white/50"
+   412→                    }`}>
+   413→                      {step > i + 1 ? <Check className="h-3.5 w-3.5" /> : i + 1}
+   414→                    </div>
+   415→                  </div>
+   416→                ))}
+   417→              </div>
+   418→            </div>
+   419→          </motion.div>
+   420→        </div>
+   421→
+   422→        <Card className="rounded-2xl shadow-lg border-0 pt-10">
+   423→          <CardContent className="p-6">
+   424→            <form onSubmit={handleSubmit} className="space-y-5">
+   425→              <AnimatePresence mode="wait">
+   426→                {/* Step 1: Role Selection */}
+   427→                {step === 1 && (
+   428→                  <motion.div
+   429→                    key="step1"
+   430→                    initial={{ opacity: 0, x: 50 }}
+   431→                    animate={{ opacity: 1, x: 0 }}
+   432→                    exit={{ opacity: 0, x: -50 }}
+   433→                    transition={{ duration: 0.3 }}
+   434→                    className="space-y-4"
+   435→                  >
+   436→                    <div className="text-center mb-4">
+   437→                      <h2 className="text-lg font-semibold">¿Cómo usarás ProveedorConecta?</h2>
+   438→                      <p className="text-sm text-muted-foreground">Puedes cambiar esto después</p>
+   439→                    </div>
+   440→
+   441→                    <div className="grid grid-cols-2 gap-4">
+   442→                      <motion.button
+   443→                        type="button"
+   444→                        whileHover={{ scale: 1.02 }}
+   445→                        whileTap={{ scale: 0.98 }}
+   446→                        onClick={() => setForm(f => ({ ...f, role: "BUYER" }))}
+   447→                        className={`relative p-6 rounded-2xl border-2 transition-all text-center ${
+   448→                          form.role === "BUYER"
+   449→                            ? "border-[#1A5276] bg-[#1A5276]/5 shadow-md"
+   450→                            : "border-muted bg-card hover:border-muted-foreground/30"
+   451→                        }`}
+   452→                      >
+   453→                        {form.role === "BUYER" && (
+   454→                          <motion.div
+   455→                            initial={{ scale: 0 }}
+   456→                            animate={{ scale: 1 }}
+   457→                            className="absolute top-2 right-2 w-5 h-5 bg-[#1A5276] rounded-full flex items-center justify-center"
+   458→                          >
+   459→                            <Check className="h-3 w-3 text-white" />
+   460→                          </motion.div>
+   461→                        )}
+   462→                        <div className="text-4xl mb-3">🛒</div>
+   463→                        <div className="font-semibold text-sm">Comprador</div>
+   464→                        <div className="text-xs text-muted-foreground mt-1">Busco productos y servicios</div>
+   465→                        <ShoppingBag className="h-5 w-5 mx-auto mt-2 text-muted-foreground" />
+   466→                      </motion.button>
+   467→
+   468→                      <motion.button
+   469→                        type="button"
+   470→                        whileHover={{ scale: 1.02 }}
+   471→                        whileTap={{ scale: 0.98 }}
+   472→                        onClick={() => setForm(f => ({ ...f, role: "SELLER" }))}
+   473→                        className={`relative p-6 rounded-2xl border-2 transition-all text-center ${
+   474→                          form.role === "SELLER"
+   475→                            ? "border-[#F4D03F] bg-[#F4D03F]/5 shadow-md"
+   476→                            : "border-muted bg-card hover:border-muted-foreground/30"
+   477→                        }`}
+   478→                      >
+   479→                        {form.role === "SELLER" && (
+   480→                          <motion.div
+   481→                            initial={{ scale: 0 }}
+   482→                            animate={{ scale: 1 }}
+   483→                            className="absolute top-2 right-2 w-5 h-5 bg-[#F4D03F] rounded-full flex items-center justify-center"
+   484→                          >
+   485→                            <Check className="h-3 w-3 text-white" />
+   486→                          </motion.div>
+   487→                        )}
+   488→                        <div className="text-4xl mb-3">🏪</div>
+   489→                        <div className="font-semibold text-sm">Vendedor</div>
+   490→                        <div className="text-xs text-muted-foreground mt-1">Ofrezco productos y servicios</div>
+   491→                        <Store className="h-5 w-5 mx-auto mt-2 text-muted-foreground" />
+   492→                      </motion.button>
+   493→                    </div>
+   494→
+   495→                    <div className="pt-2">
+   496→                      <Button
+   497→                        type="button"
+   498→                        onClick={handleNext}
+   499→                        className="w-full h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md"
+   500→                      >
+   501→                        Continuar <ArrowRight className="h-4 w-4 ml-2" />
+   502→                      </Button>
+   503→                    </div>
+   504→
+   505→                    <div className="relative">
+   506→                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t" /></div>
+   507→                      <div className="relative flex justify-center text-xs uppercase">
+   508→                        <span className="bg-card px-3 text-muted-foreground">o</span>
+   509→                      </div>
+   510→                    </div>
+   511→
+   512→                    <Button variant="outline" className="w-full h-11" onClick={handleGoogleRegister} disabled={loading}>
+   513→                      <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+   514→                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+   515→                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+   516→                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+   517→                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+   518→                      </svg>
+   519→                      Registrarse con Google
+   520→                    </Button>
+   521→                  </motion.div>
+   522→                )}
+   523→
+   524→                {/* Step 2: Personal Info - ALL FIELDS REQUIRED */}
+   525→                {step === 2 && (
+   526→                  <motion.div
+   527→                    key="step2"
+   528→                    initial={{ opacity: 0, x: 50 }}
+   529→                    animate={{ opacity: 1, x: 0 }}
+   530→                    exit={{ opacity: 0, x: -50 }}
+   531→                    transition={{ duration: 0.3 }}
+   532→                    className="space-y-4"
+   533→                  >
+   534→                    <div className="text-center mb-4">
+   535→                      <h2 className="text-lg font-semibold">Datos Personales</h2>
+   536→                      <p className="text-sm text-muted-foreground">Todos los campos son obligatorios</p>
+   537→                    </div>
+   538→
+   539→                    {/* Name */}
+   540→                    <div className="space-y-2">
+   541→                      <Label htmlFor="name">Nombre completo <span className="text-destructive">*</span></Label>
+   542→                      <div className="relative">
+   543→                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   544→                        <Input
+   545→                          id="name"
+   546→                          placeholder="Juan Pérez"
+   547→                          value={form.name}
+   548→                          onChange={(e) => { setForm(f => ({ ...f, name: e.target.value })); setTouched(t => ({ ...t, name: true })) }}
+   549→                          onBlur={() => setTouched(t => ({ ...t, name: true }))}
+   550→                          className={`pl-9 h-11 ${getFieldError("name") ? "border-destructive" : touched.name && form.name ? "border-green-500" : ""}`}
+   551→                        />
+   552→                        {touched.name && form.name && !getFieldError("name") && (
+   553→                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+   554→                        )}
+   555→                      </div>
+   556→                      {getFieldError("name") && (
+   557→                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   558→                          <X className="h-3 w-3" /> {getFieldError("name")}
+   559→                        </motion.p>
+   560→                      )}
+   561→                    </div>
+   562→
+   563→                    {/* Email */}
+   564→                    <div className="space-y-2">
+   565→                      <Label htmlFor="email">Correo electrónico <span className="text-destructive">*</span></Label>
+   566→                      <div className="relative">
+   567→                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   568→                        <Input
+   569→                          id="email"
+   570→                          type="email"
+   571→                          placeholder="tu@correo.com"
+   572→                          value={form.email}
+   573→                          onChange={(e) => { setForm(f => ({ ...f, email: e.target.value })); setTouched(t => ({ ...t, email: true })) }}
+   574→                          onBlur={() => setTouched(t => ({ ...t, email: true }))}
+   575→                          className={`pl-9 h-11 ${getFieldError("email") ? "border-destructive" : touched.email && form.email && !getFieldError("email") ? "border-green-500" : ""}`}
+   576→                        />
+   577→                        {touched.email && form.email && !getFieldError("email") && (
+   578→                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+   579→                        )}
+   580→                      </div>
+   581→                      {getFieldError("email") && (
+   582→                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   583→                          <X className="h-3 w-3" /> {getFieldError("email")}
+   584→                        </motion.p>
+   585→                      )}
+   586→                    </div>
+   587→
+   588→                    {/* Phone */}
+   589→                    <div className="space-y-2">
+   590→                      <Label htmlFor="phone">Teléfono <span className="text-destructive">*</span></Label>
+   591→                      <div className="relative">
+   592→                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   593→                        <Input
+   594→                          id="phone"
+   595→                          type="tel"
+   596→                          placeholder="8XXX-XXXX"
+   597→                          value={form.phone}
+   598→                          onChange={(e) => {
+   599→                            const formatted = formatPhoneNicaragua(e.target.value)
+   600→                            setForm(f => ({ ...f, phone: formatted }))
+   601→                            setTouched(t => ({ ...t, phone: true }))
+   602→                          }}
+   603→                          onBlur={() => setTouched(t => ({ ...t, phone: true }))}
+   604→                          className={`pl-9 h-11 ${getFieldError("phone") ? "border-destructive" : touched.phone && form.phone && !getFieldError("phone") ? "border-green-500" : ""}`}
+   605→                          maxLength={9}
+   606→                        />
+   607→                        {touched.phone && form.phone && !getFieldError("phone") && (
+   608→                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+   609→                        )}
+   610→                      </div>
+   611→                      {getFieldError("phone") && (
+   612→                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   613→                          <X className="h-3 w-3" /> {getFieldError("phone")}
+   614→                        </motion.p>
+   615→                      )}
+   616→                    </div>
+   617→
+   618→                    {/* Department */}
+   619→                    <div className="space-y-2">
+   620→                      <Label htmlFor="department">Departamento <span className="text-destructive">*</span></Label>
+   621→                      <Select value={form.department} onValueChange={(value) => { setForm(f => ({ ...f, department: value })); setTouched(t => ({ ...t, department: true })) }}>
+   622→                        <SelectTrigger className={`w-full h-11 ${getFieldError("department") ? "border-destructive" : form.department ? "border-green-500" : ""}`}>
+   623→                          <div className="flex items-center gap-2">
+   624→                            <MapPin className="h-4 w-4 text-muted-foreground" />
+   625→                            <SelectValue placeholder="Selecciona un departamento" />
+   626→                          </div>
+   627→                        </SelectTrigger>
+   628→                        <SelectContent>
+   629→                          {NICARAGUA_DEPARTMENTS.map((dept) => (
+   630→                            <SelectItem key={dept} value={dept}>
+   631→                              {dept}
+   632→                            </SelectItem>
+   633→                          ))}
+   634→                        </SelectContent>
+   635→                      </Select>
+   636→                      {getFieldError("department") && (
+   637→                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   638→                          <X className="h-3 w-3" /> {getFieldError("department")}
+   639→                        </motion.p>
+   640→                      )}
+   641→                    </div>
+   642→
+   643→                    {/* Address */}
+   644→                    <div className="space-y-2">
+   645→                      <Label htmlFor="address">Dirección <span className="text-destructive">*</span></Label>
+   646→                      <div className="relative">
+   647→                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+   648→                        <Input
+   649→                          id="address"
+   650→                          placeholder="Casa #12, Barrio Central, Managua"
+   651→                          value={form.address}
+   652→                          onChange={(e) => { setForm(f => ({ ...f, address: e.target.value })); setTouched(t => ({ ...t, address: true })) }}
+   653→                          onBlur={() => setTouched(t => ({ ...t, address: true }))}
+   654→                          className={`pl-9 h-11 ${getFieldError("address") ? "border-destructive" : touched.address && form.address && !getFieldError("address") ? "border-green-500" : ""}`}
+   655→                        />
+   656→                        {touched.address && form.address && !getFieldError("address") && (
+   657→                          <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+   658→                        )}
+   659→                      </div>
+   660→                      {getFieldError("address") && (
+   661→                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   662→                          <X className="h-3 w-3" /> {getFieldError("address")}
+   663→                        </motion.p>
+   664→                      )}
+   665→                    </div>
+   666→
+   667→                    <div className="flex gap-3 pt-2">
+   668→                      <Button type="button" variant="outline" onClick={handleBack} className="h-11">
+   669→                        <ArrowLeft className="h-4 w-4 mr-1" /> Atrás
+   670→                      </Button>
+   671→                      <Button type="button" onClick={handleNext} className="flex-1 h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium">
+   672→                        Continuar <ArrowRight className="h-4 w-4 ml-2" />
+   673→                      </Button>
+   674→                    </div>
+   675→                  </motion.div>
+   676→                )}
+   677→
+   678→                {/* Step 3: Phone Verification (SMS Code) */}
+   679→                {step === 3 && (
+   680→                  <motion.div
+   681→                    key="step3"
+   682→                    initial={{ opacity: 0, x: 50 }}
+   683→                    animate={{ opacity: 1, x: 0 }}
+   684→                    exit={{ opacity: 0, x: -50 }}
+   685→                    transition={{ duration: 0.3 }}
+   686→                    className="space-y-5"
+   687→                  >
+   688→                    <div className="text-center mb-4">
+   689→                      <h2 className="text-lg font-semibold">Verificar Teléfono</h2>
+   690→                      <p className="text-sm text-muted-foreground">Te enviaremos un código por SMS</p>
+   691→                    </div>
+   692→
+   693→                    {/* Phone number display */}
+   694→                    <div className="bg-muted/50 rounded-xl p-4 flex items-center gap-3">
+   695→                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+   696→                        <Smartphone className="h-5 w-5 text-primary" />
+   697→                      </div>
+   698→                      <div>
+   699→                        <p className="text-sm text-muted-foreground">Número registrado</p>
+   700→                        <p className="font-semibold">{form.phone}</p>
+   701→                      </div>
+   702→                      {smsVerified && (
+   703→                        <Badge className="ml-auto bg-green-100 text-green-700 border-green-200">
+   704→                          <Check className="h-3 w-3 mr-1" /> Verificado
+   705→                        </Badge>
+   706→                      )}
+   707→                    </div>
+   708→
+   709→                    {!smsVerified && (
+   710→                      <>
+   711→                        {/* Send code button */}
+   712→                        {!smsSent ? (
+   713→                          <Button
+   714→                            type="button"
+   715→                            className="w-full h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md"
+   716→                            onClick={handleSendSms}
+   717→                            disabled={smsSending}
+   718→                          >
+   719→                            {smsSending ? (
+   720→                              <span className="flex items-center gap-2">
+   721→                                <Loader2 className="h-4 w-4 animate-spin" /> Enviando código...
+   722→                              </span>
+   723→                            ) : (
+   724→                              <span className="flex items-center gap-2">
+   725→                                <MessageSquare className="h-4 w-4" /> Enviar código de verificación
+   726→                              </span>
+   727→                            )}
+   728→                          </Button>
+   729→                        ) : (
+   730→                          <>
+   731→                            {/* Show received code for demo */}
+   732→                            {receivedCode && (
+   733→                              <motion.div
+   734→                                initial={{ opacity: 0, y: 10 }}
+   735→                                animate={{ opacity: 1, y: 0 }}
+   736→                                className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 border border-amber-200 dark:border-amber-700"
+   737→                              >
+   738→                                <p className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-1">
+   739→                                  📱 Código de verificación (demo):
+   740→                                </p>
+   741→                                <p className="text-2xl font-bold font-[family-name:var(--font-jetbrains)] text-amber-800 dark:text-amber-200 tracking-widest">
+   742→                                  {receivedCode}
+   743→                                </p>
+   744→                                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+   745→                                  En producción, este código llegaría por SMS a tu teléfono
+   746→                                </p>
+   747→                              </motion.div>
+   748→                            )}
+   749→
+   750→                            {/* Code input */}
+   751→                            <div className="space-y-2">
+   752→                              <Label htmlFor="smsCode">Código de verificación (6 dígitos)</Label>
+   753→                              <div className="flex gap-2">
+   754→                                <div className="relative flex-1">
+   755→                                  <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   756→                                  <Input
+   757→                                    id="smsCode"
+   758→                                    type="text"
+   759→                                    inputMode="numeric"
+   760→                                    placeholder="000000"
+   761→                                    value={smsCode}
+   762→                                    onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+   763→                                    className="pl-9 h-11 text-center text-lg font-[family-name:var(--font-jetbrains)] tracking-widest"
+   764→                                    maxLength={6}
+   765→                                  />
+   766→                                </div>
+   767→                                <Button
+   768→                                  type="button"
+   769→                                  onClick={handleVerifySms}
+   770→                                  disabled={smsVerifying || smsCode.length !== 6}
+   771→                                  className="h-11 px-4 bg-green-600 hover:bg-green-700 text-white"
+   772→                                >
+   773→                                  {smsVerifying ? (
+   774→                                    <Loader2 className="h-4 w-4 animate-spin" />
+   775→                                  ) : (
+   776→                                    <Check className="h-4 w-4" />
+   777→                                  )}
+   778→                                </Button>
+   779→                              </div>
+   780→                            </div>
+   781→
+   782→                            {/* Resend */}
+   783→                            <div className="text-center">
+   784→                              <Button
+   785→                                type="button"
+   786→                                variant="ghost"
+   787→                                size="sm"
+   788→                                onClick={handleSendSms}
+   789→                                disabled={smsCountdown > 0 || smsSending}
+   790→                                className="text-sm"
+   791→                              >
+   792→                                {smsCountdown > 0 ? (
+   793→                                  <span className="flex items-center gap-1 text-muted-foreground">
+   794→                                    <Clock className="h-3 w-3" /> Reenviar en {smsCountdown}s
+   795→                                  </span>
+   796→                                ) : (
+   797→                                  <span className="flex items-center gap-1">
+   798→                                    <RefreshCw className="h-3 w-3" /> Reenviar código
+   799→                                  </span>
+   800→                                )}
+   801→                              </Button>
+   802→                            </div>
+   803→                          </>
+   804→                        )}
+   805→                      </>
+   806→                    )}
+   807→
+   808→                    {/* Verified success */}
+   809→                    {smsVerified && (
+   810→                      <motion.div
+   811→                        initial={{ opacity: 0, scale: 0.9 }}
+   812→                        animate={{ opacity: 1, scale: 1 }}
+   813→                        className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-700"
+   814→                      >
+   815→                        <div className="flex items-center gap-3">
+   816→                          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+   817→                            <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+   818→                          </div>
+   819→                          <div>
+   820→                            <p className="font-semibold text-green-700 dark:text-green-400">¡Teléfono verificado!</p>
+   821→                            <p className="text-sm text-green-600 dark:text-green-500">Tu número {form.phone} ha sido confirmado</p>
+   822→                          </div>
+   823→                        </div>
+   824→                      </motion.div>
+   825→                    )}
+   826→
+   827→                    {errors.sms && (
+   828→                      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   829→                        <X className="h-3 w-3" /> {errors.sms}
+   830→                      </motion.p>
+   831→                    )}
+   832→
+   833→                    <div className="flex gap-3 pt-2">
+   834→                      <Button type="button" variant="outline" onClick={handleBack} className="h-11">
+   835→                        <ArrowLeft className="h-4 w-4 mr-1" /> Atrás
+   836→                      </Button>
+   837→                      <Button
+   838→                        type="button"
+   839→                        onClick={handleNext}
+   840→                        disabled={!smsVerified}
+   841→                        className="flex-1 h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium"
+   842→                      >
+   843→                        Continuar <ArrowRight className="h-4 w-4 ml-2" />
+   844→                      </Button>
+   845→                    </div>
+   846→                  </motion.div>
+   847→                )}
+   848→
+   849→                {/* Step 4: Password */}
+   850→                {step === 4 && (
+   851→                  <motion.div
+   852→                    key="step4"
+   853→                    initial={{ opacity: 0, x: 50 }}
+   854→                    animate={{ opacity: 1, x: 0 }}
+   855→                    exit={{ opacity: 0, x: -50 }}
+   856→                    transition={{ duration: 0.3 }}
+   857→                    className="space-y-4"
+   858→                  >
+   859→                    <div className="text-center mb-4">
+   860→                      <h2 className="text-lg font-semibold">Protege tu Cuenta</h2>
+   861→                      <p className="text-sm text-muted-foreground">Elige una contraseña segura</p>
+   862→                    </div>
+   863→
+   864→                    <div className="space-y-2">
+   865→                      <Label htmlFor="password">Contraseña</Label>
+   866→                      <div className="relative">
+   867→                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   868→                        <Input
+   869→                          id="password"
+   870→                          type={showPassword ? "text" : "password"}
+   871→                          placeholder="Mínimo 6 caracteres"
+   872→                          value={form.password}
+   873→                          onChange={(e) => { setForm(f => ({ ...f, password: e.target.value })); setTouched(t => ({ ...t, password: true })) }}
+   874→                          onBlur={() => setTouched(t => ({ ...t, password: true }))}
+   875→                          className={`pl-9 pr-10 h-11 ${getFieldError("password") ? "border-destructive" : ""}`}
+   876→                        />
+   877→                        <Button
+   878→                          type="button"
+   879→                          variant="ghost"
+   880→                          size="icon"
+   881→                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+   882→                          onClick={() => setShowPassword(!showPassword)}
+   883→                        >
+   884→                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   885→                        </Button>
+   886→                      </div>
+   887→                      {/* Password Strength Indicator */}
+   888→                      {form.password && (
+   889→                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-1.5">
+   890→                          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+   891→                            <motion.div
+   892→                              initial={{ width: 0 }}
+   893→                              animate={{ width: `${passwordStrength.score}%` }}
+   894→                              transition={{ duration: 0.3 }}
+   895→                              className={`h-full rounded-full ${passwordStrength.color}`}
+   896→                            />
+   897→                          </div>
+   898→                          <div className="flex justify-between items-center">
+   899→                            <span className="text-xs text-muted-foreground">Fortaleza:</span>
+   900→                            <span className={`text-xs font-medium ${passwordStrength.score >= 60 ? "text-green-600" : passwordStrength.score >= 40 ? "text-yellow-600" : "text-red-600"}`}>
+   901→                              {passwordStrength.label}
+   902→                            </span>
+   903→                          </div>
+   904→                          <div className="grid grid-cols-2 gap-1 text-xs">
+   905→                            {[
+   906→                              { label: "6+ caracteres", met: form.password.length >= 6 },
+   907→                              { label: "Mayúscula", met: /[A-Z]/.test(form.password) },
+   908→                              { label: "Número", met: /[0-9]/.test(form.password) },
+   909→                              { label: "Especial (!@#)", met: /[^A-Za-z0-9]/.test(form.password) },
+   910→                            ].map(req => (
+   911→                              <span key={req.label} className={`flex items-center gap-1 ${req.met ? "text-green-600" : "text-muted-foreground"}`}>
+   912→                                {req.met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+   913→                                {req.label}
+   914→                              </span>
+   915→                            ))}
+   916→                          </div>
+   917→                        </motion.div>
+   918→                      )}
+   919→                      {getFieldError("password") && (
+   920→                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   921→                          <X className="h-3 w-3" /> {getFieldError("password")}
+   922→                        </motion.p>
+   923→                      )}
+   924→                    </div>
+   925→
+   926→                    <div className="space-y-2">
+   927→                      <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+   928→                      <div className="relative">
+   929→                        <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   930→                        <Input
+   931→                          id="confirmPassword"
+   932→                          type={showConfirmPassword ? "text" : "password"}
+   933→                          placeholder="Repite tu contraseña"
+   934→                          value={form.confirmPassword}
+   935→                          onChange={(e) => { setForm(f => ({ ...f, confirmPassword: e.target.value })); setTouched(t => ({ ...t, confirmPassword: true })) }}
+   936→                          onBlur={() => setTouched(t => ({ ...t, confirmPassword: true }))}
+   937→                          className={`pl-9 pr-10 h-11 ${getFieldError("confirmPassword") ? "border-destructive" : touched.confirmPassword && form.confirmPassword && !getFieldError("confirmPassword") ? "border-green-500" : ""}`}
+   938→                        />
+   939→                        <Button
+   940→                          type="button"
+   941→                          variant="ghost"
+   942→                          size="icon"
+   943→                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+   944→                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+   945→                        >
+   946→                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   947→                        </Button>
+   948→                      </div>
+   949→                      {touched.confirmPassword && form.confirmPassword && !getFieldError("confirmPassword") && form.password === form.confirmPassword && (
+   950→                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-green-600 flex items-center gap-1">
+   951→                          <Check className="h-3 w-3" /> Las contraseñas coinciden
+   952→                        </motion.p>
+   953→                      )}
+   954→                      {getFieldError("confirmPassword") && (
+   955→                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
+   956→                          <X className="h-3 w-3" /> {getFieldError("confirmPassword")}
+   957→                        </motion.p>
+   958→                      )}
+   959→                    </div>
+   960→
+   961→                    <div className="flex gap-3 pt-2">
+   962→                      <Button type="button" variant="outline" onClick={handleBack} className="h-11">
+   963→                        <ArrowLeft className="h-4 w-4 mr-1" /> Atrás
+   964→                      </Button>
+   965→                      <Button
+   966→                        type="submit"
+   967→                        disabled={loading}
+   968→                        className="flex-1 h-11 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#154360] hover:to-[#2471A3] text-white font-medium shadow-md"
+   969→                      >
+   970→                        {loading ? (
+   971→                          <span className="flex items-center gap-2">
+   972→                            <Loader2 className="h-4 w-4 animate-spin" /> Creando...
+   973→                          </span>
+   974→                        ) : (
+   975→                          <span className="flex items-center gap-2">
+   976→                            <ShieldCheck className="h-4 w-4" /> Crear Cuenta
+   977→                          </span>
+   978→                        )}
+   979→                      </Button>
+   980→                    </div>
+   981→                  </motion.div>
+   982→                )}
+   983→              </AnimatePresence>
+   984→            </form>
+   985→
+   986→            <motion.p
+   987→              initial={{ opacity: 0 }}
+   988→              animate={{ opacity: 1 }}
+   989→              transition={{ delay: 0.5 }}
+   990→              className="text-center text-sm text-muted-foreground mt-5"
+   991→            >
+   992→              ¿Ya tienes cuenta?{" "}
+   993→              <button onClick={() => navigate("login")} className="text-primary hover:underline font-medium">
+   994→                Inicia sesión
+   995→              </button>
+   996→            </motion.p>
+   997→          </CardContent>
+   998→        </Card>
+   999→      </motion.div>
+  1000→    </div>
+  1001→  )
+  1002→}
+  1003→

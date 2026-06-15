@@ -1,0 +1,1130 @@
+     1→"use client"
+     2→
+     3→import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+     4→import { useAppStore, type AppView } from "@/store/app-store"
+     5→import { useAuthStore } from "@/store/auth-store"
+     6→import { Card, CardContent } from "@/components/ui/card"
+     7→import { Button } from "@/components/ui/button"
+     8→import { Badge } from "@/components/ui/badge"
+     9→import { Skeleton } from "@/components/ui/skeleton"
+    10→import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+    11→import { Input } from "@/components/ui/input"
+    12→import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+    13→import {
+    14→  Carousel,
+    15→  CarouselContent,
+    16→  CarouselItem,
+    17→  CarouselPrevious,
+    18→  CarouselNext,
+    19→} from "@/components/ui/carousel"
+    20→import {
+    21→  Heart,
+    22→  MapPin,
+    23→  Bookmark,
+    24→  Store,
+    25→  Search,
+    26→  Star,
+    27→  ChevronUp,
+    28→  Sparkles,
+    29→  Users,
+    30→  Package,
+    31→  CreditCard,
+    32→  MessageCircle,
+    33→  Share2,
+    34→  Send,
+    35→  Zap,
+    36→  Eye,
+    37→  TrendingUp,
+    38→  X,
+    39→} from "lucide-react"
+    40→import { PRODUCT_CATEGORIES, NICARAGUA_DEPARTMENTS } from "@/lib/validators"
+    41→import { authFetch } from "@/lib/client-auth"
+    42→import { toast } from "sonner"
+    43→import { motion, AnimatePresence } from "framer-motion"
+    44→import { WeatherWidget } from "@/components/weather/weather-widget"
+    45→import dynamic from "next/dynamic"
+    46→
+    47→// Lazy-load AdBanner to reduce initial bundle
+    48→const AdBanner = dynamic(() => import("@/components/ads/ad-banner").then(m => ({ default: m.AdBanner })), { ssr: false })
+    49→
+    50→// ─── Product Interface ────────────────────────────────────────────────────────
+    51→interface Product {
+    52→  id: string
+    53→  title: string
+    54→  description: string
+    55→  price: number
+    56→  discountPrice: number | null
+    57→  discountPercent: number | null
+    58→  category: string
+    59→  images: string[]
+    60→  tags: string
+    61→  quantity: number
+    62→  likeCount: number
+    63→  seller: {
+    64→    id: string
+    65→    name: string
+    66→    avatar: string
+    67→    address: string
+    68→    businessProfile?: { businessName: string; logo: string } | null
+    69→  }
+    70→}
+    71→
+    72→// ─── Category Icons Map ──────────────────────────────────────────────────────
+    73→const CATEGORY_ICONS: Record<string, string> = {
+    74→  "Construcción y Ferretería": "🏗️",
+    75→  "Agricultura y Ganadería": "🌾",
+    76→  "Tecnología y Electrónica": "💻",
+    77→  "Alimentos y Bebidas": "🍽️",
+    78→  "Textil y Calzado": "👕",
+    79→  "Salud y Farmacia": "💊",
+    80→  "Hogar y Muebles": "🏠",
+    81→  "Transporte y Logística": "🚛",
+    82→  "Educación y Papelería": "📚",
+    83→  "Servicios Profesionales": "💼",
+    84→  "Artesanías y Manualidades": "🎨",
+    85→  "Belleza y Cuidado Personal": "💅",
+    86→  "Deportes y Recreación": "⚽",
+    87→  "Energía y Combustible": "⚡",
+    88→  "Impresión y Diseño": "🖨️",
+    89→  "Otros": "📦",
+    90→}
+    91→
+    92→// ─── Department Emojis Map ───────────────────────────────────────────────────
+    93→const DEPARTMENT_EMOJIS: Record<string, string> = {
+    94→  "Managua": "🏙️",
+    95→  "León": "⛪",
+    96→  "Granada": "🏛️",
+    97→  "Masaya": "🎭",
+    98→  "Carazo": "🌊",
+    99→  "Rivas": "🏖️",
+   100→  "Chinandega": "🏭",
+   101→  "Estelí": "🏔️",
+   102→  "Matagalpa": "☕",
+   103→  "Jinotega": "🌲",
+   104→  "Nueva Segovia": "⛏️",
+   105→  "Madriz": "🏺",
+   106→  "Boaco": "🐄",
+   107→  "Chontales": "🤠",
+   108→  "Río San Juan": "🐊",
+   109→  "Región Autónoma Caribe Norte": "🌴",
+   110→  "Región Autónoma Caribe Sur": "🏝️",
+   111→}
+   112→
+   113→// ─── Animated Counter Component ──────────────────────────────────────────────
+   114→function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
+   115→  const [count, setCount] = useState(0)
+   116→  const hasAnimated = useRef(false)
+   117→
+   118→  useEffect(() => {
+   119→    if (hasAnimated.current) return
+   120→    hasAnimated.current = true
+   121→    const duration = 2000
+   122→    const steps = 60
+   123→    const increment = target / steps
+   124→    let current = 0
+   125→    const timer = setInterval(() => {
+   126→      current += increment
+   127→      if (current >= target) {
+   128→        setCount(target)
+   129→        clearInterval(timer)
+   130→      } else {
+   131→        setCount(Math.floor(current))
+   132→      }
+   133→    }, duration / steps)
+   134→    return () => clearInterval(timer)
+   135→  }, [target])
+   136→
+   137→  return (
+   138→    <span suppressHydrationWarning>
+   139→      {count.toLocaleString()}{suffix}
+   140→    </span>
+   141→  )
+   142→}
+   143→
+   144→// ─── Product Card Skeleton (Facebook-style) ──────────────────────────────────
+   145→function ProductCardSkeleton() {
+   146→  return (
+   147→    <Card className="overflow-hidden border border-border/50 shadow-sm">
+   148→      <Skeleton className="h-52 w-full rounded-none" />
+   149→      <CardContent className="p-3 space-y-2.5">
+   150→        <Skeleton className="h-5 w-3/4" />
+   151→        <div className="flex items-baseline gap-2">
+   152→          <Skeleton className="h-6 w-24" />
+   153→          <Skeleton className="h-4 w-16" />
+   154→        </div>
+   155→        <div className="flex items-center gap-2">
+   156→          <Skeleton className="h-6 w-6 rounded-full" />
+   157→          <Skeleton className="h-3 w-24" />
+   158→        </div>
+   159→        <div className="flex gap-1.5 pt-1">
+   160→          <Skeleton className="h-7 w-7 rounded-full" />
+   161→          <Skeleton className="h-7 w-7 rounded-full" />
+   162→          <Skeleton className="h-7 flex-1 rounded-md" />
+   163→        </div>
+   164→      </CardContent>
+   165→    </Card>
+   166→  )
+   167→}
+   168→
+   169→// ─── Featured Carousel Skeleton ──────────────────────────────────────────────
+   170→function FeaturedSkeleton() {
+   171→  return (
+   172→    <div className="flex gap-3 overflow-hidden">
+   173→      {Array.from({ length: 4 }).map((_, i) => (
+   174→        <div key={i} className="min-w-[260px] max-w-[260px]">
+   175→          <Card className="overflow-hidden border border-border/50 shadow-sm">
+   176→            <Skeleton className="h-36 w-full rounded-none" />
+   177→            <CardContent className="p-3 space-y-2">
+   178→              <Skeleton className="h-4 w-3/4" />
+   179→              <Skeleton className="h-5 w-20" />
+   180→            </CardContent>
+   181→          </Card>
+   182→        </div>
+   183→      ))}
+   184→    </div>
+   185→  )
+   186→}
+   187→
+   188→// ─── Rating Stars Component ──────────────────────────────────────────────────
+   189→function RatingStars({ likeCount }: { likeCount: number }) {
+   190→  const stars = Math.min(5, Math.max(1, Math.ceil(likeCount / 3)))
+   191→  return (
+   192→    <div className="flex items-center gap-0.5">
+   193→      {Array.from({ length: 5 }).map((_, i) => (
+   194→        <Star
+   195→          key={i}
+   196→          className={`h-3 w-3 ${i < stars ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+   197→        />
+   198→      ))}
+   199→    </div>
+   200→  )
+   201→}
+   202→
+   203→// ═════════════════════════════════════════════════════════════════════════════
+   204→// MAIN HOME FEED COMPONENT
+   205→// ═════════════════════════════════════════════════════════════════════════════
+   206→export function HomeFeed() {
+   207→  const { navigate, selectedCategory, setSelectedCategory, setSearchQuery, selectedLocation, setSelectedLocation } = useAppStore()
+   208→  const { user, isAuthenticated } = useAuthStore()
+   209→
+   210→  // ─── State ──────────────────────────────────────────────────────────────
+   211→  const [products, setProducts] = useState<Product[]>([])
+   212→  const [loading, setLoading] = useState(true)
+   213→  const [cursor, setCursor] = useState<string | null>(null)
+   214→  const [hasMore, setHasMore] = useState(true)
+   215→  const [searchInput, setSearchInput] = useState("")
+   216→  const [showScrollTop, setShowScrollTop] = useState(false)
+   217→  const [likedProducts, setLikedProducts] = useState<Set<string>>(new Set())
+   218→  const [savedProducts, setSavedProducts] = useState<Set<string>>(new Set())
+   219→  const [messagingProductId, setMessagingProductId] = useState<string | null>(null)
+   220→
+   221→  const observerRef = useRef<IntersectionObserver | null>(null)
+   222→  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+   223→  const loadingRef = useRef(false)
+   224→
+   225→  // ─── Load Products ──────────────────────────────────────────────────────
+   226→  const loadProducts = useCallback(async (reset = false) => {
+   227→    if (!reset && !hasMore) return
+   228→    if (!reset && loadingRef.current) return
+   229→    loadingRef.current = true
+   230→    setLoading(true)
+   231→    try {
+   232→      const params = new URLSearchParams()
+   233→      if (!reset && cursor) params.set("cursor", cursor)
+   234→      if (selectedCategory) params.set("category", selectedCategory)
+   235→      params.set("limit", "20")
+   236→
+   237→      const res = await fetch(`/api/products?${params}`)
+   238→      if (!res.ok) return
+   239→      let data: { success?: boolean; data?: Product[]; nextCursor?: string | null }
+   240→      try {
+   241→        data = await res.json()
+   242→      } catch {
+   243→        return // Non-JSON response — bail out gracefully
+   244→      }
+   245→
+   246→      if (data.success && Array.isArray(data.data)) {
+   247→        const newProducts = data.data
+   248→        if (reset) {
+   249→          // Deduplicate by ID in case API returns duplicates
+   250→          const seen = new Set<string>()
+   251→          const unique = newProducts.filter(p => {
+   252→            if (seen.has(p.id)) return false
+   253→            seen.add(p.id)
+   254→            return true
+   255→          })
+   256→          setProducts(unique)
+   257→        } else {
+   258→          setProducts(prev => {
+   259→            const existing = new Set(prev.map(p => p.id))
+   260→            const filtered = newProducts.filter(p => !existing.has(p.id))
+   261→            return [...prev, ...filtered]
+   262→          })
+   263→        }
+   264→        setCursor(data.nextCursor ?? null)
+   265→        setHasMore(!!data.nextCursor && newProducts.length > 0)
+   266→      }
+   267→    } catch {
+   268→      // Network or parsing error — silently handle so the UI
+   269→      // shows the empty state instead of crashing
+   270→    } finally {
+   271→      loadingRef.current = false
+   272→      setLoading(false)
+   273→    }
+   274→  }, [cursor, selectedCategory, hasMore])
+   275→
+   276→  useEffect(() => {
+   277→    setProducts([])
+   278→    setCursor(null)
+   279→    setHasMore(true)
+   280→    loadProducts(true)
+   281→  }, [selectedCategory])
+   282→
+   283→  // ─── Infinite Scroll ────────────────────────────────────────────────────
+   284→  useEffect(() => {
+   285→    if (observerRef.current) observerRef.current.disconnect()
+   286→
+   287→    observerRef.current = new IntersectionObserver(
+   288→      (entries) => {
+   289→        if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
+   290→          loadProducts()
+   291→        }
+   292→      },
+   293→      { threshold: 0.1 }
+   294→    )
+   295→
+   296→    if (loadMoreRef.current) {
+   297→      observerRef.current.observe(loadMoreRef.current)
+   298→    }
+   299→
+   300→    return () => observerRef.current?.disconnect()
+   301→  }, [hasMore, loading, loadProducts])
+   302→
+   303→  // ─── Scroll to top visibility ────────────────────────────────────────────
+   304→  useEffect(() => {
+   305→    const handleScroll = () => {
+   306→      setShowScrollTop(window.scrollY > 600)
+   307→    }
+   308→    window.addEventListener("scroll", handleScroll, { passive: true })
+   309→    return () => window.removeEventListener("scroll", handleScroll)
+   310→  }, [])
+   311→
+   312→  // ─── Toggle Like (uses authFetch) ───────────────────────────────────────
+   313→  const toggleLike = async (e: React.MouseEvent, productId: string) => {
+   314→    e.stopPropagation()
+   315→    if (!isAuthenticated) {
+   316→      toast.error("Inicia sesión para dar like")
+   317→      navigate("login")
+   318→      return
+   319→    }
+   320→    try {
+   321→      const res = await authFetch("/api/likes", {
+   322→        method: "POST",
+   323→        headers: { "Content-Type": "application/json" },
+   324→        body: JSON.stringify({ productId }),
+   325→      })
+   326→      const data = await res.json()
+   327→      if (data.success) {
+   328→        const isLiked = data.data.liked
+   329→        setLikedProducts(prev => {
+   330→          const next = new Set(prev)
+   331→          if (isLiked) next.add(productId)
+   332→          else next.delete(productId)
+   333→          return next
+   334→        })
+   335→        setProducts(prev =>
+   336→          prev.map(p =>
+   337→            p.id === productId
+   338→              ? { ...p, likeCount: isLiked ? p.likeCount + 1 : Math.max(0, p.likeCount - 1) }
+   339→              : p
+   340→          )
+   341→        )
+   342→      }
+   343→    } catch {
+   344→      toast.error("Error al dar like")
+   345→    }
+   346→  }
+   347→
+   348→  // ─── Toggle Save (uses authFetch) ───────────────────────────────────────
+   349→  const toggleSave = async (e: React.MouseEvent, productId: string) => {
+   350→    e.stopPropagation()
+   351→    if (!isAuthenticated) {
+   352→      toast.error("Inicia sesión para guardar")
+   353→      navigate("login")
+   354→      return
+   355→    }
+   356→    try {
+   357→      const res = await authFetch("/api/saved", {
+   358→        method: "POST",
+   359→        headers: { "Content-Type": "application/json" },
+   360→        body: JSON.stringify({ productId }),
+   361→      })
+   362→      const data = await res.json()
+   363→      if (data.success) {
+   364→        setSavedProducts(prev => {
+   365→          const next = new Set(prev)
+   366→          if (next.has(productId)) {
+   367→            next.delete(productId)
+   368→            toast.success("Eliminado de guardados")
+   369→          } else {
+   370→            next.add(productId)
+   371→            toast.success("Guardado exitosamente")
+   372→          }
+   373→          return next
+   374→        })
+   375→      }
+   376→    } catch {
+   377→      toast.error("Error al guardar")
+   378→    }
+   379→  }
+   380→
+   381→  // ─── Share Product ──────────────────────────────────────────────────────
+   382→  const handleShare = async (e: React.MouseEvent, product: Product) => {
+   383→    e.stopPropagation()
+   384→    const url = `${window.location.origin}/product/${product.id}`
+   385→    try {
+   386→      await navigator.clipboard.writeText(url)
+   387→      toast.success("Enlace copiado al portapapeles")
+   388→    } catch {
+   389→      // Fallback for older browsers
+   390→      const textArea = document.createElement("textarea")
+   391→      textArea.value = url
+   392→      document.body.appendChild(textArea)
+   393→      textArea.select()
+   394→      document.execCommand("copy")
+   395→      document.body.removeChild(textArea)
+   396→      toast.success("Enlace copiado al portapapeles")
+   397→    }
+   398→  }
+   399→
+   400→  // ─── Send Message (creates chat room) ──────────────────────────────────
+   401→  const handleSendMessage = async (e: React.MouseEvent, product: Product) => {
+   402→    e.stopPropagation()
+   403→    if (!isAuthenticated) {
+   404→      toast.error("Inicia sesión para enviar mensajes")
+   405→      navigate("login")
+   406→      return
+   407→    }
+   408→    if (user?.id === product.seller.id) {
+   409→      toast.error("No puedes enviarte un mensaje a ti mismo")
+   410→      return
+   411→    }
+   412→    setMessagingProductId(product.id)
+   413→    try {
+   414→      const res = await authFetch("/api/chat/rooms", {
+   415→        method: "POST",
+   416→        headers: { "Content-Type": "application/json" },
+   417→        body: JSON.stringify({
+   418→          sellerId: product.seller.id,
+   419→          productId: product.id,
+   420→          message: `Hola, estoy interesado en "${product.title}"`,
+   421→        }),
+   422→      })
+   423→      const data = await res.json()
+   424→      if (data.success && data.data?.id) {
+   425→        toast.success("Chat creado, redirigiendo...")
+   426→        navigate("chat", { roomId: data.data.id })
+   427→      } else {
+   428→        toast.error("No se pudo crear el chat")
+   429→      }
+   430→    } catch {
+   431→      toast.error("Error al crear el chat")
+   432→    } finally {
+   433→      setMessagingProductId(null)
+   434→    }
+   435→  }
+   436→
+   437→  // ─── Format Price ───────────────────────────────────────────────────────
+   438→  const formatPrice = (price: number) => {
+   439→    return new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(price)
+   440→  }
+   441→
+   442→  // ─── Search Submit ──────────────────────────────────────────────────────
+   443→  const handleSearch = (e: React.FormEvent) => {
+   444→    e.preventDefault()
+   445→    if (searchInput.trim()) {
+   446→      setSearchQuery(searchInput.trim())
+   447→      navigate("search")
+   448→    }
+   449→  }
+   450→
+   451→  // ─── Featured products (trending/discounted) ────────────────────────────
+   452→  const featuredProducts = useMemo(() => {
+   453→    return [...products]
+   454→      .sort((a, b) => {
+   455→        if (a.discountPercent && !b.discountPercent) return -1
+   456→        if (!a.discountPercent && b.discountPercent) return 1
+   457→        return b.likeCount - a.likeCount
+   458→      })
+   459→      .slice(0, 10)
+   460→  }, [products])
+   461→
+   462→  // ═══════════════════════════════════════════════════════════════════════
+   463→  // RENDER
+   464→  // ═══════════════════════════════════════════════════════════════════════
+   465→  return (
+   466→    <div className="space-y-6 pb-10">
+   467→
+   468→      {/* ═══════════════════════════════════════════════════════════════════
+   469→          HERO SECTION - Clean Facebook Marketplace style
+   470→          ═══════════════════════════════════════════════════════════════════ */}
+   471→      <section className="relative rounded-2xl overflow-hidden" suppressHydrationWarning>
+   472→        {/* Background gradient - Nicaragua colors */}
+   473→        <div className="absolute inset-0 bg-gradient-to-br from-[#1A5276] via-[#2E86C1] to-[#154360]" />
+   474→
+   475→        {/* Subtle pattern overlay */}
+   476→        <div className="absolute inset-0 opacity-[0.04]">
+   477→          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+   478→            <defs>
+   479→              <pattern id="hero-dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+   480→                <circle cx="20" cy="20" r="1.5" fill="white" />
+   481→              </pattern>
+   482→            </defs>
+   483→            <rect width="100%" height="100%" fill="url(#hero-dots)" />
+   484→          </svg>
+   485→        </div>
+   486→
+   487→        {/* Gold accent orbs */}
+   488→        <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-[#F4D03F]/10 blur-3xl" />
+   489→        <div className="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-[#F4D03F]/8 blur-2xl" />
+   490→
+   491→        {/* Content */}
+   492→        <div className="relative z-10 p-6 md:p-10 lg:p-14">
+   493→          <div className="max-w-2xl">
+   494→            {/* Badge */}
+   495→            <div className="flex flex-wrap gap-2 mb-4">
+   496→              <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-3.5 py-1.5 text-sm font-medium backdrop-blur-sm border border-white/10">
+   497→                <span className="text-base">🇳🇮</span> Hecho en Nicaragua
+   498→                <Sparkles className="h-3.5 w-3.5 text-[#F4D03F]" />
+   499→              </div>
+   500→              <div className="inline-flex items-center gap-2 bg-[#F4D03F]/15 rounded-full px-3.5 py-1.5 text-sm font-medium backdrop-blur-sm border border-[#F4D03F]/20">
+   501→                🏆 Hackathon Nicaragua 2026 – 10ª Edición – Siempre más allá
+   502→              </div>
+   503→            </div>
+   504→
+   505→            {/* Title */}
+   506→            <h1 className="text-3xl md:text-5xl font-bold mb-3 leading-tight text-white" suppressHydrationWarning>
+   507→              Proveedor<span className="text-white">Conecta</span>
+   508→              <br />
+   509→              <span className="text-[#F4D03F] drop-shadow-lg">Nicaragua</span>
+   510→            </h1>
+   511→
+   512→            {/* Subtitle */}
+   513→            <p className="text-base md:text-lg text-white/90 mb-6 max-w-lg leading-relaxed">
+   514→              Conectamos emprendedores y MIPYMES con proveedores de insumos, materia prima y servicios en toda Nicaragua.
+   515→            </p>
+   516→
+   517→            {/* Search Bar */}
+   518→            <form onSubmit={handleSearch} className="flex gap-2 mb-6 max-w-lg">
+   519→              <div className="relative flex-1">
+   520→                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   521→                <Input
+   522→                  type="search"
+   523→                  placeholder="Buscar productos, proveedores..."
+   524→                  value={searchInput}
+   525→                  onChange={(e) => setSearchInput(e.target.value)}
+   526→                  className="pl-10 h-11 rounded-xl text-base shadow-lg"
+   527→                />
+   528→              </div>
+   529→              <Button
+   530→                type="submit"
+   531→                size="default"
+   532→                className="h-11 px-5 bg-[#2E86C1] hover:bg-[#2471A3] text-white font-semibold rounded-xl shadow-lg"
+   533→              >
+   534→                <Search className="h-4 w-4" />
+   535→              </Button>
+   536→            </form>
+   537→
+   538→            {/* CTA Buttons */}
+   539→            <div className="flex flex-wrap gap-3">
+   540→              <Button
+   541→                size="default"
+   542→                className="bg-white text-[#1A5276] hover:bg-white/90 font-semibold rounded-xl h-11 shadow-lg"
+   543→                onClick={() => navigate(isAuthenticated ? "sell-product" : "register")}
+   544→              >
+   545→                <Store className="h-4 w-4 mr-2" /> Vender
+   546→              </Button>
+   547→              <Button
+   548→                size="default"
+   549→                variant="outline"
+   550→                className="border-white/30 text-white hover:bg-white/10 backdrop-blur-sm rounded-xl h-11"
+   551→                onClick={() => navigate("map")}
+   552→              >
+   553→                <MapPin className="h-4 w-4 mr-2" /> Explorar Mapa
+   554→              </Button>
+   555→            </div>
+   556→          </div>
+   557→
+   558→          {/* Animated Stats */}
+   559→          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/15">
+   560→            {[
+   561→              { icon: <Users className="h-4 w-4" />, value: 500, suffix: "+", label: "Proveedores" },
+   562→              { icon: <Package className="h-4 w-4" />, value: 2000, suffix: "+", label: "Productos" },
+   563→              { icon: <MapPin className="h-4 w-4" />, value: 17, suffix: "", label: "Departamentos" },
+   564→              { icon: <CreditCard className="h-4 w-4" />, value: 11, suffix: "", label: "Métodos de Pago" },
+   565→            ].map((stat) => (
+   566→              <div key={stat.label} className="text-center sm:text-left">
+   567→                <div className="flex items-center justify-center sm:justify-start gap-1.5 text-white/70 mb-0.5">
+   568→                  {stat.icon}
+   569→                  <span className="text-xl md:text-2xl font-bold text-white" suppressHydrationWarning>
+   570→                    <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+   571→                  </span>
+   572→                </div>
+   573→                <p className="text-xs text-white/60">{stat.label}</p>
+   574→              </div>
+   575→            ))}
+   576→          </div>
+   577→        </div>
+   578→
+   579→        {/* Bottom stripe */}
+   580→        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#0067B8] via-white to-[#0067B8]" />
+   581→      </section>
+   582→
+   583→      {/* ═══════════════════════════════════════════════════════════════════
+   584→          WEATHER WIDGET - Inline card below hero
+   585→          ═══════════════════════════════════════════════════════════════════ */}
+   586→      <section className="max-w-md">
+   587→        <WeatherWidget />
+   588→      </section>
+   589→
+   590→      {/* ═══════════════════════════════════════════════════════════════════
+   591→          CATEGORY FILTER BAR - Horizontal scrollable chips
+   592→          ═══════════════════════════════════════════════════════════════════ */}
+   593→      <section className="space-y-2">
+   594→        <div className="flex items-center justify-between">
+   595→          <h2 className="text-lg font-semibold flex items-center gap-2">
+   596→            <TrendingUp className="h-4 w-4 text-primary" /> Categorías
+   597→          </h2>
+   598→          {selectedCategory && (
+   599→            <Button
+   600→              variant="ghost"
+   601→              size="sm"
+   602→              onClick={() => setSelectedCategory("")}
+   603→              className="h-7 text-xs gap-1 rounded-lg text-muted-foreground hover:text-foreground"
+   604→            >
+   605→              <X className="h-3 w-3" /> Limpiar
+   606→            </Button>
+   607→          )}
+   608→        </div>
+   609→
+   610→        <ScrollArea className="w-full whitespace-nowrap">
+   611→          <div className="flex gap-2 pb-2">
+   612→            {/* "All" chip */}
+   613→            <button
+   614→              onClick={() => setSelectedCategory("")}
+   615→              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all shrink-0 ${
+   616→                !selectedCategory
+   617→                  ? "bg-primary text-primary-foreground shadow-md"
+   618→                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+   619→              }`}
+   620→            >
+   621→              <span>🏷️</span> Todos
+   622→            </button>
+   623→            {PRODUCT_CATEGORIES.map((cat) => (
+   624→              <button
+   625→                key={cat}
+   626→                onClick={() => setSelectedCategory(selectedCategory === cat ? "" : cat)}
+   627→                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all shrink-0 ${
+   628→                  selectedCategory === cat
+   629→                    ? "bg-primary text-primary-foreground shadow-md"
+   630→                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+   631→                }`}
+   632→              >
+   633→                <span>{CATEGORY_ICONS[cat] || "📦"}</span>
+   634→                <span className="whitespace-nowrap">{cat}</span>
+   635→              </button>
+   636→            ))}
+   637→          </div>
+   638→          <ScrollBar orientation="horizontal" />
+   639→        </ScrollArea>
+   640→
+   641→        {/* Active filter indicator */}
+   642→        <AnimatePresence>
+   643→          {selectedCategory && (
+   644→            <motion.div
+   645→              initial={{ opacity: 0, y: -5 }}
+   646→              animate={{ opacity: 1, y: 0 }}
+   647→              exit={{ opacity: 0, y: -5 }}
+   648→              className="flex items-center gap-2"
+   649→            >
+   650→              <Badge variant="default" className="bg-primary rounded-lg text-xs">
+   651→                {CATEGORY_ICONS[selectedCategory] || "📦"} {selectedCategory}
+   652→              </Badge>
+   653→            </motion.div>
+   654→          )}
+   655→        </AnimatePresence>
+   656→      </section>
+   657→
+   658→      {/* ═══════════════════════════════════════════════════════════════════
+   659→          DEPARTMENT FILTER - Horizontal scrollable location chips
+   660→          ═══════════════════════════════════════════════════════════════════ */}
+   661→      <section className="space-y-2">
+   662→        <div className="flex items-center justify-between">
+   663→          <h2 className="text-lg font-semibold flex items-center gap-2">
+   664→            📍 Departamentos
+   665→          </h2>
+   666→          {selectedLocation && (
+   667→            <Button
+   668→              variant="ghost"
+   669→              size="sm"
+   670→              onClick={() => setSelectedLocation("")}
+   671→              className="h-7 text-xs gap-1 rounded-lg text-muted-foreground hover:text-foreground"
+   672→            >
+   673→              <X className="h-3 w-3" /> Limpiar
+   674→            </Button>
+   675→          )}
+   676→        </div>
+   677→
+   678→        <ScrollArea className="w-full whitespace-nowrap">
+   679→          <div className="flex gap-2 pb-2">
+   680→            {NICARAGUA_DEPARTMENTS.map((dept) => (
+   681→              <button
+   682→                key={dept}
+   683→                onClick={() => {
+   684→                  if (selectedLocation === dept) {
+   685→                    setSelectedLocation("")
+   686→                  } else {
+   687→                    setSelectedLocation(dept)
+   688→                    setSearchQuery(dept)
+   689→                    navigate("search")
+   690→                  }
+   691→                }}
+   692→                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all shrink-0 ${
+   693→                  selectedLocation === dept
+   694→                    ? "bg-primary text-primary-foreground shadow-md"
+   695→                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+   696→                }`}
+   697→              >
+   698→                <span>{DEPARTMENT_EMOJIS[dept] || "📍"}</span>
+   699→                <span className="whitespace-nowrap">{dept}</span>
+   700→              </button>
+   701→            ))}
+   702→          </div>
+   703→          <ScrollBar orientation="horizontal" />
+   704→        </ScrollArea>
+   705→      </section>
+   706→
+   707→      {/* ═══════════════════════════════════════════════════════════════════
+   708→          "FOR YOU" TRENDING SECTION - Featured carousel
+   709→          ═══════════════════════════════════════════════════════════════════ */}
+   710→      {featuredProducts.length > 0 && !selectedCategory && (
+   711→        <section className="space-y-3">
+   712→          <div className="flex items-center justify-between">
+   713→            <h2 className="text-lg font-semibold flex items-center gap-2">
+   714→              <Zap className="h-4 w-4 text-[#F4D03F]" /> Para Ti
+   715→            </h2>
+   716→            <Badge variant="secondary" className="rounded-lg bg-[#F4D03F]/10 text-[#D4AC0D] border border-[#F4D03F]/20 text-xs">
+   717→              <Sparkles className="h-3 w-3 mr-1" /> Trending
+   718→            </Badge>
+   719→          </div>
+   720→
+   721→          {loading && products.length === 0 ? (
+   722→            <FeaturedSkeleton />
+   723→          ) : (
+   724→            <Carousel
+   725→              opts={{ align: "start", loop: true }}
+   726→              className="w-full"
+   727→            >
+   728→              <CarouselContent className="-ml-3">
+   729→                {featuredProducts.map((product) => (
+   730→                  <CarouselItem key={`featured-${product.id}`} className="pl-3 basis-[260px]">
+   731→                    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+   732→                      <Card
+   733→                        className="overflow-hidden border border-border/50 shadow-sm cursor-pointer group"
+   734→                        onClick={() => navigate("product-detail", { productId: product.id })}
+   735→                      >
+   736→                        <div className="relative h-36 bg-muted overflow-hidden">
+   737→                          {product.images && product.images.length > 0 ? (
+   738→                            <img
+   739→                              src={product.images[0]}
+   740→                              alt={product.title}
+   741→                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+   742→                            />
+   743→                          ) : (
+   744→                            <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-primary/10 to-primary/5">
+   745→                              {CATEGORY_ICONS[product.category] || "📦"}
+   746→                            </div>
+   747→                          )}
+   748→                          {product.discountPercent && (
+   749→                            <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-md shadow-sm font-bold">
+   750→                              -{product.discountPercent}%
+   751→                            </Badge>
+   752→                          )}
+   753→                          <Badge className="absolute top-2 right-2 bg-[#F4D03F] text-[#1C2833] text-[10px] px-1.5 py-0.5 rounded-md shadow-sm">
+   754→                            <Star className="h-2.5 w-2.5 mr-0.5" fill="currentColor" /> TOP
+   755→                          </Badge>
+   756→                        </div>
+   757→                        <CardContent className="p-3 space-y-1.5">
+   758→                          <h3 className="font-medium text-sm line-clamp-1">{product.title}</h3>
+   759→                          <div className="flex items-baseline gap-1.5">
+   760→                            {product.discountPrice ? (
+   761→                              <>
+   762→                                <span className="text-sm font-bold text-red-500">
+   763→                                  {formatPrice(product.discountPrice)}
+   764→                                </span>
+   765→                                <span className="text-xs line-through text-muted-foreground">
+   766→                                  {formatPrice(product.price)}
+   767→                                </span>
+   768→                              </>
+   769→                            ) : (
+   770→                              <span className="text-sm font-bold text-foreground">
+   771→                                {formatPrice(product.price)}
+   772→                              </span>
+   773→                            )}
+   774→                          </div>
+   775→                          <div className="flex items-center gap-1.5">
+   776→                            <Avatar className="h-4 w-4">
+   777→                              <AvatarImage src={product.seller.businessProfile?.logo || product.seller.avatar || undefined} />
+   778→                              <AvatarFallback className="text-[6px] bg-primary text-primary-foreground">
+   779→                                {(product.seller.businessProfile?.businessName || product.seller.name)?.charAt(0)}
+   780→                              </AvatarFallback>
+   781→                            </Avatar>
+   782→                            <span className="text-[11px] text-muted-foreground truncate">
+   783→                              {product.seller.businessProfile?.businessName || product.seller.name}
+   784→                            </span>
+   785→                          </div>
+   786→                        </CardContent>
+   787→                      </Card>
+   788→                    </motion.div>
+   789→                  </CarouselItem>
+   790→                ))}
+   791→              </CarouselContent>
+   792→              <CarouselPrevious className="left-0 -translate-x-1/2 shadow-lg bg-background border-0" />
+   793→              <CarouselNext className="right-0 translate-x-1/2 shadow-lg bg-background border-0" />
+   794→            </Carousel>
+   795→          )}
+   796→        </section>
+   797→      )}
+   798→
+   799→      {/* ═══════════════════════════════════════════════════════════════════
+   800→          SPONSORED ADS - Paid advertisements
+   801→          ═══════════════════════════════════════════════════════════════════ */}
+   802→      <AdBanner />
+   803→
+   804→      {/* ═══════════════════════════════════════════════════════════════════
+   805→          PRODUCT GRID - Facebook Marketplace Style Cards
+   806→          ═══════════════════════════════════════════════════════════════════ */}
+   807→      <section className="space-y-4">
+   808→        <div className="flex items-center justify-between">
+   809→          <h2 className="text-lg font-semibold">
+   810→            {selectedCategory ? `Productos en ${selectedCategory}` : "Productos Recientes"}
+   811→          </h2>
+   812→          <span className="text-sm text-muted-foreground">
+   813→            {products.length} {products.length === 1 ? "producto" : "productos"}
+   814→          </span>
+   815→        </div>
+   816→
+   817→        {/* Loading Skeletons */}
+   818→        {loading && products.length === 0 ? (
+   819→          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+   820→            {Array.from({ length: 8 }).map((_, i) => (
+   821→              <ProductCardSkeleton key={i} />
+   822→            ))}
+   823→          </div>
+   824→        ) : products.length === 0 ? (
+   825→          /* Empty State */
+   826→          <motion.div
+   827→            animate={{ opacity: 1, scale: 1 }}
+   828→            className="text-center py-16"
+   829→          >
+   830→            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-5">
+   831→              <Package className="h-10 w-10 text-muted-foreground" />
+   832→            </div>
+   833→            <p className="text-base font-semibold text-foreground mb-1">No se encontraron productos</p>
+   834→            <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
+   835→              Intenta con otra categoría o explora todos los productos disponibles.
+   836→            </p>
+   837→            <Button
+   838→              variant="default"
+   839→              className="bg-primary rounded-xl"
+   840→              onClick={() => setSelectedCategory("")}
+   841→            >
+   842→              Ver todos los productos
+   843→            </Button>
+   844→          </motion.div>
+   845→        ) : (
+   846→          /* Product Grid - Facebook Marketplace Style */
+   847→          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+   848→            {products.map((product) => (
+   849→              <ProductCard
+   850→                key={product.id}
+   851→                product={product}
+   852→                isLiked={likedProducts.has(product.id)}
+   853→                isSaved={savedProducts.has(product.id)}
+   854→                isMessaging={messagingProductId === product.id}
+   855→                onLike={toggleLike}
+   856→                onSave={toggleSave}
+   857→                onShare={handleShare}
+   858→                onMessage={handleSendMessage}
+   859→                onNavigate={navigate}
+   860→                formatPrice={formatPrice}
+   861→              />
+   862→            ))}
+   863→          </div>
+   864→        )}
+   865→
+   866→        {/* Load more trigger */}
+   867→        <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+   868→          <AnimatePresence>
+   869→            {loading && products.length > 0 && (
+   870→              <motion.div
+   871→                initial={{ opacity: 0 }}
+   872→                animate={{ opacity: 1 }}
+   873→                exit={{ opacity: 0 }}
+   874→                className="flex items-center gap-2 text-muted-foreground text-sm"
+   875→              >
+   876→                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+   877→                Cargando más productos...
+   878→              </motion.div>
+   879→            )}
+   880→          </AnimatePresence>
+   881→          {!hasMore && products.length > 0 && (
+   882→            <p className="text-sm text-muted-foreground">No hay más productos</p>
+   883→          )}
+   884→        </div>
+   885→      </section>
+   886→
+   887→      {/* ═══════════════════════════════════════════════════════════════════
+   888→          SCROLL TO TOP BUTTON
+   889→          ═══════════════════════════════════════════════════════════════════ */}
+   890→      <AnimatePresence>
+   891→        {showScrollTop && (
+   892→          <motion.button
+   893→            initial={{ opacity: 0, scale: 0.5 }}
+   894→            animate={{ opacity: 1, scale: 1 }}
+   895→            exit={{ opacity: 0, scale: 0.5 }}
+   896→            whileHover={{ scale: 1.1 }}
+   897→            whileTap={{ scale: 0.9 }}
+   898→            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+   899→            className="fixed bottom-6 right-6 z-50 h-11 w-11 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:bg-primary/90 transition-colors"
+   900→            aria-label="Volver arriba"
+   901→          >
+   902→            <ChevronUp className="h-5 w-5" />
+   903→          </motion.button>
+   904→        )}
+   905→      </AnimatePresence>
+   906→    </div>
+   907→  )
+   908→}
+   909→
+   910→// ═════════════════════════════════════════════════════════════════════════════
+   911→// PRODUCT CARD - Facebook Marketplace Style
+   912→// ═════════════════════════════════════════════════════════════════════════════
+   913→function ProductCard({
+   914→  product,
+   915→  isLiked,
+   916→  isSaved,
+   917→  isMessaging,
+   918→  onLike,
+   919→  onSave,
+   920→  onShare,
+   921→  onMessage,
+   922→  onNavigate,
+   923→  formatPrice,
+   924→}: {
+   925→  product: Product
+   926→  isLiked: boolean
+   927→  isSaved: boolean
+   928→  isMessaging: boolean
+   929→  onLike: (e: React.MouseEvent, productId: string) => void
+   930→  onSave: (e: React.MouseEvent, productId: string) => void
+   931→  onShare: (e: React.MouseEvent, product: Product) => void
+   932→  onMessage: (e: React.MouseEvent, product: Product) => void
+   933→  onNavigate: (view: AppView, params?: Record<string, string>) => void
+   934→  formatPrice: (price: number) => string
+   935→}) {
+   936→  const [imgError, setImgError] = useState(false)
+   937→  const hasImage = product.images && product.images.length > 0 && !imgError
+   938→
+   939→  const sellerName = product.seller.businessProfile?.businessName || product.seller.name
+   940→  const sellerInitial = sellerName?.charAt(0)?.toUpperCase() || "?"
+   941→  const sellerAvatar = product.seller.businessProfile?.logo || product.seller.avatar
+   942→  const locationText = product.seller.address?.split(",").slice(-1)[0]?.trim()
+   943→
+   944→  return (
+   945→    <motion.div
+   946→      whileHover={{ y: -3 }}
+   947→      transition={{ duration: 0.2 }}
+   948→      className="group"
+   949→    >
+   950→      <Card
+   951→        className="overflow-hidden cursor-pointer border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-200 bg-card"
+   952→        onClick={() => onNavigate("product-detail", { productId: product.id })}
+   953→      >
+   954→        {/* ─── Image Area ─────────────────────────────────────────────── */}
+   955→        <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+   956→          {hasImage ? (
+   957→            <img
+   958→              src={product.images[0]}
+   959→              alt={product.title}
+   960→              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+   961→              onError={() => setImgError(true)}
+   962→              loading="lazy"
+   963→            />
+   964→          ) : (
+   965→            <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-primary/10 to-primary/5">
+   966→              {CATEGORY_ICONS[product.category] || "📦"}
+   967→            </div>
+   968→          )}
+   969→
+   970→          {/* Gradient overlay on hover */}
+   971→          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+   972→
+   973→          {/* Discount Badge */}
+   974→          {product.discountPercent && (
+   975→            <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-md shadow-sm font-bold hover:bg-red-500">
+   976→              -{product.discountPercent}%
+   977→            </Badge>
+   978→          )}
+   979→
+   980→          {/* Like Button (Heart) - Top Right */}
+   981→          <motion.button
+   982→            whileTap={{ scale: 0.8 }}
+   983→            className={`absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 ${
+   984→              isLiked
+   985→                ? "bg-red-50 text-red-500"
+   986→                : "bg-white/90 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100"
+   987→            }`}
+   988→            onClick={(e) => onLike(e, product.id)}
+   989→            aria-label={isLiked ? "Quitar like" : "Dar like"}
+   990→          >
+   991→            <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500" : ""}`} />
+   992→          </motion.button>
+   993→
+   994→          {/* Save Button (Bookmark) - Below Like */}
+   995→          <motion.button
+   996→            whileTap={{ scale: 0.8 }}
+   997→            className={`absolute top-11 right-2 h-8 w-8 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 ${
+   998→              isSaved
+   999→                ? "bg-[#F4D03F]/10 text-[#D4AC0D]"
+  1000→                : "bg-white/90 text-gray-500 hover:text-[#D4AC0D] opacity-0 group-hover:opacity-100"
+  1001→            }`}
+  1002→            onClick={(e) => onSave(e, product.id)}
+  1003→            aria-label={isSaved ? "Quitar de guardados" : "Guardar"}
+  1004→          >
+  1005→            <Bookmark className={`h-4 w-4 ${isSaved ? "fill-[#D4AC0D]" : ""}`} />
+  1006→          </motion.button>
+  1007→
+  1008→          {/* Share Button */}
+  1009→          <motion.button
+  1010→            whileTap={{ scale: 0.8 }}
+  1011→            className="absolute top-[4.75rem] right-2 h-8 w-8 rounded-full bg-white/90 text-gray-500 hover:text-primary flex items-center justify-center shadow-sm transition-all duration-200 opacity-0 group-hover:opacity-100"
+  1012→            onClick={(e) => onShare(e, product)}
+  1013→            aria-label="Compartir"
+  1014→          >
+  1015→            <Share2 className="h-4 w-4" />
+  1016→          </motion.button>
+  1017→        </div>
+  1018→
+  1019→        {/* ─── Content Area ────────────────────────────────────────────── */}
+  1020→        <CardContent className="p-3 space-y-1.5">
+  1021→          {/* Price */}
+  1022→          <div className="flex items-baseline gap-1.5">
+  1023→            {product.discountPrice ? (
+  1024→              <>
+  1025→                <span className="text-base font-bold text-foreground">
+  1026→                  {formatPrice(product.discountPrice)}
+  1027→                </span>
+  1028→                <span className="text-xs line-through text-muted-foreground">
+  1029→                  {formatPrice(product.price)}
+  1030→                </span>
+  1031→              </>
+  1032→            ) : (
+  1033→              <span className="text-base font-bold text-foreground">
+  1034→                {formatPrice(product.price)}
+  1035→              </span>
+  1036→            )}
+  1037→          </div>
+  1038→
+  1039→          {/* Title */}
+  1040→          <h3 className="font-medium text-sm line-clamp-2 leading-tight min-h-[2.5rem] group-hover:text-primary transition-colors">
+  1041→            {product.title}
+  1042→          </h3>
+  1043→
+  1044→          {/* Rating Stars */}
+  1045→          <div className="flex items-center gap-1.5">
+  1046→            <RatingStars likeCount={product.likeCount} />
+  1047→            <span className="text-[11px] text-muted-foreground">({product.likeCount})</span>
+  1048→          </div>
+  1049→
+  1050→          {/* Seller & Location */}
+  1051→          <div className="flex items-center gap-1.5 pt-0.5">
+  1052→            <Avatar className="h-5 w-5 ring-1 ring-border/50">
+  1053→              {sellerAvatar ? (
+  1054→                <AvatarImage src={sellerAvatar} />
+  1055→              ) : null}
+  1056→              <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">
+  1057→                {sellerInitial}
+  1058→              </AvatarFallback>
+  1059→            </Avatar>
+  1060→            <span className="text-xs text-muted-foreground truncate flex-1">
+  1061→              {sellerName}
+  1062→            </span>
+  1063→            {locationText && (
+  1064→              <span className="text-[11px] text-muted-foreground flex items-center gap-0.5 shrink-0">
+  1065→                <MapPin className="h-3 w-3" />
+  1066→                {locationText}
+  1067→              </span>
+  1068→            )}
+  1069→          </div>
+  1070→
+  1071→          {/* Action Buttons Row */}
+  1072→          <div className="flex items-center gap-1.5 pt-1">
+  1073→            {/* Like */}
+  1074→            <button
+  1075→              className={`h-7 w-7 rounded-full flex items-center justify-center transition-colors ${
+  1076→                isLiked
+  1077→                  ? "bg-red-50 text-red-500"
+  1078→                  : "bg-muted text-muted-foreground hover:text-red-500 hover:bg-red-50/50"
+  1079→              }`}
+  1080→              onClick={(e) => onLike(e, product.id)}
+  1081→              aria-label="Like"
+  1082→            >
+  1083→              <Heart className={`h-3.5 w-3.5 ${isLiked ? "fill-red-500" : ""}`} />
+  1084→            </button>
+  1085→
+  1086→            {/* Save */}
+  1087→            <button
+  1088→              className={`h-7 w-7 rounded-full flex items-center justify-center transition-colors ${
+  1089→                isSaved
+  1090→                  ? "bg-[#F4D03F]/10 text-[#D4AC0D]"
+  1091→                  : "bg-muted text-muted-foreground hover:text-[#D4AC0D] hover:bg-[#F4D03F]/10"
+  1092→              }`}
+  1093→              onClick={(e) => onSave(e, product.id)}
+  1094→              aria-label="Guardar"
+  1095→            >
+  1096→              <Bookmark className={`h-3.5 w-3.5 ${isSaved ? "fill-[#D4AC0D]" : ""}`} />
+  1097→            </button>
+  1098→
+  1099→            {/* Share */}
+  1100→            <button
+  1101→              className="h-7 w-7 rounded-full bg-muted text-muted-foreground hover:text-primary hover:bg-primary/10 flex items-center justify-center transition-colors"
+  1102→              onClick={(e) => onShare(e, product)}
+  1103→              aria-label="Compartir"
+  1104→            >
+  1105→              <Share2 className="h-3.5 w-3.5" />
+  1106→            </button>
+  1107→
+  1108→            {/* Send Message - Main CTA */}
+  1109→            <button
+  1110→              className="flex-1 h-7 rounded-md bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center gap-1 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  1111→              onClick={(e) => onMessage(e, product)}
+  1112→              disabled={isMessaging}
+  1113→              aria-label="Enviar mensaje"
+  1114→            >
+  1115→              {isMessaging ? (
+  1116→                <div className="animate-spin h-3 w-3 border-2 border-primary-foreground border-t-transparent rounded-full" />
+  1117→              ) : (
+  1118→                <>
+  1119→                  <MessageCircle className="h-3 w-3" />
+  1120→                  <span className="hidden sm:inline">Mensaje</span>
+  1121→                </>
+  1122→              )}
+  1123→            </button>
+  1124→          </div>
+  1125→        </CardContent>
+  1126→      </Card>
+  1127→    </motion.div>
+  1128→  )
+  1129→}
+  1130→

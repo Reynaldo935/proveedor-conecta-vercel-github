@@ -181,6 +181,7 @@ model CotizacionResponse {
   id            String   @id @default(cuid())
   cotizacionId  String
   sellerId      String
+  productId     String?
   price         Float
   description   String   @default("")
   deliveryTime  String   @default("")
@@ -190,7 +191,6 @@ model CotizacionResponse {
   cotizacion Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
   seller     User       @relation(fields: [sellerId], references: [id])
   product    Product?   @relation(fields: [productId], references: [id])
-  productId  String?
 }
 
 model Notification {

@@ -197,8 +197,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 
 /**
  * Next.js 16 proxy handler.
- * Replaces the deprecated `middleware` named export with a default export
- * following the new proxy convention.
+ * Uses the new proxy convention with default export.
  */
 export function middleware(request: NextRequest) {
   // Only process API routes
@@ -316,7 +315,7 @@ export function middleware(request: NextRequest) {
   return response
 }
 
-// ─── Middleware Config ──────────────────────────────────────────────────────────
+// ─── Proxy Config ──────────────────────────────────────────────────────────
 
 export const config = {
   matcher: '/api/:path*',

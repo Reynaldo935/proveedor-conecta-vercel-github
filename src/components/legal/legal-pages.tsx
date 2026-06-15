@@ -97,6 +97,14 @@ export function PrivacyPage() {
   )
 }
 
+export default function LegalPages({ view }: { view?: string }) {
+  switch (view) {
+    case "privacy": return <PrivacyPage />
+    case "refund": return <RefundPage />
+    default: return <TermsPage />
+  }
+}
+
 export function RefundPage() {
   return (
     <LegalPageLayout title="Política de Reembolso y Cancelación" icon={RotateCcw}>
