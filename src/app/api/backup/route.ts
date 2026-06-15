@@ -86,15 +86,17 @@ async function handlePost(request: NextRequest) {
     const body = await request.json()
     const { action } = body
 
-    if (!action || !['create', 'restore'].includes(action)) {
+    if (!action || !['create', 'restore', 'delete'].includes(action)) {
       return NextResponse.json(
-        { success: false, error: 'Acción no válida. Use "create" o "restore"' },
+        { success: false, error: 'Acción no válida. Use "create", "restore" o "delete"' },
         { status: 200 }
       )
     }
 
     if (action === 'create') {
       return await createBackup()
+    } else if (action === 'delete') {
+      return await deleteBackup(body)
     } else {
       return await restoreBackup(body)
     }
@@ -187,6 +189,43 @@ async function createBackup(): Promise<NextResponse> {
       tables: tableNames.length,
     },
     message: 'Respaldo creado exitosamente',
+  })
+}
+
+async function deleteBackup(body: { backupId?: string }): Promise<NextResponse> {
+  const { backupId } = body
+
+  if (!backupId) {
+    return NextResponse.json(
+      { success: false, error: 'Debe proporcionar backupId para eliminar' },
+      { status: 200 }
+    )
+  }
+
+  const index = backupStore.findIndex((b) => b.id === backupId)
+  if (index === -1) {
+    return NextResponse.json(
+      { success: false, error: 'Respaldo no encontrado' },
+      { status: 200 }
+    )
+  }
+
+  const deleted = backupStore.splice(index, 1)[0]
+
+  // Log the deletion in audit log
+  await db.auditLog.create({
+    data: {
+      action: 'DELETE_BACKUP',
+      entity: 'Backup',
+      entityId: backupId,
+      details: `Respaldo eliminado: ${deleted.recordCount} registros, ${deleted.size}`,
+    },
+  })
+
+  return NextResponse.json({
+    success: true,
+    data: { backupId, deleted: true },
+    message: 'Respaldo eliminado exitosamente',
   })
 }
 

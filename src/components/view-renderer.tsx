@@ -158,6 +158,11 @@ const CreateAdForm = lazy(() =>
     default: m.CreateAdForm,
   }))
 )
+const SurveysView = lazy(() =>
+  import("@/components/surveys/surveys-view").then((m) => ({
+    default: m.SurveysView,
+  }))
+)
 const TermsPage = lazy(() =>
   import("@/components/legal/legal-pages").then((m) => ({
     default: m.TermsPage,
@@ -287,6 +292,8 @@ function resolveView(
       return <MapView />
     case "cotizaciones":
       return <CotizacionView />
+    case "cotizacion-detail":
+      return <CotizacionView />
     case "notifications":
       return (
         <AuthGate isAuthenticated={isAuthenticated}>
@@ -369,6 +376,8 @@ function resolveView(
           <CreateAdForm />
         </AuthGate>
       )
+    case "surveys":
+      return <SurveysView />
     default:
       return <HomeFeed />
   }

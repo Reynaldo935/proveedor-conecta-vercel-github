@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { safeApiHandler } from '@/lib/api-utils'
+import { deflateSync } from 'zlib'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -418,6 +419,424 @@ async function generateReportDocx(): Promise<string> {
   )
 }
 
+// ─── PPTX Report Generator (Office Open XML ZIP-based) ──────────────────────
+
+interface ZipEntry {
+  name: string
+  data: Buffer
+}
+
+function buildZip(entries: ZipEntry[]): Buffer {
+  const localHeaders: Buffer[] = []
+  const centralHeaders: Buffer[] = []
+  let offset = 0
+
+  for (const entry of entries) {
+    const nameBuf = Buffer.from(entry.name, 'utf-8')
+    const compressed = deflateSync(entry.data)
+    const crc = crc32(entry.data)
+
+    // Local file header (30 + name length + compressed data)
+    const local = Buffer.alloc(30 + nameBuf.length + compressed.length)
+    local.writeUInt32LE(0x04034b50, 0) // signature
+    local.writeUInt16LE(20, 4) // version needed
+    local.writeUInt16LE(0x0008, 6) // flags: data descriptor
+    local.writeUInt16LE(8, 8) // compression: deflate
+    local.writeUInt16LE(0, 10) // mod time
+    local.writeUInt16LE(0, 12) // mod date
+    local.writeUInt32LE(crc, 14) // crc32
+    local.writeUInt32LE(compressed.length, 18) // compressed size
+    local.writeUInt32LE(entry.data.length, 22) // uncompressed size
+    local.writeUInt16LE(nameBuf.length, 26) // name length
+    local.writeUInt16LE(0, 28) // extra length
+    nameBuf.copy(local, 30)
+    compressed.copy(local, 30 + nameBuf.length)
+    localHeaders.push(local)
+
+    // Central directory header
+    const central = Buffer.alloc(46 + nameBuf.length)
+    central.writeUInt32LE(0x02014b50, 0) // signature
+    central.writeUInt16LE(20, 4) // version made by
+    central.writeUInt16LE(20, 6) // version needed
+    central.writeUInt16LE(0x0008, 8) // flags
+    central.writeUInt16LE(8, 10) // compression: deflate
+    central.writeUInt16LE(0, 12) // mod time
+    central.writeUInt16LE(0, 14) // mod date
+    central.writeUInt32LE(crc, 16) // crc32
+    central.writeUInt32LE(compressed.length, 20) // compressed size
+    central.writeUInt32LE(entry.data.length, 24) // uncompressed size
+    central.writeUInt16LE(nameBuf.length, 28) // name length
+    central.writeUInt16LE(0, 30) // extra length
+    central.writeUInt16LE(0, 32) // comment length
+    central.writeUInt16LE(0, 34) // disk number
+    central.writeUInt16LE(0, 36) // internal attrs
+    central.writeUInt32LE(0, 38) // external attrs
+    central.writeUInt32LE(offset, 42) // local header offset
+    nameBuf.copy(central, 46)
+    centralHeaders.push(central)
+
+    offset += local.length
+  }
+
+  const centralOffset = offset
+  let centralSize = 0
+  for (const c of centralHeaders) centralSize += c.length
+
+  // End of central directory
+  const end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50, 0) // signature
+  end.writeUInt16LE(0, 4) // disk number
+  end.writeUInt16LE(0, 6) // disk with central dir
+  end.writeUInt16LE(entries.length, 8) // entries on disk
+  end.writeUInt16LE(entries.length, 10) // total entries
+  end.writeUInt32LE(centralSize, 12) // central dir size
+  end.writeUInt32LE(centralOffset, 16) // central dir offset
+  end.writeUInt16LE(0, 20) // comment length
+
+  return Buffer.concat([...localHeaders, ...centralHeaders, end])
+}
+
+function crc32(buf: Buffer): number {
+  // CRC32 lookup table
+  const table: number[] = []
+  for (let i = 0; i < 256; i++) {
+    let c = i
+    for (let j = 0; j < 8; j++) {
+      c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1)
+    }
+    table[i] = c
+  }
+  let crc = 0xFFFFFFFF
+  for (let i = 0; i < buf.length; i++) {
+    crc = table[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8)
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0
+}
+
+async function generateReportPptx(): Promise<Buffer> {
+  // Gather data
+  const [
+    totalUsers,
+    totalProducts,
+    totalTransactions,
+    totalRevenue,
+    recentTransactions,
+    recentProducts,
+  ] = await Promise.all([
+    db.user.count(),
+    db.product.count(),
+    db.transaction.count(),
+    db.transaction.aggregate({ _sum: { amount: true }, where: { status: 'COMPLETED' } }),
+    db.transaction.findMany({
+      where: { status: 'COMPLETED' },
+      include: {
+        buyer: { select: { name: true } },
+        seller: { select: { name: true } },
+        product: { select: { title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    }),
+    db.product.findMany({
+      where: { status: 'ACTIVE' },
+      include: { seller: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    }),
+  ])
+
+  const revenue = totalRevenue._sum.amount || 0
+
+  // Helper to build slide XML
+  function titleSlide(title: string, subtitle: string): string {
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="Title 1"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="ctrTitle"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="685800" y="1597819"/><a:ext cx="7772400" cy="1325563"/></a:xfrm></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="es-NI" sz="4400" b="1" dirty="0"/><a:t>${escapeXml(title)}</a:t></a:r></a:p></p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="3" name="Subtitle 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="subTitle" idx="1"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="1143000" y="3200400"/><a:ext cx="6858000" cy="1655762"/></a:xfrm></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="es-NI" sz="2400" dirty="0"/><a:t>${escapeXml(subtitle)}</a:t></a:r></a:p></p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+</p:sld>`
+  }
+
+  function contentSlide(title: string, bodyLines: string[]): string {
+    const bodyXml = bodyLines.map(line =>
+      `<a:p><a:r><a:rPr lang="es-NI" sz="1800" dirty="0"/><a:t>${escapeXml(line)}</a:t></a:r></a:p>`
+    ).join('\n')
+
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="Title 1"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="457200" y="274638"/><a:ext cx="8229600" cy="1143000"/></a:xfrm></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="es-NI" sz="3200" b="1" dirty="0"/><a:t>${escapeXml(title)}</a:t></a:r></a:p></p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="3" name="Content 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="457200" y="1600200"/><a:ext cx="8229600" cy="4525963"/></a:xfrm></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/>${bodyXml}</p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+</p:sld>`
+  }
+
+  // Build slide content
+  const slide1 = titleSlide(
+    'ProveedorConecta Nicaragua - Reporte',
+    `Informe ejecutivo del marketplace | ${new Date().toLocaleDateString('es-NI', { dateStyle: 'long' })}`
+  )
+
+  const statsLines = [
+    `Total de Usuarios: ${totalUsers}`,
+    `Total de Productos: ${totalProducts}`,
+    `Total de Transacciones: ${totalTransactions}`,
+    `Ingresos Totales: C$ ${revenue.toLocaleString('es-NI', { minimumFractionDigits: 2 })}`,
+    '',
+    'Estadísticas generadas automáticamente por la plataforma.',
+  ]
+  const slide2 = contentSlide('Resumen Estadístico', statsLines)
+
+  const transLines = recentTransactions.length > 0
+    ? recentTransactions.map(t =>
+        `${t.product?.title || 'N/A'} | ${t.buyer?.name || 'N/A'} → ${t.seller?.name || 'N/A'} | C$ ${t.amount.toLocaleString('es-NI', { minimumFractionDigits: 2 })} | ${t.createdAt.toLocaleDateString('es-NI')}`
+      )
+    : ['No hay transacciones recientes.']
+  const slide3 = contentSlide('Transacciones Recientes', transLines)
+
+  const prodLines = recentProducts.length > 0
+    ? recentProducts.map(p =>
+        `${p.title} | C$ ${(p.discountPrice || p.price).toLocaleString('es-NI', { minimumFractionDigits: 2 })} | ${p.seller?.name || 'N/A'} | ${p.category}`
+      )
+    : ['No hay productos recientes.']
+  const slide4 = contentSlide('Productos Recientes', prodLines)
+
+  // Build ZIP entries for OOXML
+  const entries: ZipEntry[] = []
+
+  // [Content_Types].xml
+  entries.push({
+    name: '[Content_Types].xml',
+    data: Buffer.from(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+  <Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+  <Override PartName="/ppt/slides/slide2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+  <Override PartName="/ppt/slides/slide3.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+  <Override PartName="/ppt/slides/slide4.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+</Types>`, 'utf-8'),
+  })
+
+  // _rels/.rels
+  entries.push({
+    name: '_rels/.rels',
+    data: Buffer.from(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+</Relationships>`, 'utf-8'),
+  })
+
+  // ppt/presentation.xml
+  entries.push({
+    name: 'ppt/presentation.xml',
+    data: Buffer.from(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" saveSubsetFonts="1">
+  <p:sldIdLst>
+    <p:sldId id="256" r:id="rId2"/>
+    <p:sldId id="257" r:id="rId3"/>
+    <p:sldId id="258" r:id="rId4"/>
+    <p:sldId id="259" r:id="rId5"/>
+  </p:sldIdLst>
+  <p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>
+  <p:notesSz cx="6858000" cy="9144000"/>
+</p:presentation>`, 'utf-8'),
+  })
+
+  // ppt/_rels/presentation.xml.rels
+  entries.push({
+    name: 'ppt/_rels/presentation.xml.rels',
+    data: Buffer.from(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide2.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide3.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide4.xml"/>
+</Relationships>`, 'utf-8'),
+  })
+
+  // Slide files
+  const slides = [slide1, slide2, slide3, slide4]
+  for (let i = 0; i < slides.length; i++) {
+    entries.push({
+      name: `ppt/slides/slide${i + 1}.xml`,
+      data: Buffer.from(slides[i], 'utf-8'),
+    })
+    entries.push({
+      name: `ppt/slides/_rels/slide${i + 1}.xml.rels`,
+      data: Buffer.from(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
+</Relationships>`, 'utf-8'),
+    })
+  }
+
+  return buildZip(entries)
+}
+
+// ─── PDF Report Generator ────────────────────────────────────────────────────
+
+async function generateReportPdf(): Promise<string> {
+  const [
+    totalUsers,
+    totalSellers,
+    totalBuyers,
+    totalProducts,
+    activeProducts,
+    totalTransactions,
+    completedTransactions,
+    totalRevenue,
+    totalCommission,
+    recentTransactions,
+    topProducts,
+  ] = await Promise.all([
+    db.user.count(),
+    db.user.count({ where: { role: 'SELLER' } }),
+    db.user.count({ where: { role: 'BUYER' } }),
+    db.product.count(),
+    db.product.count({ where: { status: 'ACTIVE' } }),
+    db.transaction.count(),
+    db.transaction.count({ where: { status: 'COMPLETED' } }),
+    db.transaction.aggregate({ _sum: { amount: true }, where: { status: 'COMPLETED' } }),
+    db.commissionLog.aggregate({ _sum: { amount: true }, where: { status: 'PENDING' } }),
+    db.transaction.findMany({
+      where: { status: 'COMPLETED' },
+      include: {
+        buyer: { select: { name: true } },
+        seller: { select: { name: true } },
+        product: { select: { title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+    }),
+    db.product.findMany({
+      where: { status: 'ACTIVE' },
+      include: { seller: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+    }),
+  ])
+
+  const revenue = totalRevenue._sum.amount || 0
+  const commission = totalCommission._sum.amount || 0
+
+  let transRows = ''
+  for (const t of recentTransactions) {
+    transRows += `<tr>
+      <td>${escapeHtml(t.product?.title || 'N/A')}</td>
+      <td>${escapeHtml(t.buyer?.name || 'N/A')}</td>
+      <td>${escapeHtml(t.seller?.name || 'N/A')}</td>
+      <td class="num">C$ ${t.amount.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</td>
+      <td class="num">C$ ${t.commission.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</td>
+      <td>${t.paymentMethod}</td>
+      <td>${t.createdAt.toLocaleDateString('es-NI')}</td>
+    </tr>`
+  }
+
+  let prodRows = ''
+  for (const p of topProducts) {
+    prodRows += `<tr>
+      <td>${escapeHtml(p.title)}</td>
+      <td class="num">C$ ${(p.discountPrice || p.price).toLocaleString('es-NI', { minimumFractionDigits: 2 })}</td>
+      <td>${escapeHtml(p.seller?.name || 'N/A')}</td>
+      <td>${escapeHtml(p.category || 'Sin categoría')}</td>
+      <td>${p.status}</td>
+    </tr>`
+  }
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reporte ProveedorConecta Nicaragua</title>
+<style>
+  @page { size: A4; margin: 1.5cm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; font-size: 10pt; color: #1a1a1a; line-height: 1.5; }
+  .header { text-align: center; padding: 20pt 0 15pt; border-bottom: 3px solid #1A5276; margin-bottom: 20pt; }
+  .header h1 { font-size: 20pt; color: #1A5276; margin-bottom: 4pt; }
+  .header .subtitle { font-size: 11pt; color: #555; }
+  .header .date { font-size: 9pt; color: #888; margin-top: 6pt; }
+  h2 { font-size: 14pt; color: #1A5276; margin: 18pt 0 10pt; border-bottom: 2px solid #2E86C1; padding-bottom: 4pt; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10pt; margin: 10pt 0 20pt; }
+  .stat-card { background: #f0f4f8; border: 1px solid #d0d8e0; border-radius: 6pt; padding: 10pt 12pt; text-align: center; }
+  .stat-card .value { font-size: 18pt; font-weight: bold; color: #1A5276; }
+  .stat-card .label { font-size: 8pt; color: #666; margin-top: 2pt; }
+  table { width: 100%; border-collapse: collapse; margin: 8pt 0; font-size: 9pt; }
+  th { background: #1A5276; color: #fff; padding: 6pt 8pt; text-align: left; font-weight: 600; }
+  td { padding: 5pt 8pt; border-bottom: 1px solid #e0e0e0; }
+  tr:nth-child(even) td { background: #f8f9fa; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .footer { margin-top: 30pt; padding-top: 10pt; border-top: 1px solid #ccc; font-size: 8pt; color: #888; text-align: center; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>ProveedorConecta Nicaragua</h1>
+  <div class="subtitle">Reporte Ejecutivo del Marketplace</div>
+  <div class="date">Generado el: ${new Date().toLocaleString('es-NI', { dateStyle: 'long', timeStyle: 'short' })}</div>
+</div>
+
+<h2>1. Resumen Estadístico</h2>
+<div class="stats-grid">
+  <div class="stat-card"><div class="value">${totalUsers}</div><div class="label">Usuarios</div></div>
+  <div class="stat-card"><div class="value">${totalSellers}</div><div class="label">Vendedores</div></div>
+  <div class="stat-card"><div class="value">${totalBuyers}</div><div class="label">Compradores</div></div>
+  <div class="stat-card"><div class="value">${totalProducts}</div><div class="label">Productos</div></div>
+  <div class="stat-card"><div class="value">${activeProducts}</div><div class="label">Productos Activos</div></div>
+  <div class="stat-card"><div class="value">${totalTransactions}</div><div class="label">Transacciones</div></div>
+  <div class="stat-card"><div class="value">${completedTransactions}</div><div class="label">Completadas</div></div>
+  <div class="stat-card"><div class="value">C$ ${revenue.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</div><div class="label">Ingresos Totales</div></div>
+  <div class="stat-card"><div class="value">C$ ${commission.toLocaleString('es-NI', { minimumFractionDigits: 2 })}</div><div class="label">Comisiones Pend.</div></div>
+</div>
+
+<h2>2. Transacciones Recientes</h2>
+<table>
+  <thead><tr><th>Producto</th><th>Comprador</th><th>Vendedor</th><th>Monto</th><th>Comisión</th><th>Método</th><th>Fecha</th></tr></thead>
+  <tbody>${transRows || '<tr><td colspan="7" style="text-align:center">Sin transacciones</td></tr>'}</tbody>
+</table>
+
+<h2>3. Productos Recientes</h2>
+<table>
+  <thead><tr><th>Producto</th><th>Precio</th><th>Vendedor</th><th>Categoría</th><th>Estado</th></tr></thead>
+  <tbody>${prodRows || '<tr><td colspan="5" style="text-align:center">Sin productos</td></tr>'}</tbody>
+</table>
+
+<div class="footer">
+  <p>ProveedorConecta Nicaragua — Reporte generado automáticamente</p>
+  <p>Documento confidencial — Uso exclusivo del administrador del sistema</p>
+</div>
+</body>
+</html>`
+}
+
 // ─── Main GET Handler ──────────────────────────────────────────────────────
 
 async function handleGet(request: NextRequest) {
@@ -597,9 +1016,65 @@ async function handleGet(request: NextRequest) {
       }
     }
 
+    // ─── PPTX FORMAT (Office Open XML Presentation) ────────────────────
+    if (format === 'pptx') {
+      switch (type) {
+        case 'report': {
+          if (!admin) {
+            return NextResponse.json({ success: false, error: 'Solo el administrador puede generar reportes' }, { status: 200 })
+          }
+          const pptxBuffer = await generateReportPptx()
+          const filename = `reporte_proveedorconecta_${new Date().toISOString().split('T')[0]}.pptx`
+
+          return new NextResponse(pptxBuffer, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+          })
+        }
+
+        default:
+          return NextResponse.json(
+            { success: false, error: 'Tipo de presentación no válido. Use: report' },
+            { status: 200 }
+          )
+      }
+    }
+
+    // ─── PDF FORMAT (HTML-based PDF report) ─────────────────────────────
+    if (format === 'pdf') {
+      switch (type) {
+        case 'report': {
+          if (!admin) {
+            return NextResponse.json({ success: false, error: 'Solo el administrador puede generar reportes' }, { status: 200 })
+          }
+          const pdfContent = await generateReportPdf()
+          const filename = `reporte_proveedorconecta_${new Date().toISOString().split('T')[0]}.pdf`
+
+          return new NextResponse(pdfContent, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+          })
+        }
+
+        default:
+          return NextResponse.json(
+            { success: false, error: 'Tipo de documento no válido. Use: report' },
+            { status: 200 }
+          )
+      }
+    }
+
     // Unknown format
     return NextResponse.json(
-      { success: false, error: 'Formato no válido. Use: csv, json, xlsx, docx' },
+      { success: false, error: 'Formato no válido. Use: csv, json, xlsx, docx, pptx, pdf' },
       { status: 200 }
     )
   } catch (error) {

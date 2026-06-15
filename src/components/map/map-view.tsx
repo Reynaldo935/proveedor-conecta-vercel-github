@@ -83,9 +83,29 @@ export function MapView() {
   >(null)
   const [searchLocation, setSearchLocation] = useState("")
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all")
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
 
   // Runtime fallback: if Google Maps fails, switch to Leaflet
   const [useGoogleMaps, setUseGoogleMaps] = useState(hasGoogleMapsKey)
+
+  // Get user's geolocation on mount
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+      },
+      () => {
+        // Geolocation denied or unavailable — fallback to Managua
+        setUserLocation(null)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    )
+  }, [])
 
   // Load vendors from API
   useEffect(() => {
@@ -135,10 +155,15 @@ export function MapView() {
     }
   }, [searchLocation])
 
-  // Fly to my location (Managua default)
+  // Fly to my location (user GPS or fallback to Managua)
   const flyToMyLocation = () => {
     if (mapRef.current) {
-      mapRef.current.flyTo(12.1364, -86.2514, 12)
+      if (userLocation) {
+        mapRef.current.flyTo(userLocation.lat, userLocation.lng, 14)
+      } else {
+        // Fallback to Managua
+        mapRef.current.flyTo(12.1364, -86.2514, 12)
+      }
     }
   }
 
@@ -253,7 +278,7 @@ export function MapView() {
           variant="outline"
           size="icon"
           onClick={flyToMyLocation}
-          title="Mi ubicación (Managua)"
+          title={userLocation ? "Mi ubicación (GPS)" : "Mi ubicación (Managua)"}
         >
           <Navigation className="h-4 w-4" />
         </Button>
@@ -312,6 +337,7 @@ export function MapView() {
               sampleVendors={SAMPLE_VENDORS}
               vendors={vendors}
               onVendorSelect={handleVendorSelect}
+              userLocation={userLocation}
             />
           )}
         </Card>

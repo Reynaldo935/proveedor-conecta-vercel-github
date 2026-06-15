@@ -139,11 +139,20 @@ export function BackupView() {
   const handleDeleteBackup = async (backupId: string) => {
     setDeleting(backupId)
     try {
-      // Simulated delete (no DELETE endpoint in the API)
-      setBackups((prev) => prev.filter((b) => b.id !== backupId))
-      toast.success("Respaldo eliminado")
+      const res = await fetch("/api/backup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", backupId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setBackups((prev) => prev.filter((b) => b.id !== backupId))
+        toast.success(data.message || "Respaldo eliminado")
+      } else {
+        toast.error(data.error || "Error al eliminar respaldo")
+      }
     } catch {
-      toast.error("Error al eliminar respaldo")
+      toast.error("No se pudo eliminar el respaldo. Intenta de nuevo.")
     } finally {
       setDeleting(null)
     }

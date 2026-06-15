@@ -46,6 +46,7 @@ export function ProductDetail() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [imageZoomed, setImageZoomed] = useState(false)
+  const [imgError, setImgError] = useState(false)
 
   useEffect(() => {
     if (!selectedProductId) return
@@ -161,16 +162,31 @@ export function ProductDetail() {
             onClick={() => setImageZoomed(!imageZoomed)}
           >
             <AnimatePresence mode="wait">
-              <motion.img
-                key={activeImage}
-                src={images[activeImage]}
-                alt={product.title}
-                className={`w-full h-full object-cover transition-transform duration-500 ${imageZoomed ? 'scale-150' : 'scale-100 group-hover:scale-105'}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              />
+              {!imgError ? (
+                <motion.img
+                  key={activeImage}
+                  src={images[activeImage]}
+                  alt={product.title}
+                  className={`w-full h-full object-cover transition-transform duration-500 ${imageZoomed ? 'scale-150' : 'scale-100 group-hover:scale-105'}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <motion.div
+                  key={`fallback-${activeImage}`}
+                  className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Package className="h-16 w-16 text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">Imagen no disponible</p>
+                </motion.div>
+              )}
             </AnimatePresence>
 
             {/* Discount Badge */}
@@ -199,14 +215,14 @@ export function ProductDetail() {
                 <Button
                   variant="ghost" size="icon"
                   className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-md"
-                  onClick={(e) => { e.stopPropagation(); setActiveImage(i => i > 0 ? i - 1 : images.length - 1) }}
+                  onClick={(e) => { e.stopPropagation(); setImgError(false); setActiveImage(i => i > 0 ? i - 1 : images.length - 1) }}
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
                 <Button
                   variant="ghost" size="icon"
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-md"
-                  onClick={(e) => { e.stopPropagation(); setActiveImage(i => i < images.length - 1 ? i + 1 : 0) }}
+                  onClick={(e) => { e.stopPropagation(); setImgError(false); setActiveImage(i => i < images.length - 1 ? i + 1 : 0) }}
                 >
                   <ChevronRight className="h-5 w-5" />
                 </Button>
@@ -220,7 +236,7 @@ export function ProductDetail() {
               {images.map((img, i) => (
                 <button
                   key={i}
-                  onClick={() => setActiveImage(i)}
+                  onClick={() => { setImgError(false); setActiveImage(i) }}
                   className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                     i === activeImage ? "border-primary ring-2 ring-primary/30" : "border-transparent opacity-70 hover:opacity-100"
                   }`}

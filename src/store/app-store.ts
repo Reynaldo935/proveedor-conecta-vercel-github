@@ -37,6 +37,7 @@ export type AppView =
   | 'currencies'
   | 'audit'
   | 'create-ad'
+  | 'surveys'
 
 interface AppState {
   currentView: AppView

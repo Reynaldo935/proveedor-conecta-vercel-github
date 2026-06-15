@@ -59,6 +59,7 @@ import {
   Megaphone,
   Eye,
   ClipboardCheck,
+  BarChart3,
 } from "lucide-react"
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react"
 import { CreatorsDropdown } from "@/components/creators/CreatorsDropdown"
@@ -366,6 +367,9 @@ export function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNav("loyalty")}>
                       <Star className="mr-2 h-4 w-4" /> Puntos de Lealtad
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleNav("surveys")}>
+                      <BarChart3 className="mr-2 h-4 w-4" /> Encuestas
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNav("calendar")}>
                       <Calendar className="mr-2 h-4 w-4" /> Agenda y Citas
@@ -682,6 +686,9 @@ export function Header() {
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("loyalty")}>
                     <Star className="h-4 w-4 mr-3 text-primary" /> Puntos de Lealtad
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("surveys")}>
+                    <BarChart3 className="h-4 w-4 mr-3 text-primary" /> Encuestas
                   </Button>
                 </>
               )}

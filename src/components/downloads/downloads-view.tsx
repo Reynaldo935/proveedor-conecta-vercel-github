@@ -11,6 +11,7 @@ import {
   FileSpreadsheet,
   FileText,
   FileImage,
+  Presentation,
   Download,
   ChevronLeft,
   Loader2,
@@ -117,6 +118,18 @@ const DOWNLOAD_ITEMS: DownloadItem[] = [
     endpoint: "/api/export?type=report&format=docx",
     badge: "Word",
     badgeColor: "bg-indigo-600",
+  },
+  {
+    id: "report-pptx",
+    title: "Reporte (PowerPoint)",
+    description: "Presentación ejecutiva del marketplace con estadísticas y resumen de la plataforma.",
+    icon: <Presentation className="h-6 w-6" />,
+    iconBg: "bg-amber-100 dark:bg-amber-900/20",
+    iconColor: "text-amber-600",
+    format: "pptx",
+    endpoint: "/api/export?type=report&format=pptx",
+    badge: "PowerPoint",
+    badgeColor: "bg-[#D35400]",
   },
 ]
 

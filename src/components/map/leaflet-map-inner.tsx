@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   useImperativeHandle,
+  useCallback,
 } from "react"
 import type { MapInnerHandle, SampleVendor, Vendor } from "./map-data"
 import {
@@ -14,7 +15,7 @@ import {
   CITY_COORDS,
 } from "./map-data"
 import { Button } from "@/components/ui/button"
-import { Satellite, MapIcon } from "lucide-react"
+import { Satellite, MapIcon, Locate } from "lucide-react"
 
 // ── Props ──────────────────────────────────────────────────────────────────
 
@@ -22,18 +23,21 @@ interface LeafletMapInnerProps {
   sampleVendors: SampleVendor[]
   vendors: Vendor[]
   onVendorSelect: (vendor: SampleVendor | Vendor) => void
+  userLocation?: { lat: number; lng: number } | null
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 const LeafletMapInner = forwardRef<MapInnerHandle, LeafletMapInnerProps>(
   function LeafletMapInner(props, ref) {
-    const { sampleVendors, vendors, onVendorSelect } = props
+    const { sampleVendors, vendors, onVendorSelect, userLocation } = props
 
     const containerRef = useRef<HTMLDivElement>(null)
     const mapInstanceRef = useRef<any>(null)
     const LRef = useRef<any>(null)
     const currentTileLayerRef = useRef<any>(null)
+    const userMarkerRef = useRef<any>(null)
+    const userPulseRef = useRef<any>(null)
     const [tileMode, setTileMode] = useState<"osm" | "satellite">("osm")
 
     // Expose flyTo via imperative handle
@@ -58,13 +62,16 @@ const LeafletMapInner = forwardRef<MapInnerHandle, LeafletMapInnerProps>(
 
           if (!containerRef.current) return
 
-          // Create map centered on Nicaragua
+          // Determine initial center: use user location if available, else Nicaragua center
+          const initialCenter = userLocation
+            ? [userLocation.lat, userLocation.lng]
+            : [NICARAGUA_CENTER.lat, NICARAGUA_CENTER.lng]
+          const initialZoom = userLocation ? 13 : NICARAGUA_DEFAULT_ZOOM
+
+          // Create map
           map = L.map(containerRef.current, {
             zoomControl: false,
-          }).setView(
-            [NICARAGUA_CENTER.lat, NICARAGUA_CENTER.lng],
-            NICARAGUA_DEFAULT_ZOOM
-          )
+          }).setView(initialCenter, initialZoom)
 
           // Add zoom control to top-right
           L.control.zoom({ position: "topright" }).addTo(map)
@@ -133,6 +140,11 @@ const LeafletMapInner = forwardRef<MapInnerHandle, LeafletMapInnerProps>(
             popupAnchor: [0, -12],
           })
 
+          // Add user location marker with pulsing circle
+          if (userLocation) {
+            addUserLocationMarker(map, L, userLocation.lat, userLocation.lng)
+          }
+
           // Add department capital markers
           Object.entries(CITY_COORDS).forEach(([dept, coords]) => {
             const marker = L.marker(coords, { icon: deptIcon }).addTo(map)
@@ -185,7 +197,92 @@ const LeafletMapInner = forwardRef<MapInnerHandle, LeafletMapInnerProps>(
       return () => {
         if (map) map.remove()
       }
-    }, [vendors, sampleVendors, onVendorSelect])
+    }, [vendors, sampleVendors, onVendorSelect, userLocation])
+
+    // Add user location marker with pulsing blue circle
+    const addUserLocationMarker = (map: any, L: any, lat: number, lng: number) => {
+      // Remove existing user marker if any
+      if (userMarkerRef.current) {
+        map.removeLayer(userMarkerRef.current)
+      }
+      if (userPulseRef.current) {
+        map.removeLayer(userPulseRef.current)
+      }
+
+      // Pulsing circle
+      const pulseIcon = L.divIcon({
+        html: `<div style="
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: rgba(59, 130, 246, 0.2);
+          border: 2px solid rgba(59, 130, 246, 0.5);
+          position: relative;
+        ">
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3B82F6;
+            border: 3px solid white;
+            box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+          "></div>
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.15);
+            animation: pulse-ring 2s ease-out infinite;
+          "></div>
+        </div>
+        <style>
+          @keyframes pulse-ring {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+          }
+        </style>`,
+        className: "",
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+      })
+
+      const userMarker = L.marker([lat, lng], { icon: pulseIcon, zIndexOffset: 1000 }).addTo(map)
+      userMarker.bindPopup(
+        `<strong style="color:#3B82F6">📍 Tu ubicación</strong><br/><span style="color:#666;font-size:12px">${lat.toFixed(4)}, ${lng.toFixed(4)}</span>`
+      )
+
+      userMarkerRef.current = userMarker
+
+      // Add an accuracy circle around the user's location
+      const pulseCircle = L.circle([lat, lng], {
+        radius: 50,
+        color: '#3B82F6',
+        fillColor: '#3B82F6',
+        fillOpacity: 0.08,
+        weight: 1,
+        opacity: 0.3,
+      }).addTo(map)
+
+      userPulseRef.current = pulseCircle
+    }
+
+    // Handle "My Location" button click
+    const handleMyLocation = useCallback(() => {
+      if (userLocation && mapInstanceRef.current) {
+        mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lng], 14, { duration: 1.5 })
+      } else if (mapInstanceRef.current) {
+        // Fallback to Managua
+        mapInstanceRef.current.flyTo([12.1364, -86.2514], 12, { duration: 1.5 })
+      }
+    }, [userLocation])
 
     // Tile layer switching
     useEffect(() => {
@@ -255,6 +352,19 @@ const LeafletMapInner = forwardRef<MapInnerHandle, LeafletMapInnerProps>(
                 Mapa
               </>
             )}
+          </Button>
+        </div>
+
+        {/* My Location button */}
+        <div className="absolute bottom-14 right-3 z-[1000]">
+          <Button
+            size="icon"
+            variant="secondary"
+            className="shadow-md bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 h-9 w-9"
+            onClick={handleMyLocation}
+            title={userLocation ? "Mi ubicación (GPS)" : "Mi ubicación (Managua)"}
+          >
+            <Locate className="h-4 w-4 text-blue-500" />
           </Button>
         </div>
 
