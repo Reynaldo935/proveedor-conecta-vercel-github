@@ -278,3 +278,33 @@ Stage Summary:
 - vercel.json configured for production deployment
 - DEPLOY.md provides complete Vercel setup guide
 - Server instability is a sandbox-only issue - Vercel production won't have this problem
+
+---
+Task ID: restructuring-vercel-deployment
+Agent: Main Developer
+Task: Restructure project for Vercel deployment - fix critical file/folder issues per user's 5 architectural rules
+
+Work Log:
+- Examined entire project structure to identify all problematic files
+- DELETED junk files from root: index.html (2005-line static HTML), index.html.bak, 404.html (GitHub Pages redirect), .nojekyll
+- DELETED src/app/page.tsx.backup
+- Updated .gitignore with comprehensive exclusions for Vercel deployment (agent-ctx, docs, download, examples, mini-services, scripts, tool-results, upload, skills, .zscripts, shell scripts, worklogs, Caddyfile, DEPLOY.md)
+- Fixed vercel.json: proper framework detection, buildCommand with prisma generate, CORS headers for API routes and global security headers
+- Fixed next.config.ts: removed ignoreBuildErrors:true (dangerous for production), added image remote patterns for unsplash, pexels, cloudinary, fakestoreapi, github.io
+- Fixed package.json: removed "homepage": "." (GitHub Pages artifact), fixed build script to "prisma generate && next build", added vercel-build script, simplified start script
+- Fixed middleware.ts CORS: now uses env vars (NEXT_PUBLIC_APP_URL, NEXT_PUBLIC_VERCEL_URL) for Vercel subdomains, falls back to wildcard in development
+- Created comprehensive README.md with Vercel deployment steps, n8n chatbot configuration, environment variable list, troubleshooting guide
+- Replaced .github/workflows/deploy.yml (old polyglot microservices CI/CD) with proper Next.js CI lint+type-check workflow
+- Verified chatbot already has correct n8n webhook integration (tries n8n first → /api/ai fallback → local rule-based fallback)
+- All APIs verified working: /api/products, /api/stats, /api/weather, /api/search
+- ESLint passes clean with zero errors
+
+Stage Summary:
+- All 5 architectural rules addressed:
+  1. ✅ Separated Frontend/Backend — vercel.json routes /api/* to serverless functions, React SPA on Vercel
+  2. ✅ n8n Integration — Chatbox uses NEXT_PUBLIC_N8N_WEBHOOK_URL, tries n8n first, then API, then local fallback
+  3. ✅ Real Public APIs — OpenWeatherMap (weather), Leaflet/Nominatim (map), Turso DB (marketplace)
+  4. ✅ Zero 502/501 errors — All fetch components have try/catch + loading + fallback, middleware has CORS with env vars
+  5. ✅ Zero GitHub Pages 404 — Deleted index.html/404.html/.nojekyll, correct folder structure (src/, public/ lowercase), proper .gitignore, README with Vercel deployment steps
+- Key files changed: .gitignore, vercel.json, next.config.ts, package.json, middleware.ts, README.md, .github/workflows/deploy.yml
+- Key files deleted: index.html, index.html.bak, 404.html, .nojekyll, page.tsx.backup

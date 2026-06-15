@@ -30,8 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-# IMPORTANT: .env stays ignored for security — set env vars in Vercel dashboard
+# env files (IMPORTANT: .env stays ignored for security — set env vars in Vercel dashboard)
 .env*
 !.env.example
 .env.vercel
@@ -54,7 +53,38 @@ dev.log
 dev.out.log
 test
 prompt
-
 server.log
-# Skills directory
+
+# Skills directory (internal tooling)
 /skills/
+/.zscripts/
+
+# Development-only folders (never deploy to Vercel)
+/agent-ctx/
+/docs/
+/download/
+/examples/
+/mini-services/
+/scripts/
+/tool-results/
+/upload/
+
+# Shell scripts for local dev only
+*.sh
+!vercel-build.sh
+
+# Worklog files (internal tracking)
+worklog*.md
+
+# Backup files
+*.bak
+*.backup
+
+# GitHub Pages artifacts (NOT needed for Vercel)
+index.html
+404.html
+.nojekyll
+Caddyfile
+
+# Deployment docs (internal)
+DEPLOY.md

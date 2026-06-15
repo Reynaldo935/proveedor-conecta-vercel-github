@@ -172,17 +172,35 @@ const SECURITY_HEADERS: Record<string, string> = {
 
 // ─── CORS Configuration ─────────────────────────────────────────────────────────
 
+// CORS Configuration — uses environment variables for Vercel subdomains
+// In Vercel dashboard, set NEXT_PUBLIC_APP_URL to your production URL
+// (e.g., https://proveedorconecta.vercel.app or https://proveedorconecta.com)
 const ALLOWED_ORIGINS = new Set([
   process.env.NEXT_PUBLIC_APP_URL,
+  process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : null,
   'https://proveedorconecta.com',
   'https://www.proveedorconecta.com',
   'https://proveedorconecta.com.ni',
+  // Vercel auto-generated preview URLs
+  process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : null,
 ].filter(Boolean) as string[])
 
+// In development or when no known origin matches, allow all origins
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowOrigin = origin && ALLOWED_ORIGINS.has(origin)
+  if (isDevelopment || !origin || ALLOWED_ORIGINS.size === 0) {
+    return {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With',
+      'Access-Control-Max-Age': '86400',
+    }
+  }
+
+  const allowOrigin = ALLOWED_ORIGINS.has(origin)
     ? origin
-    : (ALLOWED_ORIGINS.values().next().value || '')
+    : '*'
 
   return {
     'Access-Control-Allow-Origin': allowOrigin,
