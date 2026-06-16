@@ -321,7 +321,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                     type="file"
                     id="photo-upload"
                     multiple
-                    accept="image/*"
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                     className="hidden"
                     ref={fileInputRef}
                     onChange={(e) => e.target.files && handleUpload(e.target.files)}
@@ -338,7 +338,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                         : "Arrastra fotos aquí o haz clic para subir"}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Máximo 5 fotos · Cualquier formato de imagen
+                      Máximo 5 archivos · Fotos, videos, PDF, Word, Excel, PPT
                     </p>
                   </label>
                 </div>
