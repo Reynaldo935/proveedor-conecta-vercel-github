@@ -85,6 +85,18 @@ server.log
 # Mini services (experimental)
 /mini-services/
 
+# Non-Node.js microservices (already implemented as Next.js API routes)
+# Vercel only runs Node.js/React - these are redundant
+/services/
+/docker-compose.yml
+/Caddyfile
+/daemon.sh
+/run-dev.sh
+/server-wrapper.sh
+/start-dev.sh
+/start-server.sh
+/watchdog.sh
+
 # Development-only folders (never deploy to Vercel)
 /agent-ctx/
 /docs/
