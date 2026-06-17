@@ -66,6 +66,25 @@ server.log
 *.suo
 *.cache
 
+# Dev artifacts (screenshots, videos, debug)
+/upload/*.png
+/upload/*.mp4
+/upload/*.jpg
+/upload/*.jpeg
+/upload/frames/
+/tool-results/
+/page-screenshot.png
+/.dev-daemon-pid
+/.next-dev-pid
+/bun.lock
+
+# Work logs and agent context
+/worklog*.md
+/agent-ctx/
+
+# Mini services (experimental)
+/mini-services/
+
 # Development-only folders (never deploy to Vercel)
 /agent-ctx/
 /docs/
