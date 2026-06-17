@@ -36,7 +36,7 @@ interface GoogleMapInnerProps {
 function MapController({
   onMapReady,
 }: {
-  onMapReady: (map: google.maps.Map) => void
+  onMapReady: (map: any) => void
 }) {
   const map = useMap()
   useEffect(() => {
@@ -58,7 +58,8 @@ const GoogleMapInner = forwardRef<MapInnerHandle, GoogleMapInnerProps>(
       onError,
     } = props
 
-    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null)
+    // Tipado de Google Maps: evitar error en builds si los tipos globales "google" no están disponibles
+    const [mapInstance, setMapInstance] = useState<any>(null)
     const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap")
     const [selectedInfo, setSelectedInfo] = useState<{
       lat: number
@@ -80,7 +81,8 @@ const GoogleMapInner = forwardRef<MapInnerHandle, GoogleMapInnerProps>(
     }))
 
     const handleMapReady = useCallback(
-      (map: google.maps.Map) => {
+      // Evitar referencia al namespace global `google` en build (types no disponibles)
+      (map: any) => {
         setMapInstance(map)
       },
       []

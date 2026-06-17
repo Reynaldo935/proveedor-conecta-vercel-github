@@ -1026,7 +1026,7 @@ async function handleGet(request: NextRequest) {
           const pptxBuffer = await generateReportPptx()
           const filename = `reporte_proveedorconecta_${new Date().toISOString().split('T')[0]}.pptx`
 
-          return new NextResponse(pptxBuffer, {
+          return new NextResponse(new Uint8Array(pptxBuffer), {
             status: 200,
             headers: {
               'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',

@@ -59,6 +59,13 @@ server.log
 /skills/
 /.zscripts/
 
+# .NET build artifacts
+**/bin/
+**/obj/
+*.user
+*.suo
+*.cache
+
 # Development-only folders (never deploy to Vercel)
 /agent-ctx/
 /docs/
