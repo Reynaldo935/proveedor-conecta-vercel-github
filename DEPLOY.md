@@ -209,7 +209,7 @@ See `.env.example` in the repository for the complete list of optional environme
 
 1. After adding all environment variables, click **"Deploy"**
 2. Vercel will:
-   - Install dependencies (`bun install`)
+   - Install dependencies (`npm install`)
    - Generate Prisma Client (`prisma generate`)
    - Build the Next.js app (`next build`)
 3. Wait 2-3 minutes for the build to complete
@@ -373,3 +373,165 @@ curl https://your-app.vercel.app/api/cron/commission-payout
 # Initialize database
 curl https://your-app.vercel.app/api/setup
 ```
+
+---
+
+## 🏗️ Full Infrastructure Stack (Vercel-Native MVP)
+
+This section documents every infrastructure layer used in production, the Vercel-native services that power them, and the languages Vercel supports for each component.
+
+### 1. 💾 DATABASE — Turso Cloud (libSQL)
+
+| Aspect | Technology | Language | Why Vercel-Compatible |
+|---|---|---|---|
+| **Primary DB** | Turso (libSQL) | SQL (SQLite-compatible) | Serverless-friendly, HTTP-based, no persistent connections |
+| **ORM** | Prisma 6+ | TypeScript | `@prisma/adapter-libsql` native adapter |
+| **Schema** | `prisma/schema.prisma` | Prisma Schema Language | Version-controlled, auto-migrations |
+| **Backup** | Turso Cloud Snapshots | N/A (automatic) | Point-in-time recovery, zero config |
+
+**Vercel supports for database access:** JavaScript, TypeScript, Python, Go, Ruby (via serverless functions + native DB drivers).
+
+---
+
+### 2. 🖥️ SERVER — Vercel Serverless Functions
+
+| Aspect | Technology | Language | Notes |
+|---|---|---|---|
+| **Runtime** | Node.js 20+ | TypeScript | Next.js API routes |
+| **Alt runtime** | Edge Functions | JavaScript/TS | Ultra-low latency (supported by Vercel) |
+| **Alt runtime** | Python | Python 3.9+ | Vercel supports Python serverless |
+| **Alt runtime** | Go | Go 1.21+ | Vercel supports Go serverless |
+| **Framework** | Next.js 16 | React/TypeScript | Turbopack compilation |
+
+**Vercel natively supports:** Node.js, Next.js, Python, Go, Ruby, Rust (community runtime). All API routes in this project use **Node.js/TypeScript** for maximum compatibility.
+
+---
+
+### 3. 🌐 NETWORKING — Vercel Edge Network
+
+| Aspect | Technology | Config | Notes |
+|---|---|---|---|
+| **CDN** | Vercel Edge Network | Automatic (global) | 100+ edge locations worldwide |
+| **DNS** | Vercel DNS (or custom) | `vercel.json` | Automatic SSL/TLS via Let's Encrypt |
+| **Routing** | Next.js App Router | `src/app/` file-based | Serverless functions + static pages |
+| **CORS** | Custom headers | `vercel.json` headers array | Per-route CORS configuration |
+| **Load Balancing** | Vercel automatic | N/A | Built into Vercel infrastructure |
+
+**Vercel CDN caches:** Static assets (JS, CSS, images), ISR pages, and edge-rendered content.
+
+---
+
+### 4. ☁️ CLOUD INFRASTRUCTURE — Vercel Platform
+
+| Service | Provider | Free Tier | Production |
+|---|---|---|---|
+| **Hosting** | Vercel | 100GB bandwidth/mo | Auto-scaling serverless |
+| **Storage** | Vercel Blob | 250MB | Image/file uploads |
+| **Storage** | Cloudinary | 25GB | Image optimization CDN |
+| **KV Store** | Upstash Redis | 10K commands/day | Rate limiting, caching |
+| **Cron Jobs** | Vercel Cron | 2 cron jobs | Commission payout @ 2AM UTC |
+
+**Languages Vercel cloud supports:** Node.js, Python, Go, Ruby (all via serverless functions).
+
+---
+
+### 5. 🔄 CI/CD — GitHub + Vercel
+
+| Stage | Tool | Config | Trigger |
+|---|---|---|---|
+| **Source** | GitHub | `main` branch | Git push |
+| **Build** | Vercel | `npm run build` | Auto on push to `main` |
+| **Test** | ESLint | `eslint.config.mjs` | `npm run lint` |
+| **Deploy** | Vercel | Auto | Production on `main`, Preview on PRs |
+| **Rollback** | Vercel | One-click | Instant revert to any deployment |
+
+**CI/CD languages supported:** Vercel auto-detects framework and uses appropriate build tools. For custom pipelines, Vercel supports **GitHub Actions** (YAML), **GitLab CI** (YAML), and direct `vercel` CLI.
+
+---
+
+### 6. 🔒 SECURITY — Multi-Layer Protection
+
+| Layer | Implementation | Config |
+|---|---|---|
+| **HTTPS** | Vercel automatic SSL | Let's Encrypt certificates |
+| **CORS** | `vercel.json` headers | API routes only |
+| **CSP** | `vercel.json` headers | Content-Security-Policy via meta tags |
+| **HSTS** | `Strict-Transport-Security` header | `max-age=63072000; preload` |
+| **Auth** | next-auth v4 (JWT) | `NEXTAUTH_SECRET` env |
+| **CSRF** | Next.js built-in | Server Actions protection |
+| **XSS** | `X-XSS-Protection` header | `1; mode=block` |
+| **Clickjack** | `X-Frame-Options: DENY` | All routes |
+| **Rate Limit** | Upstash Redis | `src/middleware.ts` (optional) |
+
+**Vercel security features:** Automatic DDoS protection, WAF (Web Application Firewall), IP blocking via Vercel Firewall.
+
+---
+
+### 7. 📊 MONITORING — Vercel Observability
+
+| Tool | What It Monitors | Access |
+|---|---|---|
+| **Vercel Analytics** | Page views, performance (Web Vitals) | Dashboard → Analytics |
+| **Vercel Logs** | Serverless function logs | Dashboard → Logs |
+| **Vercel Monitoring** | Error rates, latency, CPU/memory | Vercel Pro plan |
+| **Health Check** | `/api` endpoint (public) | Returns infra status JSON |
+| **Uptime** | External: UptimeRobot (free) | Monitor `https://your-app.vercel.app/api` |
+
+**Health endpoint:** `GET /api` returns full infrastructure status — database, email, AI, maps, payments, CDN, services memory/uptime. Use for external monitoring tools.
+
+---
+
+### 8. 🗂️ BACKUP — Multiple Strategies
+
+| Strategy | Frequency | Location |
+|---|---|---|
+| **Turso Snapshots** | Automatic (continuous) | Turso Cloud |
+| **Manual Export** | Admin-triggered | `/api/export/backup` → downloads as ZIP |
+| **Data Export** | PDF/Excel/Word | `/api/export/*` routes |
+| **Schema Backup** | Git (version controlled) | `prisma/schema.prisma` |
+| **Seed Data** | Git (version controlled) | `prisma/seed-nica.ts` |
+
+**Backup languages Vercel supports:** Node.js, Python, Go (any language that can run in a serverless function and connect to external storage).
+
+---
+
+### 9. 📦 CONTAINER — Vercel Serverless (No Containers Needed)
+
+Vercel abstracts containers entirely — each API route runs as an isolated serverless function. No Docker, no Kubernetes, no container orchestration needed.
+
+**If you did want containers:** Vercel supports **Docker** deployments via `vercel.json` with `"runtime": "docker"`. This project uses **serverless functions** (no Docker) for zero-config scaling.
+
+---
+
+### 10. 🔌 APIs — REST + Real-time
+
+| API Type | Technology | Language | Protocol |
+|---|---|---|---|
+| **REST** | Next.js API Routes | TypeScript | HTTP/HTTPS |
+| **Real-time** | Pusher Channels | TypeScript (server) + JS (client) | WebSocket (via Pusher) |
+| **AI** | Multi-provider orchestration | TypeScript | HTTP |
+| **Weather** | Open-Meteo (free) | Client-side JS fetch | HTTP |
+| **Maps** | Google Maps JS API | Client-side JS | HTTP + WebGL |
+| **Payments** | PixelPay / PayPal REST | TypeScript | HTTPS |
+
+**API languages Vercel supports:** JavaScript/TypeScript (native), Python, Go, Ruby (all as serverless functions).
+
+---
+
+### 📋 Supported Languages Summary
+
+| Infrastructure Component | Vercel-Supported Languages |
+|---|---|
+| **Serverless Functions** | Node.js, Next.js, Python, Go, Ruby |
+| **Edge Functions** | JavaScript, TypeScript |
+| **Static Sites** | HTML, CSS, JS (any framework: React, Vue, Svelte, etc.) |
+| **API Routes** | TypeScript (this project), Python, Go |
+| **Background Jobs** | Node.js (via Cron Jobs) |
+| **Database Clients** | Any language with HTTP client (Turso uses HTTP) |
+| **CI/CD** | GitHub Actions (YAML), Vercel CLI (Node.js) |
+
+**This project uses: 100% TypeScript/Node.js** — the most Vercel-native stack possible.
+
+---
+
+> 💡 **MVP Note:** All infrastructure is free-tier. Turso, Pusher, Resend, Cloudinary, and Vercel all offer generous free plans. Total monthly cost = **$0** for development and small-scale production.
