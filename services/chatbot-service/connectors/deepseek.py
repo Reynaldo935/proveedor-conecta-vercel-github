@@ -1,0 +1,80 @@
+"""
+DeepSeek Connector for ProveedorConecta Chatbot Service.
+"""
+
+import os
+import logging
+from typing import Optional
+
+import httpx
+
+logger = logging.getLogger(__name__)
+
+
+class DeepSeekConnector:
+    """Connector for DeepSeek API."""
+
+    def __init__(self):
+        self.api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        self.base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+        self.model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        self.timeout = 15.0
+
+    def is_available(self) -> bool:
+        """Check if DeepSeek API key is configured."""
+        return bool(self.api_key)
+
+    async def query(
+        self,
+        message: str,
+        system_prompt: str,
+        user_id: Optional[str] = None,
+    ) -> dict:
+        """
+        Send a query to DeepSeek API.
+
+        Args:
+            message: User message
+            system_prompt: System prompt
+            user_id: Optional user identifier
+
+        Returns:
+            dict with 'message' and 'model' keys
+
+        Raises:
+            Exception: If the API call fails
+        """
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message},
+            ],
+            "temperature": 0.7,
+            "max_tokens": 1024,
+        }
+
+        if user_id:
+            payload["user"] = user_id
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(
+                f"{self.base_url}/chat/completions",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            reply = data["choices"][0]["message"]["content"]
+            model_used = data.get("model", self.model)
+
+            return {
+                "message": reply,
+                "model": model_used,
+            }

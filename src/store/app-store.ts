@@ -38,6 +38,7 @@ export type AppView =
   | 'audit'
   | 'create-ad'
   | 'surveys'
+  | 'suppliers'
 
 interface AppState {
   currentView: AppView

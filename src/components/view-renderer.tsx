@@ -163,6 +163,11 @@ const SurveysView = lazy(() =>
     default: m.SurveysView,
   }))
 )
+const SuppliersView = lazy(() =>
+  import("@/components/marketplace/suppliers-view").then((m) => ({
+    default: m.SuppliersView,
+  }))
+)
 const TermsPage = lazy(() =>
   import("@/components/legal/legal-pages").then((m) => ({
     default: m.TermsPage,
@@ -378,6 +383,8 @@ function resolveView(
       )
     case "surveys":
       return <SurveysView />
+    case "suppliers":
+      return <SuppliersView />
     default:
       return <HomeFeed />
   }

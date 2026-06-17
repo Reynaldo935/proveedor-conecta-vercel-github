@@ -12,11 +12,16 @@ import {
   Heart, MapPin, Search, Star, Store, Package,
   Menu, Sun, Moon, MessageCircle, User, ChevronDown, Home,
   ShoppingCart, Bell, LogOut, Shield, FileText, CreditCard,
-  Settings, Plus, Compass, LayoutDashboard, X, Cloud, Droplets, Thermometer
+  Settings, Plus, Compass, LayoutDashboard, X, Cloud, Droplets, Thermometer,
+  Download, HardDriveDownload, BarChart3, Calendar, Gift, MoreHorizontal
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import { WeatherWidget } from "@/components/weather/weather-widget"
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel
+} from "@/components/ui/dropdown-menu"
 
 // ─── Hydration-safe "mounted" flag ────────────────────────────────────────────
 const emptySubscribe = () => () => {}
@@ -105,9 +110,11 @@ function SimpleHeader() {
           <nav className="hidden md:flex items-center gap-1">
             {[
               { icon: Home, label: "Inicio", view: "home" },
+              { icon: Compass, label: "Mercado", view: "featured" },
+              { icon: Store, label: "Proveedores", view: "suppliers" },
               { icon: MapPin, label: "Mapa", view: "map" },
               { icon: FileText, label: "Cotizar", view: "cotizaciones" },
-              { icon: Star, label: "Destacados", view: "featured" },
+              { icon: MessageCircle, label: "Chat", view: "chat" },
             ].map(({ icon: Icon, label, view }) => (
               <Button
                 key={view}
@@ -121,12 +128,70 @@ function SimpleHeader() {
               </Button>
             ))}
 
-            {isAuthenticated && user?.role === "ADMIN" && (
-              <Button variant="ghost" size="sm" onClick={() => navigate("admin")} className="gap-1.5">
-                <Shield className="h-4 w-4" />
-                <span className="text-xs">Admin</span>
-              </Button>
-            )}
+            {/* More menu dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="text-xs">Más</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Herramientas</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigate("suppliers")} className="gap-2 cursor-pointer">
+                  <Store className="h-4 w-4" /> Proveedores NI
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("surveys")} className="gap-2 cursor-pointer">
+                  <FileText className="h-4 w-4" /> Encuestas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("audit")} className="gap-2 cursor-pointer">
+                  <Shield className="h-4 w-4" /> Auditoría
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("downloads")} className="gap-2 cursor-pointer">
+                  <Download className="h-4 w-4" /> Descargas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("backup")} className="gap-2 cursor-pointer">
+                  <HardDriveDownload className="h-4 w-4" /> Backup
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Negocio</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigate("vendor-dashboard")} className="gap-2 cursor-pointer">
+                  <LayoutDashboard className="h-4 w-4" /> Dashboard Ventas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("my-products")} className="gap-2 cursor-pointer">
+                  <Package className="h-4 w-4" /> Mis Productos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("payments")} className="gap-2 cursor-pointer">
+                  <CreditCard className="h-4 w-4" /> Pagos y Comisión 3%
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("sell-product")} className="gap-2 cursor-pointer">
+                  <Plus className="h-4 w-4" /> Vender Producto
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Cuenta</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => navigate("loyalty")} className="gap-2 cursor-pointer">
+                  <Gift className="h-4 w-4" /> Lealtad
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("calendar")} className="gap-2 cursor-pointer">
+                  <Calendar className="h-4 w-4" /> Calendario
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("reviews")} className="gap-2 cursor-pointer">
+                  <BarChart3 className="h-4 w-4" /> Reseñas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("currencies")} className="gap-2 cursor-pointer">
+                  <CreditCard className="h-4 w-4" /> Monedas
+                </DropdownMenuItem>
+                {isAuthenticated && user?.role === "ADMIN" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("admin")} className="gap-2 cursor-pointer">
+                      <Shield className="h-4 w-4" /> Panel Admin
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Theme toggle */}
             {mounted && (
@@ -187,6 +252,7 @@ function SimpleHeader() {
             {[
               { icon: Home, label: "Inicio", view: "home" },
               { icon: Compass, label: "Explorar", view: "featured" },
+              { icon: Store, label: "Proveedores NI", view: "suppliers" },
               { icon: MapPin, label: "Mapa GPS", view: "map" },
               { icon: FileText, label: "Cotizaciones", view: "cotizaciones" },
               { icon: MessageCircle, label: "Chat", view: "chat" },
@@ -198,6 +264,8 @@ function SimpleHeader() {
               { icon: Settings, label: "Ajustes", view: "settings" },
               { icon: Shield, label: "Auditoría", view: "audit" },
               { icon: FileText, label: "Encuestas", view: "surveys" },
+              { icon: Download, label: "Descargas", view: "downloads" },
+              { icon: HardDriveDownload, label: "Backup", view: "backup" },
             ].map(({ icon: Icon, label, view }) => (
               <button
                 key={view}
@@ -280,6 +348,7 @@ function SimpleFooter() {
               <button onClick={() => navigate("home")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Explorar</button>
               <button onClick={() => navigate("featured")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Destacados</button>
               <button onClick={() => navigate("search")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Buscar</button>
+              <button onClick={() => navigate("suppliers")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Proveedores NI</button>
             </div>
           </div>
 
@@ -290,6 +359,23 @@ function SimpleFooter() {
               <button onClick={() => navigate("map")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Mapa GPS</button>
               <button onClick={() => navigate("cotizaciones")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Cotizaciones</button>
               <button onClick={() => navigate("surveys")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Encuestas</button>
+              <button onClick={() => navigate("chat")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Chat</button>
+              <button onClick={() => navigate("audit")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Auditoría</button>
+              <button onClick={() => navigate("downloads")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Descargas</button>
+              <button onClick={() => navigate("backup")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Backup</button>
+            </div>
+          </div>
+
+          {/* Negocio */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm">Negocio</h4>
+            <div className="space-y-2">
+              <button onClick={() => navigate("vendor-dashboard")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Dashboard Ventas</button>
+              <button onClick={() => navigate("my-products")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Mis Productos</button>
+              <button onClick={() => navigate("payments")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Pagos (3% comisión)</button>
+              <button onClick={() => navigate("loyalty")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Lealtad</button>
+              <button onClick={() => navigate("calendar")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Calendario</button>
+              <button onClick={() => navigate("reviews")} className="block text-sm text-muted-foreground hover:text-primary transition-colors">Reseñas</button>
             </div>
           </div>
 
