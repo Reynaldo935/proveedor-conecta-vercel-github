@@ -1,8 +1,8 @@
 # ProveedorConecta Nicaragua - CI Pipeline
-# Runs lint and type checks on every push/PR
+# Runs lint and build checks on every push/PR
 # Vercel handles deployment automatically via GitHub integration
 
-name: CI - Lint & Type Check
+name: CI - Lint & Build
 
 on:
   push:
@@ -11,29 +11,24 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Lint & Type Check
+  build:
+    name: Build & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: bun install
+        run: npm ci
 
-      - name: Generate Prisma client
-        run: bun run db:generate
+      - name: Build (includes Prisma generate + Next.js build + TypeScript check)
+        run: npm run build
         env:
           DATABASE_URL: file:./db/ci.db
-
-      - name: Run ESLint
-        run: bun run lint
-        continue-on-error: true
-
-      - name: Type check
-        run: bunx tsc --noEmit
-        continue-on-error: true
+          TURSO_DATABASE_URL: ""
+          TURSO_AUTH_TOKEN: ""
