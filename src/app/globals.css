@@ -164,10 +164,22 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FORZAR COLORES — Sin depender de caché ni variables
+   FORZAR COLORES — Regla directa, sin depender de clases ni variables
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Light mode: Celeste + plateado + letras NEGRAS */
+/* TODOS los elementos html y body: fondo celeste por defecto */
+html, body, #__next, main, [data-testid] {
+  background-color: #E3F0FA !important;
+  color: #111111 !important;
+}
+
+/* Dark mode: azul super oscuro */
+html.dark, html.dark body, .dark body, .dark {
+  background-color: #060E1A !important;
+  color: #F0F2F5 !important;
+}
+
+/*
 html.light body,
 html:not(.dark) body,
 :root body {
@@ -175,11 +187,11 @@ html:not(.dark) body,
   color: #111111 !important;
 }
 
-/* Dark mode: Azul super oscuro + letras BLANCAS */
 html.dark body {
   background-color: #060E1A !important;
   color: #F0F2F5 !important;
 }
+*/
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
