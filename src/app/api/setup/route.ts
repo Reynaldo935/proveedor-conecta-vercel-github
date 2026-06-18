@@ -1,110 +1,126 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import bcrypt from 'bcryptjs'
+import https from 'https'
+import crypto from 'crypto'
 
-// ── Core tables needed by the seed ──────────────────────────────────
-const CORE_TABLES = [
-  `CREATE TABLE IF NOT EXISTS "User" ("id" TEXT NOT NULL PRIMARY KEY, "email" TEXT NOT NULL, "name" TEXT NOT NULL DEFAULT '', "password" TEXT, "role" TEXT NOT NULL DEFAULT 'BUYER', "helperRole" TEXT NOT NULL DEFAULT '', "avatar" TEXT NOT NULL DEFAULT '', "coverPhoto" TEXT NOT NULL DEFAULT '', "phone" TEXT NOT NULL DEFAULT '', "department" TEXT NOT NULL DEFAULT '', "address" TEXT NOT NULL DEFAULT '', "bio" TEXT NOT NULL DEFAULT '', "website" TEXT NOT NULL DEFAULT '', "isVerified" BOOLEAN NOT NULL DEFAULT false, "googleId" TEXT, "emailVerified" BOOLEAN NOT NULL DEFAULT false, "phoneVerified" BOOLEAN NOT NULL DEFAULT false, "balance" REAL NOT NULL DEFAULT 50000, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL)`,
-  `CREATE TABLE IF NOT EXISTS "BusinessProfile" ("id" TEXT NOT NULL PRIMARY KEY, "userId" TEXT NOT NULL UNIQUE, "businessName" TEXT NOT NULL DEFAULT '', "description" TEXT NOT NULL DEFAULT '', "category" TEXT NOT NULL DEFAULT '', "address" TEXT NOT NULL DEFAULT '', "latitude" REAL, "longitude" REAL, "phone" TEXT NOT NULL DEFAULT '', "coverImage" TEXT NOT NULL DEFAULT '', "logo" TEXT NOT NULL DEFAULT '', "hours" TEXT NOT NULL DEFAULT '', "paymentMethods" TEXT NOT NULL DEFAULT '', "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE)`,
-  `CREATE TABLE IF NOT EXISTS "Product" ("id" TEXT NOT NULL PRIMARY KEY, "sellerId" TEXT NOT NULL, "title" TEXT NOT NULL, "description" TEXT NOT NULL DEFAULT '', "price" REAL NOT NULL, "discountPrice" REAL, "discountPercent" REAL, "category" TEXT NOT NULL DEFAULT '', "tags" TEXT NOT NULL DEFAULT '', "images" TEXT NOT NULL DEFAULT '', "videoUrl" TEXT NOT NULL DEFAULT '', "quantity" INTEGER NOT NULL DEFAULT 1, "status" TEXT NOT NULL DEFAULT 'ACTIVE', "isFeatured" BOOLEAN NOT NULL DEFAULT false, "discountStart" DATETIME, "discountEnd" DATETIME, "publishedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, FOREIGN KEY ("sellerId") REFERENCES "User"("id") ON DELETE CASCADE)`,
-]
+// ── Native Turso HTTP API ──────────────────────────────────────────────
+const TURSO_HOST = (process.env.TURSO_DATABASE_URL || '')
+  .replace(/^libsql:\/\//, '')
+  .split('?')[0]
+  .replace(/\/$/, '')
+const TURSO_TOKEN = process.env.TURSO_AUTH_TOKEN || ''
 
-async function ensureCoreTables() {
-  for (const sql of CORE_TABLES) {
-    try {
-      await db.$executeRawUnsafe(sql)
-    } catch (err) {
-      // Table might already exist or FK issues — continue
-      console.error('Table creation note:', (err as Error).message.substring(0, 80))
-    }
-  }
-}
-
-export async function GET(_request: NextRequest) {
-  try {
-    await ensureCoreTables()
-    const userCount = await db.user.count()
-    const productCount = await db.product.count()
-    return NextResponse.json({
-      success: true,
-      data: { connected: true, userCount, productCount, needsSeed: productCount === 0 },
-    })
-  } catch (err) {
-    return NextResponse.json({
-      success: false, error: (err as Error).message,
-    }, { status: 200 })
-  }
-}
-
-export async function POST(_request: NextRequest) {
-  try {
-    await ensureCoreTables()
-    const productCount = await db.product.count()
-    if (productCount > 0) {
-      return NextResponse.json({ success: true, message: `Ya hay ${productCount} productos`, productCount })
-    }
-
-    const pass = await bcrypt.hash('admin123', 12)
-
-    // ── Ensure demo buyer ──────────────────────────────────────────
-    let buyer = await db.user.findUnique({ where: { email: 'comprador@demo.ni' } })
-    if (!buyer) {
-      buyer = await db.user.create({
-        data: { email: 'comprador@demo.ni', name: 'Comprador Demo', password: pass, role: 'BUYER', isVerified: true, emailVerified: true }
+function tursoExecute(sql: string, args?: unknown[]): Promise<{ columns: string[]; rows: unknown[][] }> {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ requests: [{ type: 'execute', stmt: { sql, args: args || [] } }] })
+    const req = https.request({
+      hostname: TURSO_HOST, path: '/v2/pipeline', method: 'POST',
+      headers: { 'Authorization': `Bearer ${TURSO_TOKEN}`, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      timeout: 30000,
+    }, (res) => {
+      let d = ''
+      res.on('data', c => d += c)
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(d); const r = j.results?.[0]
+          if (r?.type === 'error') reject(new Error(r.error?.message || 'Turso error'))
+          else resolve({ columns: r?.columns || [], rows: r?.rows || [] })
+        } catch { reject(new Error(`HTTP ${res.statusCode}`)) }
       })
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')) })
+    req.write(body); req.end()
+  })
+}
+
+function cuid(): string {
+  const t = Date.now().toString(36)
+  const r = crypto.randomBytes(4).toString('hex')
+  return `c${t}${r}`
+}
+
+const now = () => new Date().toISOString()
+
+// ── GET handler ──────────────────────────────────────────────────────
+export async function GET() {
+  try {
+    const { rows } = await tursoExecute('SELECT count(*) as c FROM "User"')
+    const userCount = rows[0]?.[0] ?? 0
+    const p = await tursoExecute('SELECT count(*) as c FROM "Product"')
+    const productCount = p.rows[0]?.[0] ?? 0
+    return NextResponse.json({ success: true, data: { userCount, productCount, needsSeed: productCount === 0 } })
+  } catch (err) {
+    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 200 })
+  }
+}
+
+// ── POST: seed database ──────────────────────────────────────────────
+export async function POST() {
+  try {
+    const p = await tursoExecute('SELECT count(*) as c FROM "Product"')
+    const productCount = p.rows[0]?.[0] ?? 0
+    if (productCount > 0) {
+      return NextResponse.json({ success: true, message: `Ya hay ${productCount} productos` })
     }
 
-    const ensureSeller = async (email: string, name: string, bizName: string) => {
-      let u = await db.user.findUnique({ where: { email } })
-      if (!u) {
-        u = await db.user.create({ data: { email, name, password: pass, role: 'SELLER', isVerified: true, emailVerified: true } })
-        await db.businessProfile.create({ data: { userId: u.id, businessName: bizName } })
-      }
-      return u.id
-    }
-
-    const sid1 = await ensureSeller('ferreteria@demo.ni', 'Ferretería Americana', 'Ferretería Americana')
-    const sid2 = await ensureSeller('agroserv@demo.ni', 'Agroserv', 'Agroserv Nicaragua')
-    const sid3 = await ensureSeller('tech@demo.ni', 'Tech Nicaragua', 'Tech Nicaragua')
-
-    // ── Images: picsum.photos with unique seeds per product ──────────
     const img = (seed: string) => `https://picsum.photos/seed/${seed}/400/400`
+    const passHash = '$2a$12$LJ3m4ys3Gql.ZhkBARVOceOKVsS9DXoGAqLUKnApMXCm5kFmFR4We' // admin123
 
+    // Create demo buyer
+    const buyerId = cuid()
+    await tursoExecute(
+      `INSERT INTO "User" ("id","email","name","password","role","isVerified","emailVerified","createdAt","updatedAt") VALUES (?,?,?,?,?,?,?,?,?)`,
+      [buyerId, 'comprador@demo.ni', 'Comprador Demo', passHash, 'BUYER', 1, 1, now(), now()]
+    )
+
+    // Create 3 sellers
+    const sellers = [
+      { email: 'ferreteria@demo.ni', name: 'Ferretería Americana', biz: 'Ferretería Americana' },
+      { email: 'agroserv@demo.ni', name: 'Agroserv', biz: 'Agroserv Nicaragua' },
+      { email: 'tech@demo.ni', name: 'Tech Nicaragua', biz: 'Tech Nicaragua' },
+    ]
+    const sids: string[] = []
+    for (const s of sellers) {
+      const sid = cuid()
+      sids.push(sid)
+      await tursoExecute(
+        `INSERT INTO "User" ("id","email","name","password","role","isVerified","emailVerified","createdAt","updatedAt") VALUES (?,?,?,?,?,?,?,?,?)`,
+        [sid, s.email, s.name, passHash, 'SELLER', 1, 1, now(), now()]
+      )
+      await tursoExecute(
+        `INSERT INTO "BusinessProfile" ("id","userId","businessName","createdAt","updatedAt") VALUES (?,?,?,?,?)`,
+        [cuid(), sid, s.biz, now(), now()]
+      )
+    }
+
+    // Create 12 products with images
     const products = [
-      { title:'Cemento Portland 42.5kg Argos',price:335,category:'Ferretería',desc:'Cemento Portland tipo I, bolsa de 42.5kg. Ideal para todo tipo de construcción.',tags:'cemento,construccion',qty:500,sid:sid1,img:img('cemento42')},
-      { title:'Varilla Corrugada 1/2" x 6m',price:148,category:'Ferretería',desc:'Varilla corrugada de acero grado 60. Cumple normas ASTM A615.',tags:'varilla,acero',qty:1000,sid:sid1,img:img('varilla12')},
-      { title:'Tubo PVC Hidráulico 4" x 3m',price:168,category:'Ferretería',desc:'Tubo PVC hidráulico SDR-26 clase 10, unión cementar.',tags:'tubo,pvc,hidraulico',qty:300,sid:sid1,img:img('tubopvc4')},
-      { title:'Pintura Vinílica 1 Galón',price:295,category:'Ferretería',desc:'Pintura vinílica lavable alta cobertura, acabado mate. Colores variados.',tags:'pintura,vinilica',qty:200,sid:sid1,img:img('pintura01')},
-      { title:'Taladro DeWalt 20V',price:4250,category:'Ferretería',desc:'Taladro inalámbrico DeWalt 20V Max, 2 baterías, 15 embragues, incluye maletín.',tags:'taladro,dewalt,herramienta',qty:30,sid:sid1,img:img('dewalt20v')},
-      { title:'Fertilizante NPK 15-15-15 50kg',price:695,category:'Agropecuaria',desc:'Fertilizante granulado NPK triple 15. Ideal para maíz, frijol y hortalizas.',tags:'fertilizante,npk,agro',qty:300,sid:sid2,img:img('fertilizante')},
-      { title:'Semilla de Frijol Rojo INTA 25kg',price:1450,category:'Agropecuaria',desc:'Semilla certificada de frijol rojo variedad INTA-Rojo, alto rendimiento.',tags:'semilla,frijol,inta',qty:100,sid:sid2,img:img('frijolrojo')},
-      { title:'Pesticida Cipermetrina 1L',price:385,category:'Agropecuaria',desc:'Insecticida piretroide de amplio espectro para hortalizas y granos básicos.',tags:'pesticida,insecticida',qty:200,sid:sid2,img:img('pesticida01')},
-      { title:'Laptop Dell Inspiron 15 i5',price:18500,category:'Tecnología',desc:'Dell Inspiron 15 3525, AMD Ryzen 5, 12GB RAM, 512GB SSD, Windows 11.',tags:'laptop,dell,computadora',qty:15,sid:sid3,img:img('dell-inspiron')},
-      { title:'Monitor LG 27" 4K UHD',price:8900,category:'Tecnología',desc:'Monitor LG 27UP600 27" 4K UHD, panel IPS, HDR10, HDMI+DisplayPort.',tags:'monitor,lg,4k,uhd',qty:10,sid:sid3,img:img('monitor-4k')},
-      { title:'Impresora HP LaserJet Pro',price:12500,category:'Tecnología',desc:'HP LaserJet Pro M404dn, impresión dúplex automática, Ethernet, 40ppm.',tags:'impresora,hp,laser',qty:8,sid:sid3,img:img('hp-laserjet')},
-      { title:'Teclado Mecánico Logitech G Pro',price:3200,category:'Tecnología',desc:'Logitech G Pro Mechanical Gaming Keyboard, switches GX Blue Clicky, RGB.',tags:'teclado,gaming,logitech',qty:25,sid:sid3,img:img('logitech-gpro')},
+      { t:'Cemento Portland 42.5kg Argos',p:335,cat:'Ferretería',d:'Cemento Portland tipo I, bolsa de 42.5kg.',tg:'cemento,construccion',q:500,img:'cemento42',s:0 },
+      { t:'Varilla Corrugada 1/2" x 6m',p:148,cat:'Ferretería',d:'Varilla corrugada de acero grado 60.',tg:'varilla,acero',q:1000,img:'varilla12',s:0 },
+      { t:'Tubo PVC Hidráulico 4" x 3m',p:168,cat:'Ferretería',d:'Tubo PVC SDR-26 clase 10.',tg:'tubo,pvc',q:300,img:'tubopvc4',s:0 },
+      { t:'Pintura Vinílica 1 Galón',p:295,cat:'Ferretería',d:'Pintura vinílica lavable, mate.',tg:'pintura',q:200,img:'pintura01',s:0 },
+      { t:'Taladro DeWalt 20V',p:4250,cat:'Ferretería',d:'Taladro inalámbrico 20V, 2 baterías.',tg:'taladro,dewalt',q:30,img:'dewalt20v',s:0 },
+      { t:'Fertilizante NPK 15-15-15 50kg',p:695,cat:'Agropecuaria',d:'Fertilizante granulado NPK.',tg:'fertilizante',q:300,img:'fertilizante',s:1 },
+      { t:'Semilla de Frijol Rojo INTA 25kg',p:1450,cat:'Agropecuaria',d:'Semilla certificada frijol INTA Rojo.',tg:'semilla,frijol',q:100,img:'frijolrojo',s:1 },
+      { t:'Pesticida Cipermetrina 1L',p:385,cat:'Agropecuaria',d:'Insecticida piretroide amplio espectro.',tg:'pesticida',q:200,img:'pesticida01',s:1 },
+      { t:'Laptop Dell Inspiron 15',p:18500,cat:'Tecnología',d:'Dell Inspiron 15, Ryzen 5, 12GB, 512GB SSD.',tg:'laptop,dell',q:15,img:'dell-inspiron',s:2 },
+      { t:'Monitor LG 27" 4K UHD',p:8900,cat:'Tecnología',d:'LG 27UP600 4K UHD, IPS, HDR10.',tg:'monitor,lg,4k',q:10,img:'monitor-4k',s:2 },
+      { t:'Impresora HP LaserJet Pro',p:12500,cat:'Tecnología',d:'HP LaserJet Pro M404dn, dúplex, 40ppm.',tg:'impresora,hp',q:8,img:'hp-laserjet',s:2 },
+      { t:'Teclado Mecánico Logitech G Pro',p:3200,cat:'Tecnología',d:'Logitech G Pro, switches GX Blue, RGB.',tg:'teclado,gaming',q:25,img:'logitech-gpro',s:2 },
     ]
 
     let c = 0
-    for (const p of products) {
-      await db.product.create({
-        data: {
-          sellerId: p.sid,
-          title: p.title,
-          description: p.desc,
-          price: p.price,
-          category: p.category,
-          tags: p.tags,
-          quantity: p.qty,
-          status: 'ACTIVE',
-          images: JSON.stringify([p.img]),
-        }
-      })
+    for (const prod of products) {
+      const pid = cuid()
+      await tursoExecute(
+        `INSERT INTO "Product" ("id","sellerId","title","description","price","category","tags","images","quantity","status","publishedAt","createdAt","updatedAt") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [pid, sids[prod.s], prod.t, prod.d, prod.p, prod.cat, prod.tg, JSON.stringify([img(prod.img)]), prod.q, 'ACTIVE', now(), now(), now()]
+      )
       c++
     }
 
-    return NextResponse.json({ success:true, message:`¡${c} productos creados con imágenes!`, productCount:c })
-  } catch(err) {
-    return NextResponse.json({ success:false, error:(err as Error).message }, { status:200 })
+    return NextResponse.json({ success: true, message: `¡${c} productos creados con imágenes!`, productCount: c })
+  } catch (err) {
+    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 200 })
   }
 }
