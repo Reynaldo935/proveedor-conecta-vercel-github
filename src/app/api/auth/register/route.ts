@@ -31,27 +31,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 200 })
     }
 
-    // Validate phone
-    if (!phone) {
-      return NextResponse.json({ success: false, error: 'El teléfono es requerido' }, { status: 200 })
-    }
-    const phoneValidation = validatePhoneNicaragua(phone)
-    if (!phoneValidation.valid) {
-      return NextResponse.json({ success: false, error: phoneValidation.message }, { status: 200 })
-    }
-
-    // Validate department
-    if (!department) {
-      return NextResponse.json({ success: false, error: 'El departamento es requerido' }, { status: 200 })
-    }
-    const validDepartments = NICARAGUA_DEPARTMENTS as readonly string[]
-    if (!validDepartments.includes(department)) {
-      return NextResponse.json({ success: false, error: 'Departamento inválido. Seleccione un departamento de Nicaragua válido' }, { status: 200 })
+    // Validate phone (optional - not required for Google/email-only users)
+    if (phone) {
+      const phoneValidation = validatePhoneNicaragua(phone)
+      if (!phoneValidation.valid) {
+        return NextResponse.json({ success: false, error: phoneValidation.message }, { status: 200 })
+      }
     }
 
-    // Validate address
-    if (!address || address.trim().length === 0) {
-      return NextResponse.json({ success: false, error: 'La dirección es requerida' }, { status: 200 })
+    // Validate department (optional)
+    if (department) {
+      const validDepartments = NICARAGUA_DEPARTMENTS as readonly string[]
+      if (!validDepartments.includes(department)) {
+        return NextResponse.json({ success: false, error: 'Departamento inválido. Seleccione un departamento de Nicaragua válido' }, { status: 200 })
+      }
+    }
+
+    // Validate address (optional - not required for quick registration)
+    if (address && address.trim().length === 0) {
+      return NextResponse.json({ success: false, error: 'La dirección no puede estar vacía si se proporciona' }, { status: 200 })
     }
 
     const existing = await db.user.findUnique({ where: { email } })

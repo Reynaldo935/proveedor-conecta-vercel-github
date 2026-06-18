@@ -22,8 +22,8 @@ import { motion, AnimatePresence } from "framer-motion"
 
 const STEPS = [
   { id: 1, title: "Tipo de Cuenta", subtitle: "¿Cómo usarás ProveedorConecta?" },
-  { id: 2, title: "Datos Personales", subtitle: "Cuéntanos sobre ti" },
-  { id: 3, title: "Verificar Teléfono", subtitle: "Confirma tu número" },
+  { id: 2, title: "Datos Personales", subtitle: "Cuéntanos sobre ti (teléfono opcional)" },
+  { id: 3, title: "Verificar Teléfono", subtitle: "Opcional — puedes saltarlo" },
   { id: 4, title: "Contraseña", subtitle: "Protege tu cuenta" },
 ]
 
@@ -140,18 +140,24 @@ export function RegisterForm() {
       if (!form.name.trim() || form.name.trim().length < 3) errs.name = "Nombre es requerido (mínimo 3 caracteres)"
       const emailCheck = validateEmail(form.email)
       if (!emailCheck.valid) errs.email = emailCheck.message
-      const phoneCheck = validatePhoneNicaragua(form.phone)
-      if (!phoneCheck.valid) errs.phone = phoneCheck.message
-      if (!form.department) errs.department = "Selecciona un departamento"
-      if (!form.address.trim() || form.address.trim().length < 5) errs.address = "Dirección es requerida (mínimo 5 caracteres)"
+      // Phone is OPTIONAL — only validate if provided
+      if (form.phone.trim()) {
+        const phoneCheck = validatePhoneNicaragua(form.phone)
+        if (!phoneCheck.valid) errs.phone = phoneCheck.message
+      }
+      // Department and address optional
     } else if (s === 3) {
-      if (!smsVerified) errs.sms = "Debes verificar tu número de teléfono"
+      // Phone verification is OPTIONAL — always allow skipping
+      if (form.phone.trim() && !smsVerified) {
+        // Only require verification if they provided a phone and haven't verified
+        // Actually, let's just show a warning, not block
+      }
     } else if (s === 4) {
       if (form.password.length < 6) errs.password = "Mínimo 6 caracteres"
       if (form.password !== form.confirmPassword) errs.confirmPassword = "Las contraseñas no coinciden"
     }
     setErrors(errs)
-    const fieldsToTouch = s === 2 ? ["name", "email", "phone", "department", "address"] : s === 4 ? ["password", "confirmPassword"] : []
+    const fieldsToTouch = s === 2 ? ["name", "email"] : s === 4 ? ["password", "confirmPassword"] : []
     setTouched(t => ({ ...t, ...Object.fromEntries(fieldsToTouch.map(f => [f, true])) }))
     return Object.keys(errs).length === 0
   }
@@ -160,6 +166,11 @@ export function RegisterForm() {
     if (validateStep(step)) {
       setStep(s => Math.min(s + 1, 4))
     }
+  }
+
+  // Skip phone verification step
+  const handleSkipPhone = () => {
+    setStep(s => Math.min(s + 1, 4))
   }
 
   const handleBack = () => {
@@ -828,6 +839,24 @@ export function RegisterForm() {
                       <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-destructive flex items-center gap-1">
                         <X className="h-3 w-3" /> {errors.sms}
                       </motion.p>
+                    )}
+
+                    {/* Skip phone verification */}
+                    {!smsVerified && (
+                      <div className="text-center pt-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleSkipPhone}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          Omitir verificación <ArrowRight className="h-3 w-3 ml-1" />
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Puedes verificar tu teléfono después desde tu perfil
+                        </p>
+                      </div>
                     )}
 
                     <div className="flex gap-3 pt-2">
