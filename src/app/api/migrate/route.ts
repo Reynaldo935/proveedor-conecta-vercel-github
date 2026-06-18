@@ -77,21 +77,19 @@ export async function POST() {
     }
 
     let created = 0
-    let errors = 0
+    let errors: string[] = []
     for (const sql of createTables) {
       const r = await tursoRequest(sql)
       if (r.success) created++
       else {
-        errors++
-        // Table already exists is OK
-        if (r.error?.includes('already exists')) created++
+        errors.push(r.error || 'unknown')
       }
     }
 
     return NextResponse.json({
-      success: true,
-      message: `Core tables: ${created} created/verified, ${errors} errors`,
-      tables: createTables.length,
+      success: errors.length === 0,
+      message: `Core tables: ${created}/${createTables.length} created`,
+      errors: errors.length > 0 ? errors : undefined,
     })
   } catch (err) {
     return NextResponse.json({
