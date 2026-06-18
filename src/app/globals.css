@@ -163,6 +163,24 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   FORZAR COLORES — Sin depender de caché ni variables
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Light mode: Celeste + plateado + letras NEGRAS */
+html.light body,
+html:not(.dark) body,
+:root body {
+  background-color: #E3F0FA !important;
+  color: #111111 !important;
+}
+
+/* Dark mode: Azul super oscuro + letras BLANCAS */
+html.dark body {
+  background-color: #060E1A !important;
+  color: #F0F2F5 !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
