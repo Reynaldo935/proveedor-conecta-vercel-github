@@ -2,11 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { validatePhoneNicaragua } from '@/lib/validators'
 
+/**
+ * Asegura que la tabla PhoneVerification exista en la base de datos.
+ * Útil cuando se despliega en Turso sin migraciones previas.
+ */
+async function ensurePhoneVerificationTable() {
+  try {
+    await db.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS PhoneVerification (
+        id TEXT PRIMARY KEY,
+        phone TEXT NOT NULL,
+        code TEXT NOT NULL,
+        verified INTEGER NOT NULL DEFAULT 0,
+        expiresAt DATETIME NOT NULL,
+        createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+  } catch (err) {
+    console.error('[PhoneVerify] Failed to create table:', err)
+  }
+}
+
 // POST /api/auth/phone-verify
 // Send verification code: { phone: string }
 // Verify code: { phone: string, code: string, action: "verify" }
 export async function POST(request: NextRequest) {
   try {
+    // Asegurar que la tabla existe (primera llamada en producción)
+    await ensurePhoneVerificationTable()
+
     const body = await request.json()
     const { phone, code, action } = body
 
