@@ -49,111 +49,98 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE — Cyan metalizado + Plateado + Letras NEGRAS
+   ═══════════════════════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.625rem;
-  /* ═══════════════════════════════════════════════════════════════════════════
-     LIGHT MODE — Celeste + Plateado + Letras NEGRAS
-     ═══════════════════════════════════════════════════════════════════════════ */
-  /* Fondo celeste MAS VISIBLE */
-  --background: #D4E6F9;
-  /* Letras SIEMPRE negras */
+  --background: #C8ECF4;
   --foreground: #111111;
-  /* Tarjetas plateadas (silver) - MAS DISTINTIVO */
-  --card: #E4E8EF;
+  --card: #D8DCE3;
   --card-foreground: #111111;
-  --popover: #E4E8EF;
+  --popover: #D8DCE3;
   --popover-foreground: #111111;
-  /* Botón principal NEGRO (Buscar, etc.) */
   --primary: #1A1A1A;
   --primary-foreground: #FFFFFF;
-  /* Dorado para acentos (iconos, hover) */
-  --secondary: #E8A817;
+  --secondary: #C0A060;
   --secondary-foreground: #111111;
-  /* Plateado suave para fondos secundarios */
-  --muted: #E8ECF2;
+  --muted: #D0D8E0;
   --muted-foreground: #555555;
-  /* Dorado como acento */
-  --accent: #E8A817;
+  --accent: #C0A060;
   --accent-foreground: #111111;
   --destructive: #DC3545;
   --destructive-foreground: #FFFFFF;
-  /* Bordes plateados */
-  --border: #D0D7E0;
-  --input: #D0D7E0;
+  --border: #C0C8D0;
+  --input: #C0C8D0;
   --ring: #1A1A1A;
   --chart-1: #1A1A1A;
-  --chart-2: #E8A817;
+  --chart-2: #C0A060;
   --chart-3: #DC3545;
   --chart-4: #28A745;
-  --chart-5: #E8A817;
+  --chart-5: #C0A060;
   --laguna: #1B3A5C;
-  --dorado: #E8A817;
+  --dorado: #C0A060;
   --volcan: #DC3545;
   --laguna-foreground: #FFFFFF;
   --dorado-foreground: #111111;
   --volcan-foreground: #FFFFFF;
-  --sidebar: #EDF0F5;
+  --sidebar: #D8DCE3;
   --sidebar-foreground: #111111;
   --sidebar-primary: #1A1A1A;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #E8ECF2;
+  --sidebar-accent: #D0D8E0;
   --sidebar-accent-foreground: #111111;
-  --sidebar-border: #D0D7E0;
+  --sidebar-border: #C0C8D0;
   --sidebar-ring: #1A1A1A;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE — Azul #010a19 + DORADO + Letras BLANCAS
+   ═══════════════════════════════════════════════════════════════════════════ */
 .dark {
-  /* ═══════════════════════════════════════════════════════════════════════════
-     DARK MODE — Azul super oscuro + DORADO + Letras BLANCAS
-     ═══════════════════════════════════════════════════════════════════════════ */
-  /* Fondo azul midnight super oscuro */
-  --background: #060E1A;
-  /* Letras BLANCAS */
+  --background: #010a19;
   --foreground: #F0F2F5;
-  /* Tarjetas azul muy oscuro (para contraste con dorado) */
   --card: #0D1A2D;
   --card-foreground: #F0F2F5;
   --popover: #0D1A2D;
   --popover-foreground: #F0F2F5;
-  /* Botón principal DORADO */
-  --primary: #E8A817;
-  --primary-foreground: #060E1A;
-  /* Azul corporativo como secundario */
+  --primary: #DAA520;
+  --primary-foreground: #010a19;
   --secondary: #1B3A5C;
   --secondary-foreground: #F0F2F5;
-  /* Fondos sutiles */
-  --muted: #132238;
+  --muted: #0A1A30;
   --muted-foreground: #8899AA;
-  /* Acento dorado PERMANENTE */
-  --accent: #E8A817;
-  --accent-foreground: #060E1A;
+  --accent: #DAA520;
+  --accent-foreground: #010a19;
   --destructive: #E74C3C;
   --destructive-foreground: #FFFFFF;
-  /* Bordes azul oscuro */
   --border: #1A2F48;
   --input: #1E3550;
-  --ring: #E8A817;
-  --chart-1: #E8A817;
+  --ring: #DAA520;
+  --chart-1: #DAA520;
   --chart-2: #1B3A5C;
   --chart-3: #E74C3C;
   --chart-4: #28A745;
-  --chart-5: #E8A817;
+  --chart-5: #DAA520;
   --laguna: #1B3A5C;
-  --dorado: #E8A817;
+  --dorado: #DAA520;
   --volcan: #E74C3C;
   --laguna-foreground: #FFFFFF;
-  --dorado-foreground: #060E1A;
+  --dorado-foreground: #010a19;
   --volcan-foreground: #FFFFFF;
   --sidebar: #0D1A2D;
   --sidebar-foreground: #F0F2F5;
-  --sidebar-primary: #E8A817;
-  --sidebar-primary-foreground: #060E1A;
-  --sidebar-accent: #132238;
+  --sidebar-primary: #DAA520;
+  --sidebar-primary-foreground: #010a19;
+  --sidebar-accent: #0A1A30;
   --sidebar-accent-foreground: #F0F2F5;
   --sidebar-border: #1A2F48;
-  --sidebar-ring: #E8A817;
+  --sidebar-ring: #DAA520;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -164,179 +151,31 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FORZAR COLORES — Regla directa, sin depender de clases ni variables
+   FORCE COLORS — absolute override
    ═══════════════════════════════════════════════════════════════════════════ */
-
-/* TODOS los elementos html y body: fondo celeste MAS VISIBLE */
-html, body, #__next, main, [data-testid] {
-  background-color: #D4E6F9 !important;
+html, body {
+  background-color: #C8ECF4 !important;
   color: #111111 !important;
 }
 
-/* Dark mode: azul super oscuro */
-html.dark, html.dark body, .dark body, .dark {
-  background-color: #060E1A !important;
+html.dark, html.dark body, .dark body {
+  background-color: #010a19 !important;
   color: #F0F2F5 !important;
 }
-
-/*
-html.light body,
-html:not(.dark) body,
-:root body {
-  background-color: #E3F0FA !important;
-  color: #111111 !important;
-}
-
-html.dark body {
-  background-color: #060E1A !important;
-  color: #F0F2F5 !important;
-}
-*/
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--muted-foreground);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--foreground);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--muted-foreground); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--foreground); }
 
-/* Smooth theme transition */
-* {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
-}
+* { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
 
-/* Product card hover effect */
-.product-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
-}
-.dark .product-card:hover {
-  box-shadow: 0 12px 24px rgba(0,0,0,0.4);
-}
+.product-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
+.dark .product-card:hover { box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
 
-/* Discount badge animation */
-@keyframes pulse-discount {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-.discount-badge {
-  animation: pulse-discount 2s ease-in-out infinite;
-}
-
-/* Chat bubble */
-.chat-bubble-sent {
-  border-radius: 16px 16px 4px 16px;
-}
-.chat-bubble-received {
-  border-radius: 16px 16px 16px 4px;
-}
-
-/* ============================================
-   CRITICAL: Input fields white background rule
-   ALL form inputs MUST have white bg + black text
-   in BOTH light and dark modes. This is non-negotiable.
-   ============================================ */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="tel"],
-input[type="url"],
-input[type="search"],
-input[type="date"],
-input[type="time"],
-input:not([type]),
-textarea,
-select,
-/* Target shadcn/ui components specifically */
-.dark input[type="text"],
-.dark input[type="email"],
-.dark input[type="password"],
-.dark input[type="number"],
-.dark input[type="tel"],
-.dark input[type="url"],
-.dark input[type="search"],
-.dark input[type="date"],
-.dark input[type="time"],
-.dark input:not([type]),
-.dark textarea,
-.dark select {
-  background-color: #FFFFFF !important;
-  color: #000000 !important;
-  border: 1px solid #CCCCCC !important;
-}
-
-/* Placeholder styling */
-input::placeholder,
-textarea::placeholder,
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #999999 !important;
-}
-
-/* Select option styling */
-select option,
-.dark select option {
-  background-color: #FFFFFF !important;
-  color: #000000 !important;
-}
-
-/* shadcn/ui Select component content */
-.dark [data-radix-select-content],
-.dark [role="listbox"] {
-  background-color: #FFFFFF !important;
-  color: #000000 !important;
-}
-
-.dark [role="option"],
-.dark [data-radix-select-item] {
-  color: #000000 !important;
-}
-
-.dark [role="option"]:hover,
-.dark [data-radix-select-item]:hover,
-.dark [role="option"][data-highlighted],
-.dark [data-radix-select-item][data-highlighted] {
-  background-color: #F0F0F0 !important;
-  color: #000000 !important;
-}
-
-/* Leaflet map fix */
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-}
-
-/* Chatbot typing animation */
-@keyframes typing-bounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-4px); }
-}
-.typing-dot {
-  animation: typing-bounce 1.4s infinite;
-}
-.typing-dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.typing-dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-/* Hero pattern animation */
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
+@keyframes pulse-discount { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+.discount-badge { animation: pulse-discount 2s ease-in-out infinite; }
+.chat-bubble-sent { border-radius: 16px 16px 4px 16px; }
+.chat-bubble-received { border-radius: 16px 16px 16px 4px; }
