@@ -50,13 +50,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <style>{`
-          html, body { background-color: #E3F0FA !important; color: #111111 !important; }
-          html.dark, html.dark body, .dark body { background-color: #060E1A !important; color: #F0F2F5 !important; }
-        `}</style>
-      </head>
-      <body className={`${poppins.variable} ${inter.variable} ${jetbrains.variable} antialiased font-sans bg-background text-foreground min-h-screen`} suppressHydrationWarning>
+      <body className={`${poppins.variable} ${inter.variable} ${jetbrains.variable} antialiased font-sans bg-[#E3F0FA] dark:bg-[#060E1A] text-[#111111] dark:text-[#F0F2F5] min-h-screen`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
