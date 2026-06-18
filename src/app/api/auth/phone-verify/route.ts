@@ -153,9 +153,10 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Phone verification error:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('Phone verification error:', msg)
     return NextResponse.json(
-      { success: false, error: 'Error en la verificación de teléfono' },
+      { success: false, error: `Error en la verificación: ${msg}` },
       { status: 200 }
     )
   }
