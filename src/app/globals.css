@@ -54,14 +54,14 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      LIGHT MODE — Celeste + Plateado + Letras NEGRAS
      ═══════════════════════════════════════════════════════════════════════════ */
-  /* Fondo celeste claro */
-  --background: #E3F0FA;
+  /* Fondo celeste MAS VISIBLE */
+  --background: #D4E6F9;
   /* Letras SIEMPRE negras */
   --foreground: #111111;
-  /* Tarjetas plateadas (silver) */
-  --card: #EDF0F5;
+  /* Tarjetas plateadas (silver) - MAS DISTINTIVO */
+  --card: #E4E8EF;
   --card-foreground: #111111;
-  --popover: #EDF0F5;
+  --popover: #E4E8EF;
   --popover-foreground: #111111;
   /* Botón principal NEGRO (Buscar, etc.) */
   --primary: #1A1A1A;
@@ -167,9 +167,9 @@
    FORZAR COLORES — Regla directa, sin depender de clases ni variables
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* TODOS los elementos html y body: fondo celeste por defecto */
+/* TODOS los elementos html y body: fondo celeste MAS VISIBLE */
 html, body, #__next, main, [data-testid] {
-  background-color: #E3F0FA !important;
+  background-color: #D4E6F9 !important;
   color: #111111 !important;
 }
 
