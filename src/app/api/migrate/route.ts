@@ -14,7 +14,14 @@ export async function POST() {
     }
 
     // ── Convert libsql:// to https:// host ────────────────────────────
-    const host = tursoUrl.replace('libsql://', '')
+    // URL might be: libsql://host.turso.io OR libsql://host.turso.io?authToken=xxx
+    let host = tursoUrl
+    // Remove protocol
+    host = host.replace(/^libsql:\/\//, '')
+    // Remove authToken query param if present
+    host = host.split('?')[0]
+    // Remove trailing slash
+    host = host.replace(/\/$/, '')
     const apiPath = '/v2/pipeline'
 
     // ── Core tables SQL (minimal set needed for the app) ──────────────

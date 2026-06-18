@@ -24,11 +24,12 @@ function createPrismaClient(): PrismaClient {
   ) {
     try {
       const { PrismaLibSQL } = require('@prisma/adapter-libsql')
-      // Convert libsql:// to https:// for @libsql/client v0.6 compatibility
-      const httpUrl = tursoUrl.startsWith('libsql://')
-        ? tursoUrl.replace('libsql://', 'https://')
-        : tursoUrl
-      const adapter = new PrismaLibSQL({ url: httpUrl, authToken: tursoToken })
+      // Clean URL: remove protocol, query params, and trailing slash
+      let cleanUrl = tursoUrl
+        .replace(/^libsql:\/\//, 'https://')
+        .split('?')[0]
+        .replace(/\/$/, '')
+      const adapter = new PrismaLibSQL({ url: cleanUrl, authToken: tursoToken })
       console.log('[DB] ✅ Turso Cloud connected')
       return new PrismaClient({ adapter })
     } catch (err) {
