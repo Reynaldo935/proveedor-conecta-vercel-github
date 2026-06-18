@@ -13,14 +13,15 @@ export async function POST() {
       }, { status: 200 })
     }
 
-    // Use prisma db push with Turso URL set as DATABASE_URL
-    // Prisma adapter handles the libsql:// → https:// conversion internally
-    const output = execSync('npx prisma db push --skip-generate --accept-data-loss', {
+    // Use prisma CLI directly from node_modules
+    const prismaBin = require('path').join(process.cwd(), 'node_modules', 'prisma', 'build', 'index.js')
+    const output = execSync(`node "${prismaBin}" db push --skip-generate --accept-data-loss`, {
       encoding: 'utf-8',
       timeout: 60000,
       env: {
         ...process.env,
         DATABASE_URL: tursoUrl,
+        PRISMA_HIDE_UPDATE_MESSAGE: 'true',
       },
       stdio: ['pipe', 'pipe', 'pipe'],
     })
