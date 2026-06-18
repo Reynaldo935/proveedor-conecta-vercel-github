@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+import { execSync } from 'child_process'
 
 export async function POST() {
   try {
@@ -14,97 +13,28 @@ export async function POST() {
       }, { status: 200 })
     }
 
-    // ── Convert to Turso HTTP API endpoint ────────────────────────────
-    // libsql://dunddy-xxx.turso.io → https://dunddy-xxx.turso.io
-    const httpBase = tursoUrl
-      .replace('libsql://', 'https://')
-      .replace('.aws-us-east-1.turso.io', '') + '.aws-us-east-1.turso.io'
-
-    // Ensure we have the full host
-    const host = httpBase.startsWith('https://') ? httpBase.replace('https://', '') : httpBase
-
-    // Turso HTTP API v3 endpoint
-    const apiUrl = `https://${host}/v3/pipeline`
-
-    async function tursoQuery(sql: string): Promise<void> {
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${tursoToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requests: [
-            { type: 'execute', stmt: { sql } },
-          ],
-        }),
-      })
-
-      if (!res.ok) {
-        const text = await res.text()
-        throw new Error(`Turso HTTP ${res.status}: ${text.substring(0, 200)}`)
-      }
-
-      const data = await res.json()
-      // Check for errors in response
-      if (data.results?.[0]?.type === 'error') {
-        throw new Error(`Turso error: ${data.results[0].error?.message || 'unknown'}`)
-      }
-    }
-
-    // Check if tables already exist
-    try {
-      await tursoQuery('SELECT count(*) FROM "User"')
-      return NextResponse.json({
-        success: true,
-        message: 'Database already initialized.',
-        alreadySeeded: true,
-      })
-    } catch {
-      // Tables don't exist — proceed
-    }
-
-    // Read the migration SQL file
-    const sqlPath = path.join(process.cwd(), 'prisma', 'migrations', '20260618100830_init', 'migration.sql')
-    if (!fs.existsSync(sqlPath)) {
-      return NextResponse.json({ success: false, error: 'Migration file not found' }, { status: 500 })
-    }
-
-    const sql = fs.readFileSync(sqlPath, 'utf-8')
-
-    // Split into individual statements (SQLite CREATE TABLE etc)
-    const statements = sql
-      .split(/;\s*\n/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'))
-
-    // Execute each statement
-    let ok = 0
-    let failed = 0
-    for (const stmt of statements) {
-      try {
-        await tursoQuery(stmt)
-        ok++
-      } catch (err) {
-        failed++
-        // If the error is just "table already exists", continue
-        const msg = (err as Error).message
-        if (msg.includes('already exists') || msg.includes('duplicate')) {
-          ok++
-          continue
-        }
-        console.error(`Stmt failed: ${msg.substring(0, 100)}`)
-      }
-    }
+    // Use prisma db push with Turso URL set as DATABASE_URL
+    // Prisma adapter handles the libsql:// → https:// conversion internally
+    const output = execSync('npx prisma db push --skip-generate --accept-data-loss', {
+      encoding: 'utf-8',
+      timeout: 60000,
+      env: {
+        ...process.env,
+        DATABASE_URL: tursoUrl,
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
 
     return NextResponse.json({
       success: true,
-      message: `Migration: ${ok} ok, ${failed} failed out of ${statements.length}`,
+      message: 'Schema pushed successfully.',
+      output: output.substring(0, 500),
     })
   } catch (err) {
+    const message = (err as Error).message
     return NextResponse.json({
       success: false,
-      error: (err as Error).message,
+      error: message.substring(0, 500),
     }, { status: 200 })
   }
 }
@@ -112,6 +42,6 @@ export async function POST() {
 export async function GET() {
   return NextResponse.json({
     success: true,
-    message: 'POST to /api/migrate to run database migration',
+    message: 'POST to /api/migrate to run prisma db push',
   })
 }
