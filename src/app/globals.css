@@ -51,25 +51,32 @@
 
 :root {
   --radius: 0.625rem;
-  /* ProveedorConecta Nicaragua - Light Mode (Profesional, Confianza, Nicaragua) */
-  /* Inspirado en: azul corporativo profundo + dorado vibrante */
-  --background: #F8F9FB;
-  --foreground: #1A2332;
-  --card: #FFFFFF;
-  --card-foreground: #1A2332;
-  --popover: #FFFFFF;
-  --popover-foreground: #1A2332;
+  /* ProveedorConecta Nicaragua - Light Mode (Celeste, Plateado, Profesional) */
+  /* ─── Fondo celeste suave ─── */
+  --background: #E3F0FA;
+  /* ─── Texto negro ─── */
+  --foreground: #1A1A1A;
+  /* ─── Tarjetas plateadas / silver ─── */
+  --card: #F2F5F8;
+  --card-foreground: #1A1A1A;
+  --popover: #F2F5F8;
+  --popover-foreground: #1A1A1A;
+  /* ─── Azul corporativo oscuro ─── */
   --primary: #1B3A5C;
   --primary-foreground: #FFFFFF;
+  /* ─── Dorado vibrante para botones/CTAs ─── */
   --secondary: #E8A817;
-  --secondary-foreground: #1A2332;
-  --muted: #EDF0F5;
-  --muted-foreground: #6B7B8D;
+  --secondary-foreground: #1A1A1A;
+  /* ─── Plateado suave ─── */
+  --muted: #E8ECF2;
+  --muted-foreground: #5A6570;
+  /* ─── Dorado acento ─── */
   --accent: #E8A817;
-  --accent-foreground: #1A2332;
+  --accent-foreground: #1A1A1A;
   --destructive: #DC3545;
-  --border: #DDE1E6;
-  --input: #CED4DA;
+  /* ─── Bordes plateados ─── */
+  --border: #D0D7E0;
+  --input: #C8D0D8;
   --ring: #1B3A5C;
   --chart-1: #1B3A5C;
   --chart-2: #E8A817;
@@ -80,37 +87,45 @@
   --dorado: #E8A817;
   --volcan: #DC3545;
   --laguna-foreground: #FFFFFF;
-  --dorado-foreground: #1A2332;
+  --dorado-foreground: #1A1A1A;
   --volcan-foreground: #FFFFFF;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #1A2332;
+  /* ─── Sidebar plateado ─── */
+  --sidebar: #F2F5F8;
+  --sidebar-foreground: #1A1A1A;
   --sidebar-primary: #1B3A5C;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F0F4F8;
-  --sidebar-accent-foreground: #1A2332;
-  --sidebar-border: #DDE1E6;
+  --sidebar-accent: #E8ECF2;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: #D0D7E0;
   --sidebar-ring: #1B3A5C;
 }
 
 .dark {
-  /* ProveedorConecta Nicaragua - Dark Mode (Elegancia, Seguridad, Tecnología) */
-  --background: #0A1628;
-  --foreground: #E8ECF0;
-  --card: #112240;
-  --card-foreground: #E8ECF0;
-  --popover: #112240;
-  --popover-foreground: #E8ECF0;
+  /* ProveedorConecta Nicaragua - Dark Mode (Azul super oscuro, Dorado permanente, Letras blancas) */
+  /* ─── Fondo azul super oscuro ─── */
+  --background: #060E1A;
+  /* ─── Texto blanco ─── */
+  --foreground: #F0F2F5;
+  /* ─── Tarjetas azul muy oscuro ─── */
+  --card: #0D1A2D;
+  --card-foreground: #F0F2F5;
+  --popover: #0D1A2D;
+  --popover-foreground: #F0F2F5;
+  /* ─── Dorado como primary en dark ─── */
   --primary: #E8A817;
-  --primary-foreground: #0A1628;
+  --primary-foreground: #060E1A;
   --secondary: #1B3A5C;
-  --secondary-foreground: #E8ECF0;
-  --muted: #1A2D42;
+  --secondary-foreground: #F0F2F5;
+  /* ─── Plateado oscuro ─── */
+  --muted: #132238;
   --muted-foreground: #8899AA;
+  /* ─── Dorado permanente como acento ─── */
   --accent: #E8A817;
-  --accent-foreground: #0A1628;
+  --accent-foreground: #060E1A;
   --destructive: #E74C3C;
-  --border: #1E3550;
-  --input: #2A3F55;
+  /* ─── Bordes azul oscuro ─── */
+  --border: #1A2F48;
+  --input: #1E3550;
   --ring: #E8A817;
   --chart-1: #E8A817;
   --chart-2: #1B3A5C;
@@ -121,15 +136,16 @@
   --dorado: #E8A817;
   --volcan: #E74C3C;
   --laguna-foreground: #FFFFFF;
-  --dorado-foreground: #0A1628;
+  --dorado-foreground: #060E1A;
   --volcan-foreground: #FFFFFF;
-  --sidebar: #112240;
-  --sidebar-foreground: #E8ECF0;
+  /* ─── Sidebar azul super oscuro ─── */
+  --sidebar: #0D1A2D;
+  --sidebar-foreground: #F0F2F5;
   --sidebar-primary: #E8A817;
-  --sidebar-primary-foreground: #0A1628;
-  --sidebar-accent: #1A2D42;
-  --sidebar-accent-foreground: #E8ECF0;
-  --sidebar-border: #1E3550;
+  --sidebar-primary-foreground: #060E1A;
+  --sidebar-accent: #132238;
+  --sidebar-accent-foreground: #F0F2F5;
+  --sidebar-border: #1A2F48;
   --sidebar-ring: #E8A817;
 }
 
