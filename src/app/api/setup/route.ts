@@ -2,8 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
+// ── Core tables needed by the seed ──────────────────────────────────
+const CORE_TABLES = [
+  `CREATE TABLE IF NOT EXISTS "User" ("id" TEXT NOT NULL PRIMARY KEY, "email" TEXT NOT NULL, "name" TEXT NOT NULL DEFAULT '', "password" TEXT, "role" TEXT NOT NULL DEFAULT 'BUYER', "helperRole" TEXT NOT NULL DEFAULT '', "avatar" TEXT NOT NULL DEFAULT '', "coverPhoto" TEXT NOT NULL DEFAULT '', "phone" TEXT NOT NULL DEFAULT '', "department" TEXT NOT NULL DEFAULT '', "address" TEXT NOT NULL DEFAULT '', "bio" TEXT NOT NULL DEFAULT '', "website" TEXT NOT NULL DEFAULT '', "isVerified" BOOLEAN NOT NULL DEFAULT false, "googleId" TEXT, "emailVerified" BOOLEAN NOT NULL DEFAULT false, "phoneVerified" BOOLEAN NOT NULL DEFAULT false, "balance" REAL NOT NULL DEFAULT 50000, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS "BusinessProfile" ("id" TEXT NOT NULL PRIMARY KEY, "userId" TEXT NOT NULL UNIQUE, "businessName" TEXT NOT NULL DEFAULT '', "description" TEXT NOT NULL DEFAULT '', "category" TEXT NOT NULL DEFAULT '', "address" TEXT NOT NULL DEFAULT '', "latitude" REAL, "longitude" REAL, "phone" TEXT NOT NULL DEFAULT '', "coverImage" TEXT NOT NULL DEFAULT '', "logo" TEXT NOT NULL DEFAULT '', "hours" TEXT NOT NULL DEFAULT '', "paymentMethods" TEXT NOT NULL DEFAULT '', "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE)`,
+  `CREATE TABLE IF NOT EXISTS "Product" ("id" TEXT NOT NULL PRIMARY KEY, "sellerId" TEXT NOT NULL, "title" TEXT NOT NULL, "description" TEXT NOT NULL DEFAULT '', "price" REAL NOT NULL, "discountPrice" REAL, "discountPercent" REAL, "category" TEXT NOT NULL DEFAULT '', "tags" TEXT NOT NULL DEFAULT '', "images" TEXT NOT NULL DEFAULT '', "videoUrl" TEXT NOT NULL DEFAULT '', "quantity" INTEGER NOT NULL DEFAULT 1, "status" TEXT NOT NULL DEFAULT 'ACTIVE', "isFeatured" BOOLEAN NOT NULL DEFAULT false, "discountStart" DATETIME, "discountEnd" DATETIME, "publishedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, FOREIGN KEY ("sellerId") REFERENCES "User"("id") ON DELETE CASCADE)`,
+]
+
+async function ensureCoreTables() {
+  for (const sql of CORE_TABLES) {
+    try {
+      await db.$executeRawUnsafe(sql)
+    } catch (err) {
+      // Table might already exist or FK issues — continue
+      console.error('Table creation note:', (err as Error).message.substring(0, 80))
+    }
+  }
+}
+
 export async function GET(_request: NextRequest) {
   try {
+    await ensureCoreTables()
     const userCount = await db.user.count()
     const productCount = await db.product.count()
     return NextResponse.json({
@@ -19,6 +38,7 @@ export async function GET(_request: NextRequest) {
 
 export async function POST(_request: NextRequest) {
   try {
+    await ensureCoreTables()
     const productCount = await db.product.count()
     if (productCount > 0) {
       return NextResponse.json({ success: true, message: `Ya hay ${productCount} productos`, productCount })
