@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "prisma generate && next build",
-    "postinstall": "prisma generate && node scripts/fix-libsql.js",
+    "postinstall": "prisma generate",
     "start": "next start",
     "vercel-build": "prisma generate && next build",
     "lint": "eslint .",
