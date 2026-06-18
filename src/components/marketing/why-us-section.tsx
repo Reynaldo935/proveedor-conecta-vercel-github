@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Users,
   Heart,
+  Search,
   CheckCircle2,
   XCircle,
   Globe,
