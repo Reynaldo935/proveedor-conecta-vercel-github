@@ -240,13 +240,7 @@ export function RegisterForm() {
     e.preventDefault()
     if (!validateStep(4)) return
 
-    // Double-check phone verification
-    if (!smsVerified) {
-      toast.error("Debes verificar tu número de teléfono primero")
-      setStep(3)
-      return
-    }
-
+    // Phone verification is OPTIONAL — no longer blocking
     setLoading(true)
     try {
       const res = await fetch("/api/auth/register", {
