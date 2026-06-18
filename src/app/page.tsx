@@ -18,6 +18,8 @@ import {
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import { WeatherWidget } from "@/components/weather/weather-widget"
+import { Header } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel
@@ -796,11 +798,11 @@ export default function ProveedorConecta() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <SimpleHeader />
+      <Header />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <LazyViewLoader viewName={currentView} isAuthenticated={isAuthenticated} />
       </main>
-      <SimpleFooter />
+      <Footer />
 
       {/* Chatbot — loaded dynamically on toggle */}
       {showChatbot && (
