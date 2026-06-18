@@ -24,8 +24,11 @@ function createPrismaClient(): PrismaClient {
   ) {
     try {
       const { PrismaLibSQL } = require('@prisma/adapter-libsql')
-      // PrismaLibSQL is a factory that takes Turso config directly
-      const adapter = new PrismaLibSQL({ url: tursoUrl, authToken: tursoToken })
+      // Convert libsql:// to https:// for @libsql/client v0.6 compatibility
+      const httpUrl = tursoUrl.startsWith('libsql://')
+        ? tursoUrl.replace('libsql://', 'https://')
+        : tursoUrl
+      const adapter = new PrismaLibSQL({ url: httpUrl, authToken: tursoToken })
       console.log('[DB] ✅ Turso Cloud connected')
       return new PrismaClient({ adapter })
     } catch (err) {
