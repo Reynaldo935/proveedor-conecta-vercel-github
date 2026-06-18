@@ -5,6 +5,24 @@ const nextConfig: NextConfig = {
   generateBuildId: async () => `pc-build-${Date.now()}`,
   reactStrictMode: false,
   serverExternalPackages: ["bcryptjs", "sharp", "pusher", "nodemailer"],
+  // ── Reemplazar @libsql/client por implementación nativa HTTPS ──────
+  // El adaptador @prisma/adapter-libsql v6 usa @libsql/client@0.6.2
+  // que no es compatible con la API actual de Turso (HTTP 400).
+  // Nuestra implementación nativa usa /v2/pipeline (PROBADO: funciona).
+  turbopack: {
+    resolveAlias: {
+      '@libsql/client': require('path').resolve(__dirname, 'src/lib/libsql-native.js'),
+    },
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@libsql/client': require('path').resolve(__dirname, 'src/lib/libsql-native.js'),
+      }
+    }
+    return config
+  },
   allowedDevOrigins: [
     "preview-chat-209caf1c-61ef-4935-aa21-0ed59ca5f08a.space-z.ai",
     ".space-z.ai",
