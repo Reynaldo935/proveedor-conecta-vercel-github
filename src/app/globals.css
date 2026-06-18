@@ -51,90 +51,86 @@
 
 :root {
   --radius: 0.625rem;
-  /* ProveedorConecta Nicaragua - Light Mode (Warm, Trust, Entrepreneurship) */
-  /* Dominant background: White #FFFFFF (75%), Main text: Slate Blue-Grey #607D8B */
-  /* Primary emphasis: Muted Blue #4A90E2, Accent: Tan-Gold #D2B48C */
-  --background: #FFFFFF;
-  --foreground: #607D8B;
+  /* ProveedorConecta Nicaragua - Light Mode (Profesional, Confianza, Nicaragua) */
+  /* Inspirado en: azul corporativo profundo + dorado vibrante */
+  --background: #F8F9FB;
+  --foreground: #1A2332;
   --card: #FFFFFF;
-  --card-foreground: #607D8B;
+  --card-foreground: #1A2332;
   --popover: #FFFFFF;
-  --popover-foreground: #607D8B;
-  --primary: #4A90E2;
+  --popover-foreground: #1A2332;
+  --primary: #1B3A5C;
   --primary-foreground: #FFFFFF;
-  --secondary: #D2B48C;
-  --secondary-foreground: #FFFFFF;
-  --muted: #F5F7FA;
-  --muted-foreground: #8B9DAF;
-  --accent: #D2B48C;
-  --accent-foreground: #FFFFFF;
-  --destructive: #E74C3C;
-  --border: #E0E4E8;
-  --input: #D1D5DB;
-  --ring: #4A90E2;
-  --chart-1: #4A90E2;
-  --chart-2: #D2B48C;
-  --chart-3: #E74C3C;
-  --chart-4: #27AE60;
-  --chart-5: #D4A017;
-  --laguna: #4A90E2;
-  --dorado: #D2B48C;
-  --volcan: #E74C3C;
+  --secondary: #E8A817;
+  --secondary-foreground: #1A2332;
+  --muted: #EDF0F5;
+  --muted-foreground: #6B7B8D;
+  --accent: #E8A817;
+  --accent-foreground: #1A2332;
+  --destructive: #DC3545;
+  --border: #DDE1E6;
+  --input: #CED4DA;
+  --ring: #1B3A5C;
+  --chart-1: #1B3A5C;
+  --chart-2: #E8A817;
+  --chart-3: #DC3545;
+  --chart-4: #28A745;
+  --chart-5: #E8A817;
+  --laguna: #1B3A5C;
+  --dorado: #E8A817;
+  --volcan: #DC3545;
   --laguna-foreground: #FFFFFF;
-  --dorado-foreground: #FFFFFF;
+  --dorado-foreground: #1A2332;
   --volcan-foreground: #FFFFFF;
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #607D8B;
-  --sidebar-primary: #4A90E2;
+  --sidebar-foreground: #1A2332;
+  --sidebar-primary: #1B3A5C;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F5F7FA;
-  --sidebar-accent-foreground: #607D8B;
-  --sidebar-border: #E0E4E8;
-  --sidebar-ring: #4A90E2;
+  --sidebar-accent: #F0F4F8;
+  --sidebar-accent-foreground: #1A2332;
+  --sidebar-border: #DDE1E6;
+  --sidebar-ring: #1B3A5C;
 }
 
 .dark {
-  /* ProveedorConecta Nicaragua - Dark Mode (Cool, Technological Security) */
-  /* Dominant background: Deep Oxford Blue #0B1A2C (replaces pure black) */
-  /* Secondary: Slate Grey / Steel Blue #122B40 */
-  /* Accent connection: Old Gold / Warm Sand #D4A017 (links the light theme's warmth) */
-  --background: #0B1A2C;
-  --foreground: #D5DDE5;
-  --card: #122B40;
-  --card-foreground: #D5DDE5;
-  --popover: #122B40;
-  --popover-foreground: #D5DDE5;
-  --primary: #4A90E2;
-  --primary-foreground: #FFFFFF;
-  --secondary: #D4A017;
-  --secondary-foreground: #0B1A2C;
-  --muted: #1A3550;
-  --muted-foreground: #8B9DAF;
-  --accent: #D4A017;
-  --accent-foreground: #0B1A2C;
+  /* ProveedorConecta Nicaragua - Dark Mode (Elegancia, Seguridad, Tecnología) */
+  --background: #0A1628;
+  --foreground: #E8ECF0;
+  --card: #112240;
+  --card-foreground: #E8ECF0;
+  --popover: #112240;
+  --popover-foreground: #E8ECF0;
+  --primary: #E8A817;
+  --primary-foreground: #0A1628;
+  --secondary: #1B3A5C;
+  --secondary-foreground: #E8ECF0;
+  --muted: #1A2D42;
+  --muted-foreground: #8899AA;
+  --accent: #E8A817;
+  --accent-foreground: #0A1628;
   --destructive: #E74C3C;
-  --border: #1E3A52;
-  --input: #2C3E50;
-  --ring: #4A90E2;
-  --chart-1: #4A90E2;
-  --chart-2: #D4A017;
+  --border: #1E3550;
+  --input: #2A3F55;
+  --ring: #E8A817;
+  --chart-1: #E8A817;
+  --chart-2: #1B3A5C;
   --chart-3: #E74C3C;
-  --chart-4: #27AE60;
-  --chart-5: #D2B48C;
-  --laguna: #4A90E2;
-  --dorado: #D4A017;
+  --chart-4: #28A745;
+  --chart-5: #E8A817;
+  --laguna: #1B3A5C;
+  --dorado: #E8A817;
   --volcan: #E74C3C;
   --laguna-foreground: #FFFFFF;
-  --dorado-foreground: #0B1A2C;
+  --dorado-foreground: #0A1628;
   --volcan-foreground: #FFFFFF;
-  --sidebar: #122B40;
-  --sidebar-foreground: #D5DDE5;
-  --sidebar-primary: #4A90E2;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #1A3550;
-  --sidebar-accent-foreground: #D5DDE5;
-  --sidebar-border: #1E3A52;
-  --sidebar-ring: #4A90E2;
+  --sidebar: #112240;
+  --sidebar-foreground: #E8ECF0;
+  --sidebar-primary: #E8A817;
+  --sidebar-primary-foreground: #0A1628;
+  --sidebar-accent: #1A2D42;
+  --sidebar-accent-foreground: #E8ECF0;
+  --sidebar-border: #1E3550;
+  --sidebar-ring: #E8A817;
 }
 
 @layer base {

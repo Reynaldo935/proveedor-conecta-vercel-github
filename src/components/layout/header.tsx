@@ -103,10 +103,12 @@ export function Header() {
             onClick={() => navigate("home")}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
           >
-            <div className="w-9 h-9 rounded-lg bg-[#D2B48C] dark:bg-[#D4A017] flex items-center justify-center">
-              <span className="text-white font-bold text-lg">PC</span>
-            </div>
-            <span className="hidden sm:block font-bold text-lg font-[family-name:var(--font-poppins)] text-[#4A90E2] dark:text-[#D4A017]">
+            <img
+              src="/uploads/logotipo.png"
+              alt="ProveedorConecta Nicaragua"
+              className="h-9 w-auto object-contain"
+            />
+            <span className="hidden sm:block font-bold text-lg font-[family-name:var(--font-poppins)] text-[#1B3A5C] dark:text-[#E8A817]">
               ProveedorConecta
             </span>
           </button>
@@ -154,7 +156,7 @@ export function Header() {
               suppressHydrationWarning
             >
               {mounted ? (
-                isDark ? <Sun className="h-5 w-5 text-[#D4A017]" /> : <Moon className="h-5 w-5 text-[#4A90E2]" />
+                isDark ? <Sun className="h-5 w-5 text-[#E8A817]" /> : <Moon className="h-5 w-5 text-[#1B3A5C]" />
               ) : (
                 <Moon className="h-5 w-5" />
               )}
@@ -179,10 +181,12 @@ export function Header() {
         <SheetContent side="right" className="w-[320px] sm:w-[380px] p-0">
           <SheetHeader className="p-4 pb-2 border-b">
             <SheetTitle className="flex items-center gap-2 font-[family-name:var(--font-poppins)]">
-              <div className="w-8 h-8 rounded-lg bg-[#D2B48C] dark:bg-[#D4A017] flex items-center justify-center">
-                <span className="text-white font-bold text-sm">PC</span>
-              </div>
-              <span className="text-[#4A90E2] dark:text-[#D4A017]">ProveedorConecta</span>
+              <img
+                src="/uploads/logotipo.png"
+                alt="Logo"
+                className="h-8 w-auto object-contain"
+              />
+              <span className="text-[#1B3A5C] dark:text-[#E8A817]">ProveedorConecta</span>
             </SheetTitle>
             <SheetDescription className="sr-only">Menú de navegación principal</SheetDescription>
           </SheetHeader>
@@ -207,10 +211,10 @@ export function Header() {
               {/* ── User info ── */}
               {isAuthenticated && user && (
                 <div className="px-2 pt-2 pb-3">
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-[#4A90E2]/10 to-[#D2B48C]/10 dark:from-[#4A90E2]/20 dark:to-[#D4A017]/20">
-                    <Avatar className="h-11 w-11 border-2 border-[#D2B48C] dark:border-[#D4A017]">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-[#1B3A5C]/10 to-[#E8A817]/10 dark:from-[#1B3A5C]/20 dark:to-[#E8A817]/20">
+                    <Avatar className="h-11 w-11 border-2 border-[#E8A817] dark:border-[#E8A817]">
                       <AvatarImage src={user.avatar || undefined} />
-                      <AvatarFallback className="bg-[#4A90E2] text-white">
+                      <AvatarFallback className="bg-[#1B3A5C] text-white">
                         {user.name?.charAt(0)?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -218,8 +222,8 @@ export function Header() {
                       <p className="text-sm font-semibold truncate">{user.name}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       <div className="flex items-center gap-1 mt-0.5">
-                        <Wallet className="h-3 w-3 text-[#D2B48C] dark:text-[#D4A017]" />
-                        <span className="text-xs font-medium text-[#4A90E2] dark:text-[#D4A017]">
+                        <Wallet className="h-3 w-3 text-[#E8A817] dark:text-[#E8A817]" />
+                        <span className="text-xs font-medium text-[#1B3A5C] dark:text-[#E8A817]">
                           {new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(user?.balance ?? 0)}
                         </span>
                       </div>
@@ -233,22 +237,22 @@ export function Header() {
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Navegación</p>
               </div>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("home")}>
-                <Home className="h-4 w-4 mr-3 text-[#4A90E2]" /> Inicio
+                <Home className="h-4 w-4 mr-3 text-[#1B3A5C] dark:text-[#E8A817]" /> Inicio
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("search")}>
-                <Search className="h-4 w-4 mr-3 text-[#4A90E2]" /> Productos
+                <Search className="h-4 w-4 mr-3 text-[#1B3A5C] dark:text-[#E8A817]" /> Productos
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("map")}>
-                <MapPin className="h-4 w-4 mr-3 text-[#4A90E2]" /> Mapa Proveedores
+                <MapPin className="h-4 w-4 mr-3 text-[#1B3A5C] dark:text-[#E8A817]" /> Mapa Proveedores
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("featured")}>
-                <Star className="h-4 w-4 mr-3 text-[#D2B48C] dark:text-[#D4A017]" /> Destacados y Ofertas
+                <Star className="h-4 w-4 mr-3 text-[#E8A817]" /> Destacados y Ofertas
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("calendar")}>
-                <Calendar className="h-4 w-4 mr-3 text-[#4A90E2]" /> Agenda y Clima
+                <Calendar className="h-4 w-4 mr-3 text-[#1B3A5C] dark:text-[#E8A817]" /> Agenda y Clima
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("why-us")}>
-                <Zap className="h-4 w-4 mr-3 text-[#D2B48C] dark:text-[#D4A017]" /> ¿Por qué ProveedorConecta?
+                <Zap className="h-4 w-4 mr-3 text-[#E8A817]" /> ¿Por qué ProveedorConecta?
               </Button>
 
               {/* ── Sell (Seller) ── */}
@@ -256,13 +260,13 @@ export function Header() {
                 <>
                   <Separator className="my-2" />
                   <div className="px-2 pt-1 pb-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#D2B48C] dark:text-[#D4A017]">Vendedor</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#E8A817] dark:text-[#E8A817]">Vendedor</p>
                   </div>
-                  <Button className="w-full justify-start h-10 bg-[#D2B48C] hover:bg-[#C4A67A] dark:bg-[#D4A017] dark:hover:bg-[#C8920F] text-white font-semibold" onClick={() => handleNav("sell-product")}>
+                  <Button className="w-full justify-start h-10 bg-[#E8A817] hover:bg-[#C4A67A] dark:bg-[#E8A817] dark:hover:bg-[#C8920F] text-white font-semibold" onClick={() => handleNav("sell-product")}>
                     <Plus className="h-4 w-4 mr-3" /> Vender Producto
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("my-products")}>
-                    <Package className="h-4 w-4 mr-3 text-[#4A90E2]" /> Mis Productos
+                    <Package className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Mis Productos
                   </Button>
                 </>
               )}
@@ -273,17 +277,17 @@ export function Header() {
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pagos</p>
               </div>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("payments")}>
-                <CreditCard className="h-4 w-4 mr-3 text-[#4A90E2]" /> Métodos de Pago
+                <CreditCard className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Métodos de Pago
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("cotizaciones")}>
-                <FileText className="h-4 w-4 mr-3 text-[#4A90E2]" /> Cotizaciones
+                <FileText className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Cotizaciones
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("currencies")}>
-                <DollarSign className="h-4 w-4 mr-3 text-[#4A90E2]" /> Divisas (USD/NIO)
+                <DollarSign className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Divisas (USD/NIO)
               </Button>
               {isAuthenticated && (
                 <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("checkout")}>
-                  <ShoppingCart className="h-4 w-4 mr-3 text-[#4A90E2]" /> Checkout
+                  <ShoppingCart className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Checkout
                 </Button>
               )}
 
@@ -295,7 +299,7 @@ export function Header() {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Comunicación</p>
                   </div>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("chat-list")}>
-                    <MessageCircle className="h-4 w-4 mr-3 text-[#4A90E2]" /> Chats
+                    <MessageCircle className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Chats
                     {notifCount > 0 && (
                       <Badge className="ml-auto bg-[#E74C3C] text-white h-5 min-w-5 px-1 flex items-center justify-center text-[10px]">
                         {notifCount > 9 ? "9+" : notifCount}
@@ -303,10 +307,10 @@ export function Header() {
                     )}
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("notifications")}>
-                    <Bell className="h-4 w-4 mr-3 text-[#4A90E2]" /> Notificaciones
+                    <Bell className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Notificaciones
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("reviews")}>
-                    <Star className="h-4 w-4 mr-3 text-[#D2B48C] dark:text-[#D4A017]" /> Reseñas
+                    <Star className="h-4 w-4 mr-3 text-[#E8A817] dark:text-[#E8A817]" /> Reseñas
                   </Button>
                 </>
               )}
@@ -319,7 +323,7 @@ export function Header() {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Descargar</p>
                   </div>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("downloads")}>
-                    <Download className="h-4 w-4 mr-3 text-[#4A90E2]" /> Centro de Descargas
+                    <Download className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Centro de Descargas
                   </Button>
                 </>
               )}
@@ -332,16 +336,16 @@ export function Header() {
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Mi Cuenta</p>
                   </div>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav(isSeller ? "vendor-dashboard" : "buyer-dashboard")}>
-                    <LayoutDashboard className="h-4 w-4 mr-3 text-[#4A90E2]" /> Dashboard
+                    <LayoutDashboard className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Dashboard
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("profile")}>
-                    <User className="h-4 w-4 mr-3 text-[#4A90E2]" /> Perfil
+                    <User className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Perfil
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("settings")}>
-                    <Settings className="h-4 w-4 mr-3 text-[#4A90E2]" /> Configuración
+                    <Settings className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Configuración
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("loyalty")}>
-                    <Star className="h-4 w-4 mr-3 text-[#D2B48C] dark:text-[#D4A017]" /> Puntos de Lealtad
+                    <Star className="h-4 w-4 mr-3 text-[#E8A817] dark:text-[#E8A817]" /> Puntos de Lealtad
                   </Button>
                 </>
               )}
@@ -370,7 +374,7 @@ export function Header() {
                 <>
                   <Separator className="my-2" />
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("create-ad")}>
-                    <Megaphone className="h-4 w-4 mr-3 text-[#D2B48C] dark:text-[#D4A017]" /> Crear Anuncio
+                    <Megaphone className="h-4 w-4 mr-3 text-[#E8A817] dark:text-[#E8A817]" /> Crear Anuncio
                   </Button>
                 </>
               )}
@@ -396,10 +400,10 @@ export function Header() {
                 </div>
               ) : (
                 <div className="px-2 space-y-2 pt-2">
-                  <Button className="w-full bg-[#4A90E2] hover:bg-[#3A7BC8]" onClick={() => handleNav("login")}>
+                  <Button className="w-full bg-[#1B3A5C] hover:bg-[#3A7BC8]" onClick={() => handleNav("login")}>
                     Iniciar Sesión
                   </Button>
-                  <Button variant="outline" className="w-full border-[#D2B48C] dark:border-[#D4A017] text-[#607D8B] dark:text-[#D4A017]" onClick={() => handleNav("register")}>
+                  <Button variant="outline" className="w-full border-[#E8A817] dark:border-[#E8A817] text-[#607D8B] dark:text-[#E8A817]" onClick={() => handleNav("register")}>
                     Registrarse
                   </Button>
                 </div>

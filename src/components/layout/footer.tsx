@@ -26,10 +26,12 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2 space-y-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">PC</span>
-              </div>
-              <span className="font-bold text-primary font-[family-name:var(--font-poppins)]">
+              <img
+                src="/uploads/logotipo.png"
+                alt="ProveedorConecta"
+                className="h-8 w-auto object-contain"
+              />
+              <span className="font-bold text-[#1B3A5C] dark:text-[#E8A817] font-[family-name:var(--font-poppins)]">
                 ProveedorConecta
               </span>
             </div>
