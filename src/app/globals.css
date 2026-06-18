@@ -49,65 +49,65 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   LIGHT MODE — Cyan metalizado + Plateado + Letras NEGRAS
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═════════════════════════════════════════════════════════════════════
+   LIGHT — Cyan #00BCD4 + Plateado #B0B5BD + Letras NEGRAS #000
+   ═════════════════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.625rem;
-  --background: #C8ECF4;
-  --foreground: #111111;
-  --card: #D8DCE3;
-  --card-foreground: #111111;
-  --popover: #D8DCE3;
-  --popover-foreground: #111111;
+  --background: #00BCD4;
+  --foreground: #000000;
+  --card: #B0B5BD;
+  --card-foreground: #000000;
+  --popover: #B0B5BD;
+  --popover-foreground: #000000;
   --primary: #1A1A1A;
   --primary-foreground: #FFFFFF;
-  --secondary: #C0A060;
-  --secondary-foreground: #111111;
-  --muted: #D0D8E0;
-  --muted-foreground: #555555;
-  --accent: #C0A060;
-  --accent-foreground: #111111;
+  --secondary: #C0963C;
+  --secondary-foreground: #000000;
+  --muted: #A0A8B0;
+  --muted-foreground: #333333;
+  --accent: #C0963C;
+  --accent-foreground: #000000;
   --destructive: #DC3545;
   --destructive-foreground: #FFFFFF;
-  --border: #C0C8D0;
-  --input: #C0C8D0;
+  --border: #A0A8B0;
+  --input: #A0A8B0;
   --ring: #1A1A1A;
   --chart-1: #1A1A1A;
-  --chart-2: #C0A060;
+  --chart-2: #C0963C;
   --chart-3: #DC3545;
   --chart-4: #28A745;
-  --chart-5: #C0A060;
-  --laguna: #1B3A5C;
-  --dorado: #C0A060;
+  --chart-5: #C0963C;
+  --laguna: #0097A7;
+  --dorado: #C0963C;
   --volcan: #DC3545;
   --laguna-foreground: #FFFFFF;
-  --dorado-foreground: #111111;
+  --dorado-foreground: #000000;
   --volcan-foreground: #FFFFFF;
-  --sidebar: #D8DCE3;
-  --sidebar-foreground: #111111;
+  --sidebar: #B0B5BD;
+  --sidebar-foreground: #000000;
   --sidebar-primary: #1A1A1A;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #D0D8E0;
-  --sidebar-accent-foreground: #111111;
-  --sidebar-border: #C0C8D0;
+  --sidebar-accent: #A0A8B0;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #9AA2AA;
   --sidebar-ring: #1A1A1A;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   DARK MODE — Azul #010a19 + DORADO + Letras BLANCAS
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═════════════════════════════════════════════════════════════════════
+   DARK — Azul #010a19 + DORADO #DAA520 + Letras BLANCAS
+   ═════════════════════════════════════════════════════════════════════ */
 .dark {
   --background: #010a19;
-  --foreground: #F0F2F5;
+  --foreground: #F5F5F5;
   --card: #0D1A2D;
-  --card-foreground: #F0F2F5;
+  --card-foreground: #F5F5F5;
   --popover: #0D1A2D;
-  --popover-foreground: #F0F2F5;
+  --popover-foreground: #F5F5F5;
   --primary: #DAA520;
   --primary-foreground: #010a19;
   --secondary: #1B3A5C;
-  --secondary-foreground: #F0F2F5;
+  --secondary-foreground: #F5F5F5;
   --muted: #0A1A30;
   --muted-foreground: #8899AA;
   --accent: #DAA520;
@@ -129,53 +129,33 @@
   --dorado-foreground: #010a19;
   --volcan-foreground: #FFFFFF;
   --sidebar: #0D1A2D;
-  --sidebar-foreground: #F0F2F5;
+  --sidebar-foreground: #F5F5F5;
   --sidebar-primary: #DAA520;
   --sidebar-primary-foreground: #010a19;
   --sidebar-accent: #0A1A30;
-  --sidebar-accent-foreground: #F0F2F5;
+  --sidebar-accent-foreground: #F5F5F5;
   --sidebar-border: #1A2F48;
   --sidebar-ring: #DAA520;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   BASE STYLES
-   ═══════════════════════════════════════════════════════════════════════════ */
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   FORCE COLORS — absolute override
-   ═══════════════════════════════════════════════════════════════════════════ */
-html, body {
-  background-color: #C8ECF4 !important;
-  color: #111111 !important;
-}
+/* FORCE */
+html, body { background-color: #00BCD4 !important; color: #000000 !important; }
+html.dark, html.dark body, .dark body { background-color: #010a19 !important; color: #F5F5F5 !important; }
 
-html.dark, html.dark body, .dark body {
-  background-color: #010a19 !important;
-  color: #F0F2F5 !important;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--muted-foreground); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--foreground); }
-
-* { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
-
-.product-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
-.dark .product-card:hover { box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
-
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--muted-foreground); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--foreground); }
+* { transition:background-color .2s,border-color .2s,color .15s; }
+.product-card { transition:transform .2s,box-shadow .2s; }
+.product-card:hover { transform:translateY(-4px); box-shadow:0 12px 24px rgba(0,0,0,.12); }
+.dark .product-card:hover { box-shadow:0 12px 24px rgba(0,0,0,.4); }
 @keyframes pulse-discount { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-.discount-badge { animation: pulse-discount 2s ease-in-out infinite; }
-.chat-bubble-sent { border-radius: 16px 16px 4px 16px; }
-.chat-bubble-received { border-radius: 16px 16px 16px 4px; }
+.discount-badge { animation:pulse-discount 2s infinite; }
+.chat-bubble-sent { border-radius:16px 16px 4px 16px; }
+.chat-bubble-received { border-radius:16px 16px 16px 4px; }
