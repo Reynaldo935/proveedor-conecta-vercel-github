@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Force fresh build on every deploy — invalidates Vercel cache
+  generateBuildId: async () => `pc-build-${Date.now()}`,
   reactStrictMode: false,
   serverExternalPackages: ["bcryptjs", "sharp", "pusher", "nodemailer"],
   allowedDevOrigins: [
