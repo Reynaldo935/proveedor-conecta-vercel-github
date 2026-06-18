@@ -562,7 +562,7 @@ function HomeFeed() {
             placeholder="Buscar productos, proveedores..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-card border-[#D0D7E0] dark:bg-[#0D1A2D] dark:border-[#E8A817] text-[#111111] dark:text-[#F0F2F5]"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 useAppStore.getState().setSearchQuery(searchQuery)
@@ -571,7 +571,8 @@ function HomeFeed() {
             }}
           />
         </div>
-        <Button onClick={() => { useAppStore.getState().setSearchQuery(searchQuery); navigate("search") }}>
+        <Button onClick={() => { useAppStore.getState().setSearchQuery(searchQuery); navigate("search") }}
+          className="bg-[#1A1A1A] hover:bg-[#333] text-white dark:bg-[#E8A817] dark:hover:bg-[#D4950F] dark:text-[#060E1A] font-semibold">
           Buscar
         </Button>
       </div>
@@ -590,10 +591,9 @@ function HomeFeed() {
         ].map(({ label, view, icon: Icon }) => (
           <Button
             key={view}
-            variant="outline"
             size="sm"
             onClick={() => navigate(view as Parameters<typeof navigate>[0])}
-            className="gap-2"
+            className="gap-2 bg-card hover:bg-[#DDE1E8] dark:bg-[#E8A817] dark:hover:bg-[#D4950F] dark:text-[#060E1A] text-[#111111] border border-[#D0D7E0] dark:border-[#E8A817] shadow-sm"
           >
             <Icon className="h-4 w-4" />
             {label}
