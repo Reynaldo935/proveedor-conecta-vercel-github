@@ -14,22 +14,50 @@ export async function POST() {
       }, { status: 200 })
     }
 
-    // ── Convert libsql:// URL to https:// for @libsql/client v0.6 ──────
-    let httpUrl = tursoUrl
-    if (tursoUrl.startsWith('libsql://')) {
-      httpUrl = tursoUrl.replace('libsql://', 'https://')
-    }
+    // ── Convert to Turso HTTP API endpoint ────────────────────────────
+    // libsql://dunddy-xxx.turso.io → https://dunddy-xxx.turso.io
+    const httpBase = tursoUrl
+      .replace('libsql://', 'https://')
+      .replace('.aws-us-east-1.turso.io', '') + '.aws-us-east-1.turso.io'
 
-    // Try to connect directly via libsql client
-    const { createClient } = await import('@libsql/client')
-    const client = createClient({ url: httpUrl, authToken: tursoToken })
+    // Ensure we have the full host
+    const host = httpBase.startsWith('https://') ? httpBase.replace('https://', '') : httpBase
+
+    // Turso HTTP API v3 endpoint
+    const apiUrl = `https://${host}/v3/pipeline`
+
+    async function tursoQuery(sql: string): Promise<void> {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tursoToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [
+            { type: 'execute', stmt: { sql } },
+          ],
+        }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`Turso HTTP ${res.status}: ${text.substring(0, 200)}`)
+      }
+
+      const data = await res.json()
+      // Check for errors in response
+      if (data.results?.[0]?.type === 'error') {
+        throw new Error(`Turso error: ${data.results[0].error?.message || 'unknown'}`)
+      }
+    }
 
     // Check if tables already exist
     try {
-      const r = await client.execute("SELECT count(*) as c FROM User")
+      await tursoQuery('SELECT count(*) FROM "User"')
       return NextResponse.json({
         success: true,
-        message: `DB already initialized. ${r.rows[0]?.c ?? 0} users.`,
+        message: 'Database already initialized.',
         alreadySeeded: true,
       })
     } catch {
@@ -44,43 +72,35 @@ export async function POST() {
 
     const sql = fs.readFileSync(sqlPath, 'utf-8')
 
-    // Build batched SQL: disable FK checks, run all, re-enable
-    const batchedSql = 'PRAGMA foreign_keys = OFF;\n' + sql + '\nPRAGMA foreign_keys = ON;'
+    // Split into individual statements (SQLite CREATE TABLE etc)
+    const statements = sql
+      .split(/;\s*\n/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0 && !s.startsWith('--'))
 
-    try {
-      await client.execute(batchedSql)
-      return NextResponse.json({
-        success: true,
-        message: 'Migration completed successfully.',
-      })
-    } catch (batchErr) {
-      // Batch failed — try statement by statement
-      const statements = sql
-        .split(/;\s*\n/)
-        .map(s => s.trim())
-        .filter(s => s.length > 0 && !s.startsWith('--'))
-
-      // Disable foreign keys for individual execution too
-      await client.execute('PRAGMA foreign_keys = OFF')
-
-      let executed = 0
-      for (const stmt of statements) {
-        try {
-          await client.execute(stmt)
-          executed++
-        } catch (err) {
-          // Log but continue - some statements may fail due to ordering
-          console.error(`Stmt ${executed + 1} failed: ${(err as Error).message}`)
+    // Execute each statement
+    let ok = 0
+    let failed = 0
+    for (const stmt of statements) {
+      try {
+        await tursoQuery(stmt)
+        ok++
+      } catch (err) {
+        failed++
+        // If the error is just "table already exists", continue
+        const msg = (err as Error).message
+        if (msg.includes('already exists') || msg.includes('duplicate')) {
+          ok++
+          continue
         }
+        console.error(`Stmt failed: ${msg.substring(0, 100)}`)
       }
-
-      await client.execute('PRAGMA foreign_keys = ON')
-
-      return NextResponse.json({
-        success: true,
-        message: `Migration complete. ${executed}/${statements.length} statements executed.`,
-      })
     }
+
+    return NextResponse.json({
+      success: true,
+      message: `Migration: ${ok} ok, ${failed} failed out of ${statements.length}`,
+    })
   } catch (err) {
     return NextResponse.json({
       success: false,
