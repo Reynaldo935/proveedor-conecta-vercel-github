@@ -83,59 +83,9 @@ export function LoginForm() {
   }
 
   const handleGoogleLogin = async () => {
-    const googleEmail = prompt("Ingresa tu correo de Google (simulación OAuth):")
-    if (!googleEmail) return
-
-    // Local email format validation
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    if (!emailRegex.test(googleEmail)) {
-      toast.error("Formato de correo inválido")
-      return
-    }
-
-    // Server-side email validation with account existence check
-    try {
-      const validateData = await api.post("auth/validate-email", { email: googleEmail, checkAccount: true })
-      if (validateData.success && validateData.data) {
-        const vd = validateData.data as any
-        if (vd.correoInvalido || !vd.accountExists) {
-          toast.error("Correo inválido — la cuenta de Google no existe o no se puede verificar")
-          return
-        }
-        if (vd.disposable) {
-          toast.error("No se permiten correos de dominios desechables")
-          return
-        }
-        if (!vd.valid) {
-          toast.error("Correo inválido. Verifica que la dirección de correo exista.")
-          return
-        }
-      }
-    } catch {
-      // If validation endpoint fails, proceed anyway (don't block login)
-    }
-
-    setLoading(true)
-    try {
-      const data = await api.post("auth/google", {
-        email: googleEmail,
-        name: googleEmail.split("@")[0],
-        googleId: "google_" + Date.now(),
-        avatar: "",
-        role: "BUYER",
-      })
-      if (data.success && data.data) {
-        setUser(data.data as any)
-        toast.success("¡Bienvenido con Google!")
-        navigate("home")
-      } else {
-        toast.error(data.error || "Error con Google")
-      }
-    } catch {
-      toast.error("No se pudo conectar con Google. Intenta de nuevo.")
-    } finally {
-      setLoading(false)
-    }
+    // Real Google OAuth2 flow via server-side redirect
+    // This redirects to Google's consent screen, which returns to /api/auth/google
+    window.location.href = "/api/auth/google"
   }
 
   return (

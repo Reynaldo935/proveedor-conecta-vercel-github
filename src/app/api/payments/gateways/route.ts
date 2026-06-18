@@ -145,6 +145,16 @@ export async function POST(request: NextRequest) {
       }
 
       case 'stripe': {
+        // Stripe Connect: use seller's Stripe account for 3% application fee
+        const sellerStripeId = product.seller?.businessProfile?.paymentMethods
+          ? (() => {
+              try {
+                const pm = JSON.parse(product.seller.businessProfile.paymentMethods)
+                return pm?.stripeAccountId || undefined
+              } catch { return undefined }
+            })()
+          : undefined
+
         const payResult = await createStripeCheckoutSession({
           amount: body.amount,
           currency: currency === 'NIO' ? 'usd' : currency.toLowerCase(),
@@ -155,7 +165,9 @@ export async function POST(request: NextRequest) {
             productId: body.productId,
             userId,
             orderId,
+            feePercent: '3',
           },
+          sellerStripeAccountId: sellerStripeId,
         })
         result = {
           success: payResult.success,

@@ -379,7 +379,7 @@ export async function capturePayPalOrder(paypalOrderId: string): Promise<PayPalC
   }
 }
 
-// ─── Stripe (for ad subscriptions) ───────────────────────────────────────────
+// ─── Stripe (with Connect 3% Commission) ──────────────────────────────────
 
 interface StripeCheckoutParams {
   amount: number
@@ -388,30 +388,75 @@ interface StripeCheckoutParams {
   successUrl: string
   cancelUrl: string
   metadata?: Record<string, string>
+  /** Stripe Connect account ID of the seller (for application_fee_amount) */
+  sellerStripeAccountId?: string
 }
 
 interface StripeCheckoutResult {
   success: boolean
   sessionId?: string
   url?: string
+  /** The 3% commission fee in cents, calculated from the total amount */
+  applicationFeeCents?: number
   error?: string
+}
+
+/**
+ * Calculate 3% commission fee in cents.
+ * Uses Math.round for precise integer cent calculation.
+ * Example: $10.00 = 1000 cents → fee = Math.round(1000 * 0.03) = 30 cents
+ */
+export function calculateStripeCommission(totalAmountInCents: number): number {
+  return Math.round(totalAmountInCents * 0.03)
 }
 
 export async function createStripeCheckoutSession(params: StripeCheckoutParams): Promise<StripeCheckoutResult> {
   const secretKey = process.env.STRIPE_SECRET_KEY
 
+  // Calculate total in cents and 3% commission
+  const amountInCents = Math.round(params.amount * 100)
+  const applicationFeeCents = calculateStripeCommission(amountInCents)
+
   // Simulated response when credentials are not configured
   if (!secretKey) {
     console.log('[Stripe] Using simulated response (missing STRIPE_SECRET_KEY)')
+    console.log(`[Stripe] Simulated fee: ${applicationFeeCents} cents (3%% of ${amountInCents} cents)`)
     const simSessionId = `CS-SIM-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
     return {
       success: true,
       sessionId: simSessionId,
       url: `${(() => { const u = process.env.NEXT_PUBLIC_APP_URL; if (!u) throw new Error('NEXT_PUBLIC_APP_URL is required in production'); return u })()}/payment/success?gateway=stripe&session_id=${simSessionId}&simulated=1`,
+      applicationFeeCents,
     }
   }
 
   try {
+    // Build form data for Stripe REST API
+    const formData: Record<string, string> = {
+      'payment_method_types[0]': 'card',
+      'line_items[0][price_data][currency]': params.currency,
+      'line_items[0][price_data][product_data][name]': params.description,
+      'line_items[0][price_data][unit_amount]': String(amountInCents),
+      'line_items[0][quantity]': '1',
+      'mode': 'payment',
+      'success_url': params.successUrl,
+      'cancel_url': params.cancelUrl,
+    }
+
+    // Add Stripe Connect: if seller has a connected Stripe account, set the fee
+    // The admin/platform account (rey7214935@gmail.com) receives the 3% fee
+    if (params.sellerStripeAccountId) {
+      formData['payment_intent_data[application_fee_amount]'] = String(applicationFeeCents)
+      formData['payment_intent_data[transfer_data][destination]'] = params.sellerStripeAccountId
+    }
+
+    // Add metadata
+    if (params.metadata) {
+      for (const [key, value] of Object.entries(params.metadata)) {
+        formData[`metadata[${key}]`] = value
+      }
+    }
+
     // Use Stripe REST API directly (no SDK needed for Vercel serverless)
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
@@ -419,25 +464,7 @@ export async function createStripeCheckoutSession(params: StripeCheckoutParams):
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Bearer ${secretKey}`,
       },
-      body: new URLSearchParams({
-        'payment_method_types[0]': 'card',
-        'line_items[0][price_data][currency]': params.currency,
-        'line_items[0][price_data][product_data][name]': params.description,
-        'line_items[0][price_data][unit_amount]': String(Math.round(params.amount * 100)), // Stripe expects cents
-        'line_items[0][quantity]': '1',
-        'mode': 'payment',
-        'success_url': params.successUrl,
-        'cancel_url': params.cancelUrl,
-        ...(params.metadata
-          ? Object.entries(params.metadata).reduce(
-              (acc, [key, value], index) => ({
-                ...acc,
-                [`metadata[${key}]`]: value,
-              }),
-              {}
-            )
-          : {}),
-      }).toString(),
+      body: new URLSearchParams(formData).toString(),
     })
 
     if (!response.ok) {
@@ -448,10 +475,13 @@ export async function createStripeCheckoutSession(params: StripeCheckoutParams):
 
     const data = await response.json()
 
+    console.log(`[Stripe] Session created: ${data.id}, fee: ${applicationFeeCents} cents (3%%)`)
+
     return {
       success: true,
       sessionId: data.id,
       url: data.url,
+      applicationFeeCents,
     }
   } catch (error) {
     console.error('[Stripe] Create session error:', error)

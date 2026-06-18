@@ -158,8 +158,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Step 5: Set auth cookie and redirect to home
-    const response = NextResponse.redirect(new URL('/', request.url))
+    // Step 5: Set auth cookie and redirect to home with success flag
+    const redirectUrl = new URL('/?google_auth=success', request.url)
+    const response = NextResponse.redirect(redirectUrl)
     response.cookies.set('pc_user_id', user.id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

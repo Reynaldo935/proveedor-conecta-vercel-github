@@ -86,7 +86,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const body = await request.json()
-    const { content, imageUrl, messageType, mediaUrl, locationLat, locationLng, locationName } = body
+    const { content, imageUrl, messageType, mediaUrl, locationLat, locationLng, locationName, fileName, fileSize } = body
 
     if (!content && !imageUrl && !mediaUrl && !locationLat) {
       return NextResponse.json({ success: false, error: 'Mensaje, imagen o ubicación requerido' }, { status: 200 })
@@ -102,6 +102,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         imageUrl: imageUrl || mediaUrl || '',
         messageType: msgType,
         mediaUrl: mediaUrl || '',
+        fileName: fileName || '',
+        fileSize: fileSize || 0,
         locationLat: locationLat || null,
         locationLng: locationLng || null,
         locationName: locationName || '',
@@ -117,6 +119,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     else if (msgType === 'video') lastMsgDisplay = content || '🎥 Video'
     else if (msgType === 'audio') lastMsgDisplay = content || '🎵 Audio'
     else if (msgType === 'location') lastMsgDisplay = content || '📍 Ubicación'
+    else if (msgType === 'file') lastMsgDisplay = content || '📎 Archivo'
 
     await db.chatRoom.update({
       where: { id: roomId },

@@ -14,6 +14,7 @@ import { authFetch } from "@/lib/client-auth"
 import {
   Send, ChevronLeft, ImagePlus, Package, Wifi, WifiOff,
   Paperclip, MapPin, Mic, Video, X, Loader2, Volume2,
+  FileText, File,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -26,8 +27,10 @@ interface ChatMessage {
   isRead: boolean
   createdAt: string
   sender?: { id: string; name: string; avatar: string }
-  messageType?: "text" | "image" | "video" | "audio" | "location"
+  messageType?: "text" | "image" | "video" | "audio" | "location" | "file"
   mediaUrl?: string
+  fileName?: string
+  fileSize?: number
   locationLat?: number
   locationLng?: number
   locationName?: string
@@ -430,6 +433,65 @@ export function ChatView() {
     }
   }
 
+  // Upload general file (document, PDF, etc.)
+  const handleFileUpload = async (files: FileList) => {
+    if (!chatRoom || !user) return
+    setUploading(true)
+    setShowAttachMenu(false)
+
+    const fd = new FormData()
+    Array.from(files).forEach((f) => fd.append("files", f))
+    fd.append("subfolder", "chat")
+
+    try {
+      const res = await authFetch("/api/upload", { method: "POST", body: fd })
+      const d = await res.json()
+      if (d.success && d.data.length > 0) {
+        for (let i = 0; i < d.data.length; i++) {
+          const url = d.data[i]
+          const file = files[i]
+          const fileName = file?.name || "Archivo"
+          const fileSize = file?.size || 0
+
+          if (isConnected && socketRef.current) {
+            socketRef.current.emit("send-message", {
+              roomId: chatRoom.id,
+              senderId: user.id,
+              content: `📎 ${fileName}`,
+              imageUrl: url,
+              messageType: "file",
+              mediaUrl: url,
+              fileName,
+              fileSize,
+            })
+          } else {
+            const msgRes = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: `📎 ${fileName}`,
+                imageUrl: url,
+                messageType: "file",
+                mediaUrl: url,
+                fileName,
+                fileSize,
+              }),
+            })
+            const md = await msgRes.json()
+            if (md.success) setMessages((prev) => [...prev, md.data])
+          }
+        }
+        toast.success("Archivo enviado")
+      } else {
+        toast.error(d.error || "Error al subir archivo")
+      }
+    } catch {
+      toast.error("Error al subir archivo")
+    } finally {
+      setUploading(false)
+    }
+  }
+
   // Send location
   const sendLocation = async () => {
     if (!chatRoom || !user) return
@@ -605,6 +667,31 @@ export function ChatView() {
                 <p className="text-xs text-muted-foreground">{m.locationName || m.content}</p>
               </div>
             </a>
+          </div>
+        )
+      case "file":
+        return (
+          <div>
+            {m.mediaUrl ? (
+              <a
+                href={m.mediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-black/5 dark:bg-white/5 rounded-lg p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                download={m.fileName}
+              >
+                <File className="h-8 w-8 text-[#4A90E2] flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{m.fileName || "Archivo adjunto"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {m.fileSize ? `${(m.fileSize / 1024).toFixed(1)} KB` : "Descargar"}
+                  </p>
+                </div>
+              </a>
+            ) : null}
+            {m.content && !m.content.startsWith("📎") && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap mt-1">{m.content}</p>
+            )}
           </div>
         )
       default:
@@ -957,6 +1044,24 @@ export function ChatView() {
                 >
                   <Mic className="h-5 w-5 text-purple-600" />
                   <span className="text-[10px]">Audio</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 flex flex-col items-center gap-1 h-auto py-2"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.accept = "*"
+                      fileInputRef.current.onchange = (e) => {
+                        const target = e.target as HTMLInputElement
+                        if (target.files?.length) handleFileUpload(target.files)
+                      }
+                      fileInputRef.current.click()
+                    }
+                  }}
+                >
+                  <FileText className="h-5 w-5 text-orange-600" />
+                  <span className="text-[10px]">Archivo</span>
                 </Button>
                 <Button
                   variant="ghost"

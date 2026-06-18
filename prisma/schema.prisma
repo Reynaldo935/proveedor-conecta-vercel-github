@@ -136,8 +136,10 @@ model Message {
   senderId     String
   content      String   @default("")
   imageUrl     String   @default("")
-  messageType  String   @default("text") // text, image, video, audio, location
+  messageType  String   @default("text") // text, image, video, audio, location, file
   mediaUrl     String   @default("")
+  fileName     String   @default("")
+  fileSize     Int      @default(0)
   locationLat  Float?
   locationLng  Float?
   locationName String   @default("")
