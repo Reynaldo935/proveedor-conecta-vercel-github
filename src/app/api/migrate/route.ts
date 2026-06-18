@@ -10,6 +10,12 @@ export async function POST() {
       return NextResponse.json({
         success: false,
         error: 'TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set',
+        debug: {
+          urlExists: !!tursoUrl,
+          tokenExists: !!tursoToken,
+          urlFirst20: tursoUrl?.substring(0, 20),
+          tokenFirst20: tursoToken?.substring(0, 20),
+        }
       }, { status: 200 })
     }
 
@@ -23,6 +29,12 @@ export async function POST() {
     // Remove trailing slash
     host = host.replace(/\/$/, '')
     const apiPath = '/v2/pipeline'
+
+    const debugInfo = {
+      urlFirst30: tursoUrl?.substring(0, 30),
+      hostUsed: host,
+      tokenFirst20: tursoToken?.substring(0, 20),
+    }
 
     // ── Core tables SQL (minimal set needed for the app) ──────────────
     const createTables = [
@@ -97,6 +109,7 @@ export async function POST() {
       success: errors.length === 0,
       message: `Core tables: ${created}/${createTables.length} created`,
       errors: errors.length > 0 ? errors : undefined,
+      debug: debugInfo,
     })
   } catch (err) {
     return NextResponse.json({
