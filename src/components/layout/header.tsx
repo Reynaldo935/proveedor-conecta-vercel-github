@@ -108,7 +108,7 @@ export function Header() {
               alt="ProveedorConecta Nicaragua"
               className="h-9 w-auto object-contain"
             />
-            <span className="hidden sm:block font-bold text-lg font-[family-name:var(--font-poppins)] text-[#1B3A5C] dark:text-[#E8A817]">
+            <span className="hidden sm:block font-bold text-lg font-[family-name:var(--font-poppins)] text-foreground dark:text-[#E8A817]">
               ProveedorConecta
             </span>
           </button>
@@ -156,7 +156,7 @@ export function Header() {
               suppressHydrationWarning
             >
               {mounted ? (
-                isDark ? <Sun className="h-5 w-5 text-[#E8A817]" /> : <Moon className="h-5 w-5 text-[#1B3A5C]" />
+                isDark ? <Sun className="h-5 w-5 text-[#E8A817]" /> : <Moon className="h-5 w-5 text-foreground" />
               ) : (
                 <Moon className="h-5 w-5" />
               )}
@@ -186,7 +186,7 @@ export function Header() {
                 alt="Logo"
                 className="h-8 w-auto object-contain"
               />
-              <span className="text-[#1B3A5C] dark:text-[#E8A817]">ProveedorConecta</span>
+              <span className="text-foreground dark:text-[#E8A817]">ProveedorConecta</span>
             </SheetTitle>
             <SheetDescription className="sr-only">Menú de navegación principal</SheetDescription>
           </SheetHeader>

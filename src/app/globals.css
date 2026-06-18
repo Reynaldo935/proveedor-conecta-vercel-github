@@ -51,34 +51,37 @@
 
 :root {
   --radius: 0.625rem;
-  /* ProveedorConecta Nicaragua - Light Mode (Celeste, Plateado, Profesional) */
-  /* ─── Fondo celeste suave ─── */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LIGHT MODE — Celeste + Plateado + Letras NEGRAS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  /* Fondo celeste claro */
   --background: #E3F0FA;
-  /* ─── Texto negro ─── */
-  --foreground: #1A1A1A;
-  /* ─── Tarjetas plateadas / silver ─── */
-  --card: #F2F5F8;
-  --card-foreground: #1A1A1A;
-  --popover: #F2F5F8;
-  --popover-foreground: #1A1A1A;
-  /* ─── Azul corporativo oscuro ─── */
-  --primary: #1B3A5C;
+  /* Letras SIEMPRE negras */
+  --foreground: #111111;
+  /* Tarjetas plateadas (silver) */
+  --card: #EDF0F5;
+  --card-foreground: #111111;
+  --popover: #EDF0F5;
+  --popover-foreground: #111111;
+  /* Botón principal NEGRO (Buscar, etc.) */
+  --primary: #1A1A1A;
   --primary-foreground: #FFFFFF;
-  /* ─── Dorado vibrante para botones/CTAs ─── */
+  /* Dorado para acentos (iconos, hover) */
   --secondary: #E8A817;
-  --secondary-foreground: #1A1A1A;
-  /* ─── Plateado suave ─── */
+  --secondary-foreground: #111111;
+  /* Plateado suave para fondos secundarios */
   --muted: #E8ECF2;
-  --muted-foreground: #5A6570;
-  /* ─── Dorado acento ─── */
+  --muted-foreground: #555555;
+  /* Dorado como acento */
   --accent: #E8A817;
-  --accent-foreground: #1A1A1A;
+  --accent-foreground: #111111;
   --destructive: #DC3545;
-  /* ─── Bordes plateados ─── */
+  --destructive-foreground: #FFFFFF;
+  /* Bordes plateados */
   --border: #D0D7E0;
-  --input: #C8D0D8;
-  --ring: #1B3A5C;
-  --chart-1: #1B3A5C;
+  --input: #D0D7E0;
+  --ring: #1A1A1A;
+  --chart-1: #1A1A1A;
   --chart-2: #E8A817;
   --chart-3: #DC3545;
   --chart-4: #28A745;
@@ -87,43 +90,46 @@
   --dorado: #E8A817;
   --volcan: #DC3545;
   --laguna-foreground: #FFFFFF;
-  --dorado-foreground: #1A1A1A;
+  --dorado-foreground: #111111;
   --volcan-foreground: #FFFFFF;
-  /* ─── Sidebar plateado ─── */
-  --sidebar: #F2F5F8;
-  --sidebar-foreground: #1A1A1A;
-  --sidebar-primary: #1B3A5C;
+  --sidebar: #EDF0F5;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #1A1A1A;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #E8ECF2;
-  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-accent-foreground: #111111;
   --sidebar-border: #D0D7E0;
-  --sidebar-ring: #1B3A5C;
+  --sidebar-ring: #1A1A1A;
 }
 
 .dark {
-  /* ProveedorConecta Nicaragua - Dark Mode (Azul super oscuro, Dorado permanente, Letras blancas) */
-  /* ─── Fondo azul super oscuro ─── */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     DARK MODE — Azul super oscuro + DORADO + Letras BLANCAS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  /* Fondo azul midnight super oscuro */
   --background: #060E1A;
-  /* ─── Texto blanco ─── */
+  /* Letras BLANCAS */
   --foreground: #F0F2F5;
-  /* ─── Tarjetas azul muy oscuro ─── */
+  /* Tarjetas azul muy oscuro (para contraste con dorado) */
   --card: #0D1A2D;
   --card-foreground: #F0F2F5;
   --popover: #0D1A2D;
   --popover-foreground: #F0F2F5;
-  /* ─── Dorado como primary en dark ─── */
+  /* Botón principal DORADO */
   --primary: #E8A817;
   --primary-foreground: #060E1A;
+  /* Azul corporativo como secundario */
   --secondary: #1B3A5C;
   --secondary-foreground: #F0F2F5;
-  /* ─── Plateado oscuro ─── */
+  /* Fondos sutiles */
   --muted: #132238;
   --muted-foreground: #8899AA;
-  /* ─── Dorado permanente como acento ─── */
+  /* Acento dorado PERMANENTE */
   --accent: #E8A817;
   --accent-foreground: #060E1A;
   --destructive: #E74C3C;
-  /* ─── Bordes azul oscuro ─── */
+  --destructive-foreground: #FFFFFF;
+  /* Bordes azul oscuro */
   --border: #1A2F48;
   --input: #1E3550;
   --ring: #E8A817;
@@ -138,7 +144,6 @@
   --laguna-foreground: #FFFFFF;
   --dorado-foreground: #060E1A;
   --volcan-foreground: #FFFFFF;
-  /* ─── Sidebar azul super oscuro ─── */
   --sidebar: #0D1A2D;
   --sidebar-foreground: #F0F2F5;
   --sidebar-primary: #E8A817;
