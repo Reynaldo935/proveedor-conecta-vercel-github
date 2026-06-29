@@ -163,7 +163,11 @@ export async function POST() {
     })
   } catch (error) {
     console.error('Seed marketplace error:', error)
-    return NextResponse.json({ success: false, error: 'Error al poblar marketplace' }, { status: 200 })
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Error al poblar marketplace',
+      detail: (error as Error).message 
+    }, { status: 200 })
   }
 }
 
@@ -176,7 +180,7 @@ export async function GET() {
       data: { productCount, sellerCount },
       providers: NICARAGUA_PROVIDERS.map(p => ({ name: p.businessName, website: p.website, products: p.products.length })),
     })
-  } catch {
-    return NextResponse.json({ success: false, error: 'Error' }, { status: 200 })
+  } catch (err) {
+    return NextResponse.json({ success: false, error: 'Error', detail: (err as Error).message }, { status: 200 })
   }
 }
