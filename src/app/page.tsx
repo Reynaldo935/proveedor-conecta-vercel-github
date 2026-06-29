@@ -3,15 +3,16 @@
 import { useEffect, useState, useSyncExternalStore, useCallback } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
+import { useCartStore } from "@/store/cart-store"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import {
-  Heart, MapPin, Search, Star, Store, Package,
+  Heart, MapPin, Search, Star, Store, Package, ShoppingCart,
   Menu, Sun, Moon, MessageCircle, User, ChevronDown, Home,
-  ShoppingCart, Bell, LogOut, Shield, FileText, CreditCard,
+  Bell, LogOut, Shield, FileText, CreditCard,
   Settings, Plus, Compass, LayoutDashboard, X, Cloud, Droplets, Thermometer,
   Download, HardDriveDownload, BarChart3, Calendar, Gift, MoreHorizontal
 } from "lucide-react"
@@ -415,6 +416,26 @@ function SimpleFooter() {
 // ─── Product Card ─────────────────────────────────────────────────────────────
 function ProductCard({ product }: { product: Product }) {
   const { navigate } = useAppStore()
+  const addItem = useCartStore((s) => s.addItem)
+  const cartItems = useCartStore((s) => s.items)
+  const isInCart = cartItems.some(i => i.productId === product.id)
+  const [added, setAdded] = useState(false)
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    addItem({
+      productId: product.id,
+      title: product.title,
+      price: product.price,
+      discountPrice: product.discountPrice,
+      image: product.images?.[0] || '',
+      sellerName: product.seller?.businessProfile?.businessName || product.seller?.name || 'Vendedor',
+      maxQuantity: product.quantity,
+      quantity: 1,
+    })
+    setAdded(true)
+    setTimeout(() => setAdded(false), 1500)
+  }
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("es-NI", { style: "currency", currency: "NIO" }).format(price)
@@ -485,11 +506,21 @@ function ProductCard({ product }: { product: Product }) {
             <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
               <Store className="h-3 w-3 text-primary" />
             </div>
-            <span className="text-xs text-muted-foreground truncate">
+            <span className="text-xs text-muted-foreground truncate flex-1">
               {product.seller.businessProfile?.businessName || product.seller.name}
             </span>
           </div>
         )}
+        {/* Add to Cart Button */}
+        <Button
+          size="sm"
+          variant={isInCart ? "default" : "outline"}
+          className={`w-full mt-2 gap-1 text-xs h-8 ${added ? 'bg-green-600 text-white' : ''}`}
+          onClick={handleAddToCart}
+        >
+          <ShoppingCart className="h-3.5 w-3.5" />
+          {added ? '✓ Agregado' : isInCart ? 'En el carrito' : 'Agregar al carrito'}
+        </Button>
       </CardContent>
     </Card>
   )
