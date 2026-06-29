@@ -1,45 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
+import { MEGA_CATALOG } from '@/data/mega-catalog'
+
+// Helper: find product in static catalog
+function findStaticProduct(id: string) {
+  const p = MEGA_CATALOG.find(p => p.id === id)
+  if (!p) return null
+  return {
+    id: p.id,
+    title: p.title,
+    description: p.description,
+    price: p.price,
+    discountPrice: p.discountPrice,
+    discountPercent: p.discountPercent,
+    category: p.category,
+    tags: p.tags,
+    images: p.images,
+    quantity: p.quantity,
+    featured: p.featured,
+    seller: {
+      id: 'static',
+      name: p.seller.name,
+      avatar: null,
+      phone: p.seller.phone,
+      address: p.seller.department,
+      businessProfile: p.seller.businessName ? { businessName: p.seller.businessName, logo: null, category: p.category } : null,
+      followers: [],
+      followerCount: 0,
+      isFollowing: false,
+    },
+    likes: [],
+    likeCount: 0,
+    isLiked: false,
+    savedCount: 0,
+    isSaved: false,
+    isFollowingSeller: false,
+    quantityDiscounts: [],
+    status: 'ACTIVE',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const userId = await getAuthenticatedUserId(request)
-    if (userId) await setAuthCookie(userId)
 
-    const product = await db.product.findUnique({
-      where: { id },
-      include: {
-        seller: {
-          select: {
-            id: true, name: true, avatar: true, phone: true, address: true,
-            businessProfile: { select: { businessName: true, logo: true, category: true } },
-            followers: { select: { followerId: true } },
-          },
-        },
-        likes: { select: { userId: true } },
-        quantityDiscounts: true,
-      },
-    })
-
-    if (!product || product.status === 'DELETED') {
-      return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 200 })
-    }
-
-    // Check if user saved this product
+    // Try DB first, fallback to static catalog
+    let product: any = null
     let isSaved = false
     let savedCount = 0
-    if (userId) {
-      const saved = await db.savedProduct.findUnique({
-        where: { userId_productId: { userId, productId: id } },
-      })
-      isSaved = !!saved
-    }
-    savedCount = await db.savedProduct.count({ where: { productId: id } })
+    let isLiked = false
+    let isFollowingSeller = false
 
-    const isLiked = userId ? product.likes.some(l => l.userId === userId) : false
-    const isFollowingSeller = userId ? product.seller.followers.some(f => f.followerId === userId) : false
+    try {
+      const userId = await getAuthenticatedUserId(request)
+      if (userId) await setAuthCookie(userId)
+
+      product = await db.product.findUnique({
+        where: { id },
+        include: {
+          seller: {
+            select: {
+              id: true, name: true, avatar: true, phone: true, address: true,
+              businessProfile: { select: { businessName: true, logo: true, category: true } },
+              followers: { select: { followerId: true } },
+            },
+          },
+          likes: { select: { userId: true } },
+          quantityDiscounts: true,
+        },
+      })
+
+      if (product && product.status !== 'DELETED') {
+        if (userId) {
+          const saved = await db.savedProduct.findUnique({
+            where: { userId_productId: { userId, productId: id } },
+          })
+          isSaved = !!saved
+        }
+        savedCount = await db.savedProduct.count({ where: { productId: id } })
+        isLiked = userId ? product.likes.some((l: { userId: string }) => l.userId === userId) : false
+        isFollowingSeller = userId ? product.seller.followers.some((f: { followerId: string }) => f.followerId === userId) : false
+      }
+    } catch (dbError) {
+      console.warn('DB unavailable for product detail, using static catalog:', id)
+    }
+
+    // If DB failed or product not found, use static catalog
+    if (!product || product.status === 'DELETED') {
+      const staticProduct = findStaticProduct(id)
+      if (!staticProduct) {
+        return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 200 })
+      }
+      return NextResponse.json({ success: true, data: staticProduct })
+    }
 
     return NextResponse.json({
       success: true,
@@ -62,6 +118,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
   } catch (error) {
     console.error('Get product error:', error)
+    // Final fallback: try static catalog
+    const { id } = await params
+    const staticProduct = findStaticProduct(id)
+    if (staticProduct) {
+      return NextResponse.json({ success: true, data: staticProduct })
+    }
     return NextResponse.json({ success: false, error: 'Error al obtener producto' }, { status: 200 })
   }
 }

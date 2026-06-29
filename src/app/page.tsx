@@ -64,6 +64,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   "Salud y Farmacia": "💊",
   "Hogar y Muebles": "🏠",
   "Educación y Oficina": "📚",
+  "Transporte y Logística": "🚛",
   "Transporte y Vehículos": "🚗",
   "Servicios Profesionales": "🤝",
   "Otros": "📦",
