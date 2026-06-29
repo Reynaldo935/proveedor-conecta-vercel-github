@@ -11,17 +11,54 @@ import { db } from './db'
 
 /**
  * Get the authenticated user ID.
- * Tries Clerk first, falls back to legacy pc_user_id cookie.
+ * Tries Clerk first, auto-creates DB record if needed, falls back to cookie.
  */
 export async function getAuthenticatedUserId(_request?: Request): Promise<string | null> {
   try {
     // ── Clerk (primary) ──────────────────────────────────────────
     const { userId: clerkUserId } = await auth()
     if (clerkUserId) {
-      const user = await db.user.findUnique({
+      // Find or create the database user linked to this Clerk account
+      let user = await db.user.findUnique({
         where: { clerkId: clerkUserId },
         select: { id: true },
       })
+
+      if (!user) {
+        // Auto-create user in DB on first Clerk auth
+        const { currentUser } = await import('@clerk/nextjs/server')
+        const clerkUser = await currentUser()
+        const email = clerkUser?.emailAddresses[0]?.emailAddress || ''
+        const name = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ') || email
+
+        try {
+          user = await db.user.create({
+            data: {
+              clerkId: clerkUserId,
+              email,
+              name,
+              avatar: clerkUser?.imageUrl || '',
+              role: email === 'rey7214935@gmail.com' ? 'ADMIN' : 'BUYER',
+              emailVerified: true,
+            },
+            select: { id: true },
+          })
+        } catch {
+          // If creation fails (e.g. duplicate email), try finding by email
+          user = await db.user.findFirst({
+            where: { email },
+            select: { id: true },
+          })
+          if (user) {
+            // Link existing email-based account to Clerk
+            await db.user.update({
+              where: { id: user.id },
+              data: { clerkId: clerkUserId },
+            })
+          }
+        }
+      }
+
       if (user) return user.id
     }
   } catch { /* Clerk not available */ }

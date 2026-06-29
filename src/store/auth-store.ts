@@ -84,46 +84,67 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (storedUser.id) setCurrentUserId(storedUser.id as string)
     }
 
-    // Then verify with the server
+    // Then verify with the server (uses Clerk auto-create now)
     try {
-      const res = await fetch('/api/auth/me', {
-        credentials: 'include',
-      })
+      const res = await fetch('/api/auth/me', { credentials: 'include' })
       const data = await res.json()
       if (data.success && data.data) {
         const user = data.data
         set({ user, isAuthenticated: true, isLoading: false })
         storeAuthData(user)
         setCurrentUserId(user.id)
+      } else if (storedUser) {
+        // Keep stored user — Clerk might still be loading
+        set({ isLoading: false })
       } else {
-        // Server says not authenticated - clear stored data
-        set({ user: null, isAuthenticated: false, isLoading: false })
-        clearAuthData()
-        setCurrentUserId(null)
+        // No stored user and server says not authenticated
+        set({ isLoading: false })
       }
     } catch {
-      // Network error - keep stored user if available
+      // Network error — keep stored user if available
+      set({ isLoading: false })
       if (!storedUser) {
-        set({ user: null, isAuthenticated: false, isLoading: false })
+        set({ user: null, isAuthenticated: false })
       }
     }
   },
 
   /**
    * Sync a Clerk-authenticated user with the Zustand store.
-   * Looks up the user in our database by clerkId, or creates a minimal profile.
-   * This bridges Clerk's auth with our existing data layer.
+   * Sets user IMMEDIATELY from Clerk data, then refreshes from API.
    */
   syncClerkUser: async (clerkUser) => {
+    // Set user immediately from Clerk data (instant UI update)
+    const minimalUser: User = {
+      id: clerkUser.id,
+      email: clerkUser.emailAddress,
+      name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.emailAddress,
+      role: 'BUYER',
+      avatar: clerkUser.imageUrl,
+      coverPhoto: '',
+      phone: '',
+      department: '',
+      address: '',
+      bio: '',
+      website: '',
+      isVerified: false,
+      emailVerified: true,
+      phoneVerified: false,
+      balance: 50000,
+    }
+    set({ user: minimalUser, isAuthenticated: true, isLoading: false })
+    storeAuthData(minimalUser as unknown as Record<string, unknown>)
+    setCurrentUserId(clerkUser.id)
+
+    // Then refresh from API (gets full DB record with balance, businessProfile, etc.)
     try {
-      // Try to find or create the user in our database via API
       const res = await fetch('/api/auth/clerk-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clerkId: clerkUser.id,
           email: clerkUser.emailAddress,
-          name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.emailAddress,
+          name: minimalUser.name,
           avatar: clerkUser.imageUrl,
         }),
         credentials: 'include',
@@ -134,51 +155,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ user, isAuthenticated: true, isLoading: false })
         storeAuthData(user)
         setCurrentUserId(user.id)
-      } else {
-        // Fallback: set a minimal user from Clerk data
-        const minimalUser: User = {
-          id: clerkUser.id,
-          email: clerkUser.emailAddress,
-          name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.emailAddress,
-          role: 'BUYER',
-          avatar: clerkUser.imageUrl,
-          coverPhoto: '',
-          phone: '',
-          department: '',
-          address: '',
-          bio: '',
-          website: '',
-          isVerified: false,
-          emailVerified: true, // Clerk handles email verification
-          phoneVerified: false,
-          balance: 50000,
-        }
-        set({ user: minimalUser, isAuthenticated: true, isLoading: false })
-        storeAuthData(minimalUser as unknown as Record<string, unknown>)
-        setCurrentUserId(clerkUser.id)
       }
     } catch {
-      // Network error — still set minimal user from Clerk
-      const minimalUser: User = {
-        id: clerkUser.id,
-        email: clerkUser.emailAddress,
-        name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.emailAddress,
-        role: 'BUYER',
-        avatar: clerkUser.imageUrl,
-        coverPhoto: '',
-        phone: '',
-        department: '',
-        address: '',
-        bio: '',
-        website: '',
-        isVerified: false,
-        emailVerified: true,
-        phoneVerified: false,
-        balance: 50000,
-      }
-      set({ user: minimalUser, isAuthenticated: true, isLoading: false })
-      storeAuthData(minimalUser as unknown as Record<string, unknown>)
-      setCurrentUserId(clerkUser.id)
+      // Keep the minimal user set above
     }
   },
 }))
