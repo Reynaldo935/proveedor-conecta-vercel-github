@@ -321,7 +321,7 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                     type="file"
                     id="photo-upload"
                     multiple
-                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                     className="hidden"
                     ref={fileInputRef}
                     onChange={(e) => e.target.files && handleUpload(e.target.files)}
@@ -334,11 +334,11 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
                     </motion.div>
                     <p className="font-medium">
                       {dragActive
-                        ? "Suelta las fotos aquí"
-                        : "Arrastra fotos aquí o haz clic para subir"}
+                        ? "Suelta los archivos aquí"
+                        : "Arrastra archivos aquí o haz clic para subir"}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Máximo 5 archivos · Fotos, videos, PDF, Word, Excel, PPT
+                      Máximo 5 archivos · Fotos, videos, audio, PDF, Word, Excel, PPT
                     </p>
                   </label>
                 </div>

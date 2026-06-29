@@ -7,6 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ProveedorConecta Nicaragua — Relational Database Schema
+// Supabase PostgreSQL + Prisma ORM
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// TABLES:
+//   User (1) ──< Product (M)        [seller creates products]
+//   User (1) ──< Transaction (M)    [buyer purchases]
+//   User (1) ──< Message (M)        [sender sends messages]
+//   User (1) ──< ChatRoom (M)       [buyer/seller chat rooms]
+//   User (1) ──< Review (M)         [given & received ratings]
+//   User (1) ── BusinessProfile (1) [seller business profile]
+//   Product (1) ──< Transaction (M) [product sold]
+//   Product (1) ──< QuantityDiscount (M) [tiered pricing]
+//   Product (1) ──< ChatRoom (M)    [chat about product]
+//   ChatRoom (1) ──< Message (M)    [messages in room]
+//   User (1) ──< Like (M)           [user likes products]
+//   User (1) ──< SavedProduct (M)   [user bookmarks]
+//   User (1) ──< Follow (M)         [user follows others]
+//   User (1) ──< Notification (M)   [user notifications]
+//   User (1) ──< AuditLog (M)       [activity audit trail]
+//   CommissionLog tracks 3% fee → admin (rey7214935@gmail.com)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// 3% COMMISSION LOGIC:
+//   Every Transaction.commission = Transaction.amount * 0.03
+//   CommissionLog.destination = "rey7214935@gmail.com" (admin)
+//   CommissionLog.bank = "LAFISE" (default)
+//   Applied via application logic in /api/payments and /api/cron/commission-payout
+// ═══════════════════════════════════════════════════════════════════════════
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -106,6 +137,13 @@ model Product {
   chatRooms    ChatRoom[]
   cotizacionResponses CotizacionResponse[]
   quantityDiscounts QuantityDiscount[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([category])
+  @@index([isFeatured])
+  @@index([price])
+  @@index([createdAt])
 }
 
 model Transaction {
@@ -128,6 +166,12 @@ model Transaction {
   buyer   User    @relation("BuyerTransactions", fields: [buyerId], references: [id])
   seller  User    @relation("SellerSales", fields: [sellerId], references: [id])
   product Product @relation(fields: [productId], references: [id])
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([productId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Message {
@@ -148,6 +192,11 @@ model Message {
 
   chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
   sender   User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([chatRoomId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([isRead])
 }
 
 model ChatRoom {
@@ -163,6 +212,10 @@ model ChatRoom {
   seller  User     @relation("ChatRoomSeller", fields: [sellerId], references: [id])
   product Product? @relation(fields: [productId], references: [id])
   messages Message[]
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([lastMessageAt])
 }
 
 model Cotizacion {
@@ -206,6 +259,10 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
 }
 
 model Follow {

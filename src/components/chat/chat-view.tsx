@@ -585,6 +585,37 @@ export function ChatView() {
   const renderMessageContent = (m: ChatMessage) => {
     const msgType = m.messageType || (m.imageUrl ? "image" : "text")
 
+    // Linkify URLs in text content
+    const linkify = (text: string) => {
+      if (!text) return null
+      const urlRegex = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]})"'])/g
+      const parts = text.split(urlRegex)
+      const matches = text.match(urlRegex) || []
+      if (matches.length === 0) return <span>{text}</span>
+      
+      const result: React.ReactNode[] = []
+      let matchIdx = 0
+      parts.forEach((part, i) => {
+        if (part) result.push(<span key={`t-${i}`}>{part}</span>)
+        if (matchIdx < matches.length) {
+          const url = matches[matchIdx++]
+          result.push(
+            <a
+              key={`link-${i}`}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline hover:text-blue-600 break-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {url.length > 50 ? url.substring(0, 47) + '...' : url}
+            </a>
+          )
+        }
+      })
+      return <>{result}</>
+    }
+
     switch (msgType) {
       case "image":
         return (
@@ -705,7 +736,9 @@ export function ChatView() {
               />
             )}
             {m.content && (
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                {linkify(m.content)}
+              </p>
             )}
           </div>
         )

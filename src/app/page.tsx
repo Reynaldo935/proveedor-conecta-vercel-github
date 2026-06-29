@@ -508,7 +508,16 @@ function HomeFeed() {
         const res = await fetch("/api/products?limit=20")
         if (res.ok) {
           const data = await res.json()
-          setProducts(data.data?.products || data.products || data.data || [])
+          // API returns { success: true, data: Product[] }
+          const rawProducts = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : [])
+          // Parse images from JSON string to array consistently
+          const parsed = rawProducts.map((p: any) => ({
+            ...p,
+            images: Array.isArray(p.images)
+              ? p.images
+              : (() => { try { return JSON.parse(p.images || '[]') } catch { return [] } })(),
+          }))
+          setProducts(parsed)
         }
       } catch {
         toast.error("Error al cargar productos")

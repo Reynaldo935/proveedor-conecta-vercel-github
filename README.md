@@ -42,11 +42,54 @@
 - Búsqueda avanzada con filtros por categoría, departamento, rango de precio
 - Descuentos por cantidad y ofertas especiales
 - Sistema de "me gusta" y productos guardados
+- **Productos de proveedores nicaragüenses verificados** con precios actualizados
 
-### 💬 3. Chat en Tiempo Real
-- Comunicación directa entre compradores y vendedores vía Pusher/Socket.io
-- Salas de chat privadas por producto o consulta
-- Notificaciones en tiempo real
+### 🏢 3. Proveedores Nicaragüenses Verificados
+- **20+ proveedores locales**: Casa Pellas, Ingenio San Antonio (Flor de Caña), Café Prestó, Café Toro, Café 1820, Cukra, Disagro, AGRICORP, Lala, Ferretería Americana, PROINCO, DIMACO, CISA AGRO, Fresinika, Doselva, Nicanaturals, y más
+- Cada proveedor tiene perfil con logo, sitio web oficial, ubicación y productos
+- **Precios dinámicos**: Mecanismo automático de actualización cada 24 horas (cron job)
+- Filtrado por categoría, departamento y búsqueda textual
+
+### 📦 4. Gestión de Productos para Vendedores
+- CRUD completo: Crear, Editar, Eliminar, Pausar/Activar productos
+- **Multimedia**: Subida de fotos, videos, audio, PDF, Word, Excel, PPT
+- Descuentos por cantidad (hasta 5 reglas escalonadas)
+- Perfil de vendedor con todos sus productos (estilo Facebook Marketplace)
+- Panel "Mis Productos" con filtros de búsqueda y estado
+
+### 👤 5. Perfil de Usuario Mejorado
+- Foto de perfil y portada personalizables
+- Información personal: nombre, teléfono, ubicación, biografía
+- Dirección física con geolocalización
+- Datos persistentes entre sesiones
+- Perfil público con seguidores y productos
+
+### 💬 6. Chat Multimedia en Tiempo Real
+- Mensajes de texto con detección automática de enlaces
+- **Multimedia**: Imágenes, videos, audio, archivos (cualquier formato)
+- **Ubicación en tiempo real** con GPS
+- Indicadores de escritura y estado en línea
+- Modo fallback: polling HTTP cuando WebSocket no está disponible
+- Pusher + Socket.io para mensajería instantánea
+
+### 💾 7. Sistema de Backup
+- **Usuarios**: Exportación de datos personales en JSON/CSV (perfil, productos, transacciones)
+- **Admin**: Backup completo de base de datos (15+ tablas) en JSON/CSV
+- Metadatos de respaldo: fecha, tamaño, registros, tablas
+- Restauración desde backup (para administradores)
+
+### 🌐 8. CDN y Rendimiento
+- **Vercel Edge Network**: Distribución global de assets estáticos
+- **Cloudflare CDN**: Configurable via DNS proxy
+- Optimización de imágenes con AVIF/WebP
+- Cache-Control inmutable para assets con hash (1 año)
+- Compresión gzip/brotli automática en Vercel
+
+### 🤖 9. Asistente Virtual (Chatbot IA)
+- Integración con **n8n webhook** para respuestas inteligentes
+- Fallback a API de IA interna (z-ai-web-dev-sdk)
+- Fallback local basado en reglas cuando los servicios de IA no están disponibles
+- Sugerencias rápidas y contexto de producto automático
 
 ### 🤖 4. Asistente Virtual (Chatbot IA)
 - Integración con **n8n webhook** para respuestas inteligentes
@@ -291,9 +334,25 @@ erDiagram
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **v4.0** | Jun 2026 | Proveedores NI verificados (20+), precios dinámicos, backup usuario/admin, CDN Vercel, chat multimedia completo, perfil mejorado, seller CRUD |
 | **v3.0** | Jun 2026 | Clerk Auth, Next.js 16 proxy, Supabase secundario |
 | **v2.0** | May 2026 | Chat Pusher, Cotizaciones, Lealtad, Reseñas |
 | **v1.0** | Abr 2026 | Marketplace base, Turso, Google OAuth manual |
+
+### 📊 Commit Graph (Jun 2026)
+
+```
+main    ●──●──●──●──●──●──●──●──●  v4.0 (proveedores NI, backup, CDN, chat)
+        │   │   │   │   │   │   │   │
+        │   │   │   │   │   │   │   └── fix: marketplace images display
+        │   │   │   │   │   │   └────── feat: backup user + admin
+        │   │   │   │   │   └────────── feat: chat multimedia + links
+        │   │   │   │   └────────────── feat: CDN & performance config
+        │   │   │   └────────────────── feat: seller profile + my-products
+        │   │   └────────────────────── feat: 20+ NI suppliers + prices
+        │   └────────────────────────── feat: Clerk auth + webhooks
+        └────────────────────────────── Initial: marketplace base
+```
 
 ---
 
@@ -501,7 +560,143 @@ Puedes encontrar workflows de ejemplo en: [n8n-workflows](https://zie619.github.
 
 ---
 
-## 📄 Licencia
+## � Sistema de Backup
+
+### Backup de Usuario
+- **Endpoint**: `GET /api/export/my-data?format=json|csv&scope=all|profile|products|transactions`
+- El usuario autenticado puede descargar sus datos personales
+- Formatos: JSON (estructurado) o CSV (hoja de cálculo)
+- Incluye: perfil, productos, transacciones, guardados, seguidos
+
+### Backup Administrativo
+- **Endpoint**: `POST /api/export/admin-backup` (solo admin)
+- Backup completo de 15+ tablas en JSON o CSV
+- Registro de auditoría por cada backup creado
+- Metadatos: fecha, tamaño, número de registros, tablas incluidas
+
+### Cron de Respaldo
+- Se puede programar un cron job en Vercel para backups automáticos
+- Configurar en `vercel.json`:
+```json
+{
+  "crons": [
+    { "path": "/api/cron/refresh-prices", "schedule": "0 4 * * *" }
+  ]
+}
+```
+
+---
+
+## 🌐 CDN y Rendimiento
+
+### Vercel Edge Network (Automático)
+- **Activado por defecto** en todos los deployments de Vercel
+- Edge caching de assets estáticos (`/_next/static/*`) con 1 año de caché
+- Imágenes optimizadas automáticamente (AVIF/WebP) con `next/image`
+- Compresión Brotli/Gzip automática
+
+### Cloudflare CDN (Opcional)
+1. Agrega tu dominio a Cloudflare
+2. Apunta los DNS a Vercel (`cname.vercel-dns.com`)
+3. Activa el proxy naranja de Cloudflare
+4. Configura reglas de caché para `/uploads/*` y assets estáticos
+
+### Headers de Caché (configurados en `next.config.ts`)
+- `/_next/static/*` → 1 año inmutable
+- `/uploads/*` → 7 días
+- `/api/*` → no-store (datos dinámicos)
+
+---
+
+## 💰 Lógica de Comisión 3%
+
+Cada transacción en ProveedorConecta aplica una comisión del 3%:
+
+```
+Transaction.amount = precio × cantidad
+Transaction.commission = Transaction.amount × 0.03
+Transaction.sellerPayout = Transaction.amount × 0.97
+```
+
+La comisión se registra en la tabla `CommissionLog`:
+- `destination`: `rey7214935@gmail.com` (cuenta admin)
+- `bank`: `LAFISE` (por defecto)
+- Estados: `PENDING` → `PAID`
+
+El cron job `/api/cron/commission-payout` procesa comisiones pendientes cada 24h (2:00 AM).
+
+---
+
+## 🗄️ Esquema Relacional de Base de Datos
+
+### Tablas Principales (26 tablas)
+
+| Tabla | Descripción | Relaciones Clave |
+|-------|-------------|------------------|
+| **User** | Usuarios (BUYER, SELLER, ADMIN) | FK a sí mismo (follows) |
+| **BusinessProfile** | Perfil de negocio del vendedor | FK → User (1:1) |
+| **Product** | Productos del marketplace | FK → User (sellerId) |
+| **Transaction** | Transacciones de compra/venta | FK → User (buyerId, sellerId), FK → Product |
+| **Message** | Mensajes del chat | FK → ChatRoom, FK → User (senderId) |
+| **ChatRoom** | Salas de chat | FK → User (buyerId, sellerId), FK → Product |
+| **Cotizacion** | Solicitudes de cotización (RFQ) | FK → User (buyerId) |
+| **CotizacionResponse** | Respuestas a cotizaciones | FK → Cotizacion, User, Product |
+| **Notification** | Notificaciones push | FK → User |
+| **Follow** | Seguidores (user-to-user) | FK → User (followerId, followingId) |
+| **Like** | Likes en productos | FK → User, Product |
+| **SavedProduct** | Productos guardados | FK → User, Product |
+| **AuditLog** | Registro de actividad | FK → User |
+| **CommissionLog** | Registro de comisiones 3% | FK → Transaction |
+| **Review** | Reseñas y calificaciones | FK → User (reviewer, reviewed) |
+| **LoyaltyPoint** | Puntos de lealtad | FK → User |
+| **Advertisement** | Anuncios publicitarios | FK → User (sellerId) |
+| **QuantityDiscount** | Descuentos por cantidad | FK → Product |
+| **WallPost** | Publicaciones en muro | FK → BusinessProfile |
+| **CalendarEvent** | Eventos del calendario | FK → User |
+| **Appointment** | Citas entre usuarios | FK → User (buyer, seller) |
+
+### Diagrama de Relaciones (Texto)
+
+```
+┌──────────┐       ┌──────────────────┐       ┌──────────┐
+│   User   │1────1│ BusinessProfile  │       │ Product  │
+│  (id)    │       │  (userId FK)     │       │  (id)    │
+└────┬─────┘       └──────────────────┘       └────┬─────┘
+     │                                             │
+     │ 1──M Product (sellerId)                     │ 1──M Transaction
+     │ 1──M Transaction (buyerId)                  │ 1──M Like
+     │ 1──M Transaction (sellerId)                 │ 1──M SavedProduct
+     │ 1──M Message (senderId)                     │ 1──M ChatRoom
+     │ 1──M ChatRoom (buyerId)                     │ 1──M QuantityDiscount
+     │ 1──M ChatRoom (sellerId)                    │
+     │ 1──M Notification                           │
+     │ 1──M Follow (followerId)        ┌───────────┴──────────┐
+     │ 1──M Follow (followingId)       │     ChatRoom         │
+     │ 1──M Review (givenRatings)      │      (id)            │
+     │ 1──M Review (receivedRatings)   └──────┬───────────────┘
+     │ 1──M LoyaltyPoint                      │
+     │ 1──M AuditLog                           │ 1──M Message
+     │ 1──M Advertisement                      │
+     │                                         │
+     └── 1──M Cotizacion                       │
+          │ 1──M CotizacionResponse            │
+          │                                    │
+┌─────────┴──────────┐              ┌──────────┴──────────┐
+│   Transaction      │              │   CommissionLog     │
+│   (id)             │1────1────────│   (transactionId)   │
+└────────────────────┘              └─────────────────────┘
+```
+
+### Índices de Rendimiento
+- `Product`: sellerId, status, category, isFeatured, price, createdAt
+- `Transaction`: buyerId, sellerId, productId, status, createdAt
+- `Message`: chatRoomId, senderId, createdAt, isRead
+- `ChatRoom`: buyerId, sellerId, lastMessageAt
+- `Notification`: userId, isRead, createdAt
+
+---
+
+## �📄 Licencia
 
 Este proyecto es privado y confidencial. Todos los derechos reservados.
 
