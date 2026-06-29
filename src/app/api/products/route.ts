@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MARKETPLACE_PRODUCTS } from '@/data/marketplace-products'
+import { MEGA_CATALOG } from '@/data/mega-catalog'
 import { getAuthenticatedUserId, setAuthCookie } from '@/lib/auth'
 
 // DB import is dynamic in GET, but static for POST
@@ -22,7 +22,7 @@ function parseImages(raw: unknown): string[] {
 }
 
 // Static product catalog — always available, zero dependencies
-const STATIC_PRODUCTS = MARKETPLACE_PRODUCTS.map(p => ({
+const STATIC_PRODUCTS = MEGA_CATALOG.map(p => ({
   id: p.id,
   title: p.title,
   description: p.description,

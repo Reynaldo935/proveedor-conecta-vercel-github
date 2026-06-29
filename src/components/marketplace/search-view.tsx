@@ -79,30 +79,17 @@ export function SearchView() {
     async (q: string, cat: string) => {
       setLoading(true)
       try {
-        const params = new URLSearchParams()
-        if (q) params.set("q", q)
-        if (cat) params.set("category", cat)
+        const productParams = new URLSearchParams()
+        if (q) productParams.set("search", q)
+        if (cat) productParams.set("category", cat)
+        if (minPrice) productParams.set("minPrice", minPrice)
+        if (maxPrice) productParams.set("maxPrice", maxPrice)
+        productParams.set("limit", "200")
 
-        // If we have price range or location, use the products API instead
-        if (minPrice || maxPrice || location) {
-          const productParams = new URLSearchParams()
-          if (q) {
-            productParams.set("search", q)
-          }
-          if (cat) productParams.set("category", cat)
-          if (minPrice) productParams.set("minPrice", minPrice)
-          if (maxPrice) productParams.set("maxPrice", maxPrice)
-          if (location) productParams.set("location", location)
-          productParams.set("limit", "30")
-
-          const res = await fetch(`/api/products?${productParams.toString()}`)
-          const d = await res.json()
-          if (d.success) setProducts(d.data)
-        } else {
-          const res = await fetch(`/api/search?${params.toString()}`)
-          const d = await res.json()
-          if (d.success) setProducts(d.data)
-        }
+        const res = await fetch(`/api/products?${productParams.toString()}`)
+        const d = await res.json()
+        if (d.success) setProducts(d.data || [])
+        else setProducts([])
       } catch {
         toast.error("Error en búsqueda")
       } finally {
@@ -112,12 +99,22 @@ export function SearchView() {
     [minPrice, maxPrice, location]
   )
 
-  // Debounced search
+  // Load products: if no filters, show all. If filters active, search with debounce.
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
 
+    // If no search query and no category, load ALL products
+    if (!localQuery && !category && !minPrice && !maxPrice && !location) {
+      setLoading(true)
+      fetch("/api/products?limit=200")
+        .then(r => r.json())
+        .then(d => { if (d.success) setProducts(d.data || []) })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+      return
+    }
+
     if (!localQuery && !category) {
-      setProducts([])
       setLoading(false)
       return
     }
@@ -130,7 +127,7 @@ export function SearchView() {
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     }
-  }, [localQuery, category, performSearch])
+  }, [localQuery, category, performSearch, minPrice, maxPrice, location])
 
   // Sync with global search query
   useEffect(() => {
