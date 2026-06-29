@@ -353,7 +353,7 @@ SUPABASE_URL=https://xxxxxxxxx.supabase.co
 SUPABASE_DB=postgresql://postgres:password@db.xxxxxxxxx.supabase.co:5432/postgres
 
 # App URL
-NEXT_PUBLIC_APP_URL=https://proveedor-conecta.vercel.app
+NEXT_PUBLIC_APP_URL=https://proveedor-conecta-vercel-github.vercel.app
 ADMIN_EMAIL=rey7214935@gmail.com
 
 # OpenWeatherMap (para el widget de clima)
