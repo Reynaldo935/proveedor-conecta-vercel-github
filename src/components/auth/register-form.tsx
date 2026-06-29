@@ -55,39 +55,8 @@ export function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateStep(3)) return
-    setLoading(true)
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim().toLowerCase(),
-          password: form.password,
-          role: form.role,
-          phone: "",
-          department: "",
-          address: "",
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        if (data.data) setUser(data.data)
-        toast.success("¡Cuenta creada! Revisa tu correo para verificar.")
-        navigate("home")
-      } else {
-        if (data.needsVerification) {
-          toast.info("Revisa tu correo para verificar tu cuenta")
-          navigate("home")
-        } else {
-          toast.error(data.error || "Error al registrarse")
-        }
-      }
-    } catch {
-      toast.error("Error de conexión")
-    } finally {
-      setLoading(false)
-    }
+    // Redirigir a Clerk para registro con verificación de email automática
+    window.location.href = "/sign-up"
   }
 
   // ─── Render Step Content ──────────────────────────────────────────────

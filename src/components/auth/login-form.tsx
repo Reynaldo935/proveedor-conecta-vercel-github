@@ -43,21 +43,8 @@ export function LoginForm() {
       toast.error("Completa todos los campos")
       return
     }
-    setLoading(true)
-    try {
-      const data = await api.post("auth/login", { email, password })
-      if (data.success && data.data) {
-        setUser(data.data as any)
-        toast.success("¡Bienvenido de vuelta!")
-        navigate("home")
-      } else {
-        toast.error(data.error || "Error al iniciar sesión")
-      }
-    } catch {
-      toast.error("No se pudo conectar al servidor. Verifica tu conexión e intenta de nuevo.")
-    } finally {
-      setLoading(false)
-    }
+    // Redirigir a Clerk para inicio de sesión seguro
+    window.location.href = "/sign-in"
   }
 
   const handleDemoLogin = async (demoEmail: string) => {
