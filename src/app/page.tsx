@@ -509,60 +509,23 @@ const FALLBACK_PRODUCTS: Product[] = [
 ]
 
 function HomeFeed() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const { navigate } = useAppStore()
 
-  useEffect(() => {
-    async function loadProducts() {
-      try {
-        const res = await fetch("/api/products?limit=20")
-        if (res.ok) {
-          const data = await res.json()
-          const rawProducts = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : [])
-          if (rawProducts.length > 0) {
-            const parsed = rawProducts.map((p: any) => ({
-              ...p,
-              images: Array.isArray(p.images)
-                ? p.images
-                : (() => { try { return JSON.parse(p.images || '[]') } catch { return [] } })(),
-            }))
-            setProducts(parsed)
-            setLoading(false)
-            return
-          }
-        }
-      } catch { /* API failed, use fallback */ }
-      // Use hardcoded fallback products
-      setProducts(FALLBACK_PRODUCTS)
-      setLoading(false)
-    }
-    loadProducts()
-  }, [])
+  // ═══════════════════════════════════════════════════════════════
+  // PRODUCTOS 100% LOCALES — NUNCA fallan, no dependen de API ni DB
+  // ═══════════════════════════════════════════════════════════════
+  const allProducts = FALLBACK_PRODUCTS
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center space-y-3 py-6">
-          <Skeleton className="h-10 w-72 mx-auto" />
-          <Skeleton className="h-5 w-96 mx-auto" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Card key={i} className="overflow-hidden">
-              <Skeleton className="h-48 w-full" />
-              <CardContent className="p-4 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-6 w-1/3" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  // Filter by search query
+  const products = searchQuery.trim()
+    ? allProducts.filter(p =>
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.tags.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allProducts
 
   return (
     <div className="space-y-6">
