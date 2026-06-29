@@ -40,7 +40,7 @@ export async function getAuthenticatedUserId(_request?: Request): Promise<string
               role: email === 'rey7214935@gmail.com' ? 'ADMIN' : 'BUYER',
               emailVerified: true,
             },
-            select: { id: true },
+            select: { id: true, email: true },
           })
         } catch {
           // Retry find (race condition)

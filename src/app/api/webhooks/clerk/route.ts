@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   }
 
   const event = JSON.parse(payload) as ClerkUserEvent
-  const { id: clerkId, email_addresses, first_name, last_name, image_url } = event.data
+  const { id: clerkUserId, email_addresses, first_name, last_name, image_url } = event.data
   const primaryEmail = email_addresses[0]?.email_address
   const name = [first_name, last_name].filter(Boolean).join(' ') || primaryEmail || 'Usuario'
 
@@ -59,15 +59,12 @@ export async function POST(request: NextRequest) {
       case 'user.updated': {
         if (!primaryEmail) break
 
-        const existing = await db.user.findFirst({
-          where: { OR: [{ clerkId }, { email: primaryEmail }] },
-        })
+        const existing = await db.user.findUnique({ where: { email: primaryEmail } })
 
         if (existing) {
           await db.user.update({
             where: { id: existing.id },
             data: {
-              clerkId,
               email: primaryEmail,
               name,
               avatar: image_url || existing.avatar,
@@ -77,7 +74,6 @@ export async function POST(request: NextRequest) {
         } else {
           await db.user.create({
             data: {
-              clerkId,
               email: primaryEmail,
               name,
               avatar: image_url || '',
@@ -86,15 +82,15 @@ export async function POST(request: NextRequest) {
             },
           })
         }
-        console.log(`[Clerk Webhook] ${event.type}: ${clerkId} (${primaryEmail})`)
+        console.log(`[Clerk Webhook] ${event.type}: ${clerkUserId} (${primaryEmail})`)
         break
       }
 
       case 'user.deleted': {
-        const user = await db.user.findUnique({ where: { clerkId } })
+        const user = await db.user.findUnique({ where: { email: primaryEmail } })
         if (user) {
           await db.user.delete({ where: { id: user.id } })
-          console.log(`[Clerk Webhook] user.deleted: ${clerkId}`)
+          console.log(`[Clerk Webhook] user.deleted: ${clerkUserId}`)
         }
         break
       }
