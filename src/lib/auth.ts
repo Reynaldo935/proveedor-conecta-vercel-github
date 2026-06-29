@@ -44,7 +44,7 @@ export async function getAuthenticatedUserId(_request?: Request): Promise<string
           })
         } catch {
           // Retry find (race condition)
-          user = await db.user.findFirst({ where: { email }, select: { id: true } })
+          user = await db.user.findFirst({ where: { email }, select: { id: true, email: true } })
         }
       }
 
