@@ -18,23 +18,22 @@ export async function getAuthenticatedUserId(_request?: Request): Promise<string
     // ── Clerk (primary) ──────────────────────────────────────────
     const { userId: clerkUserId } = await auth()
     if (clerkUserId) {
-      // Find or create the database user linked to this Clerk account
-      let user = await db.user.findUnique({
-        where: { clerkId: clerkUserId },
-        select: { id: true },
+      const { currentUser } = await import('@clerk/nextjs/server')
+      const clerkUser = await currentUser()
+      const email = clerkUser?.emailAddresses[0]?.emailAddress || ''
+
+      // Find user by email (no clerkId column needed in Turso)
+      let user = await db.user.findFirst({
+        where: { email },
+        select: { id: true, email: true },
       })
 
-      if (!user) {
-        // Auto-create user in DB on first Clerk auth
-        const { currentUser } = await import('@clerk/nextjs/server')
-        const clerkUser = await currentUser()
-        const email = clerkUser?.emailAddresses[0]?.emailAddress || ''
+      if (!user && email) {
+        // Auto-create user on first Clerk login
         const name = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ') || email
-
         try {
           user = await db.user.create({
             data: {
-              clerkId: clerkUserId,
               email,
               name,
               avatar: clerkUser?.imageUrl || '',
@@ -44,18 +43,8 @@ export async function getAuthenticatedUserId(_request?: Request): Promise<string
             select: { id: true },
           })
         } catch {
-          // If creation fails (e.g. duplicate email), try finding by email
-          user = await db.user.findFirst({
-            where: { email },
-            select: { id: true },
-          })
-          if (user) {
-            // Link existing email-based account to Clerk
-            await db.user.update({
-              where: { id: user.id },
-              data: { clerkId: clerkUserId },
-            })
-          }
+          // Retry find (race condition)
+          user = await db.user.findFirst({ where: { email }, select: { id: true } })
         }
       }
 
