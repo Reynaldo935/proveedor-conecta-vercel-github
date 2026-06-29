@@ -126,3 +126,6 @@ Caddyfile
 
 # Deployment docs (internal)
 DEPLOY.md
+
+.vercel
+.env*

@@ -1,0 +1,68 @@
+# .vercelignore — Exclude unnecessary files from Vercel deployment
+
+# Vercel build cache (HUGE)
+.vercel/
+
+# Microservices (deployed separately)
+services/
+mini-services/
+
+# Large tool results
+tool-results/
+
+# Upload/download temp folders
+upload/
+download/
+
+# Video files (VERY large)
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# Python/Go/Rust env folders
+**/__pycache__/
+**/.venv/
+**/venv/
+**/target/
+
+# Node modules (handled by npm install)
+node_modules/
+
+# Git
+.git/
+
+# Docs and logs
+docs/
+worklog*.md
+VERCEL-DEPLOY-CHECKLIST.md
+DEPLOY-CONFIG.md
+DEPLOY.md
+
+# Build artifacts
+.next/
+
+# Database files
+*.db
+*.db-journal
+prisma/db/
+
+# IDE
+.vscode/
+.idea/
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+
+# Examples
+examples/
+EQUIPO/
+
+# Agent context files
+agent-ctx/
+
+# Environment files
+.env
+.env.*
+!.env.example
