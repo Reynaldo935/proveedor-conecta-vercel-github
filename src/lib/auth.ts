@@ -12,6 +12,7 @@ import { db } from './db'
 /**
  * Get the authenticated user ID.
  * Tries Clerk first, auto-creates DB record if needed, falls back to cookie.
+ * RESILIENT: If Clerk authenticates but DB is down, still returns a valid ID.
  */
 export async function getAuthenticatedUserId(_request?: Request): Promise<string | null> {
   try {
@@ -22,11 +23,17 @@ export async function getAuthenticatedUserId(_request?: Request): Promise<string
       const clerkUser = await currentUser()
       const email = clerkUser?.emailAddresses[0]?.emailAddress || ''
 
-      // Find user by email (no clerkId column needed in Turso)
-      let user = await db.user.findFirst({
-        where: { email },
-        select: { id: true, email: true },
-      })
+      // Try to find user by email in DB
+      let user: { id: string; email: string } | null = null
+      try {
+        user = await db.user.findFirst({
+          where: { email },
+          select: { id: true, email: true },
+        })
+      } catch {
+        // DB unavailable — fall back to in-memory/cookie auth
+        console.warn('[Auth] DB unavailable for Clerk user lookup, using cookie fallback')
+      }
 
       if (!user && email) {
         // Auto-create user on first Clerk login
@@ -43,22 +50,42 @@ export async function getAuthenticatedUserId(_request?: Request): Promise<string
             select: { id: true, email: true },
           })
         } catch {
-          // Retry find (race condition)
-          user = await db.user.findFirst({ where: { email }, select: { id: true, email: true } })
+          // Retry find (race condition) or DB down
+          try {
+            user = await db.user.findFirst({ where: { email }, select: { id: true, email: true } })
+          } catch {
+            // DB is down — use clerkUserId directly as fallback
+            console.warn('[Auth] DB create/find failed, using clerkUserId as fallback')
+          }
         }
       }
 
       if (user) return user.id
+
+      // Last resort: if Clerk auth worked but DB is completely down,
+      // return the Clerk user ID directly so authenticated actions work
+      if (clerkUserId) {
+        console.warn('[Auth] Using raw clerkUserId as fallback (DB down)')
+        return 'clerk_' + clerkUserId
+      }
     }
-  } catch { /* Clerk not available */ }
+  } catch {
+    // Clerk not available — will try cookie fallback
+    console.warn('[Auth] Clerk auth unavailable, trying cookie fallback')
+  }
 
   // ── Legacy cookie (fallback) ───────────────────────────────────
   try {
     const cookieStore = await cookies()
     const cookieUserId = cookieStore.get('pc_user_id')?.value
     if (cookieUserId) {
-      const user = await db.user.findUnique({ where: { id: cookieUserId }, select: { id: true } })
-      if (user) return cookieUserId
+      try {
+        const user = await db.user.findUnique({ where: { id: cookieUserId }, select: { id: true } })
+        if (user) return cookieUserId
+      } catch {
+        // DB down — but we have a cookie, trust it
+        return cookieUserId
+      }
     }
   } catch { /* Cookie reading failed */ }
 
