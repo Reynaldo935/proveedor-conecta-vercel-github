@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState, useSyncExternalStore, useCallback } from "react"
 import { useAppStore } from "@/store/app-store"
 import { useAuthStore } from "@/store/auth-store"
