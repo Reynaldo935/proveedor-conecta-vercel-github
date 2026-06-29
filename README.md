@@ -28,12 +28,13 @@
 
 ## ✨ Funcionalidades
 
-### 🔐 1. Autenticación y Roles
-- Registro e inicio de sesión con email/contraseña
+### 🔐 1. Autenticación y Roles (Clerk)
+- **Clerk** como proveedor de autenticación externo (Email + Google OAuth)
 - **3 roles de usuario:** `BUYER` (Comprador), `SELLER` (Vendedor), `ADMIN` (Administrador)
-- Sesiones seguras basadas en cookies con JWT + bcryptjs
-- Verificación de email y teléfono
-- Soporte para autenticación con Google OAuth
+- Componentes nativos `<SignIn />` y `<SignUp />` en `/sign-in` y `/sign-up`
+- Verificación de email automática por Clerk (código al Gmail)
+- Admin único: `rey7214935@gmail.com` protegido por middleware
+- Sincronización automática Clerk ↔ Turso vía API + Webhooks
 
 ### 🛒 2. Marketplace Completo
 - Catálogo de productos con imágenes, precios en córdobas (NIO) y descripciones
@@ -184,7 +185,11 @@ ProveedorConecta Nicaragua/
 │   │   └── chat-store.ts      # Estado del chat
 │   ├── types/                 # Definiciones TypeScript
 │   ├── data/                  # Datos estáticos (creators.json)
-│   └── middleware.ts          # Middleware (CORS, rate limit, seguridad)
+│   ├── middleware.ts          # Middleware (CORS, rate limit, seguridad) [deprecated en Next 16]
+├── proxy.ts                   # Next.js 16 Proxy: Clerk Auth + Rate Limit + Seguridad
+├── public/
+│   └── api/
+│       └── supabase-db.php    # Endpoint PHP para Supabase PostgreSQL
 ├── .env.example               # Variables de entorno (plantilla)
 ├── .gitignore                 # Archivos excluidos de Git
 ├── vercel.json                # Configuración de despliegue Vercel
@@ -208,7 +213,9 @@ ProveedorConecta Nicaragua/
 | **Tailwind CSS 4** | Estilos y diseño responsive |
 | **shadcn/ui** | Biblioteca de componentes UI |
 | **Prisma ORM** | ORM para base de datos |
-| **Turso (libSQL)** | Base de datos en la nube |
+| **Turso (libSQL)** | Base de datos PRIMARIA en la nube |
+| **Supabase (PostgreSQL)** | Base de datos SECUNDARIA (PHP endpoint) |
+| **Clerk** | Autenticación (Email + Google OAuth) |
 | **Upstash Redis** | Cache en la nube |
 | **Pusher / Socket.io** | Chat en tiempo real |
 | **n8n Webhook** | Integración del chatbot IA |
@@ -218,12 +225,79 @@ ProveedorConecta Nicaragua/
 | **Framer Motion** | Animaciones y transiciones |
 | **Zustand** | Estado global del cliente |
 | **Zod** | Validación de datos |
-| **bcryptjs** | Encriptación de contraseñas |
+| **bcryptjs** | Encriptación (legacy, Clerk maneja auth) |
 | **Resend** | Emails transaccionales |
+| **Svix** | Verificación de Webhooks de Clerk |
+| **PHP** | Endpoint de conexión a Supabase |
 
 ---
 
-## 🚀 Despliegue en Vercel
+## �️ Esquema de Base de Datos (Prisma + Turso)
+
+```mermaid
+erDiagram
+    User ||--o| BusinessProfile : tiene
+    User ||--o{ Product : vende
+    User ||--o{ Transaction : compra
+    User ||--o{ Transaction : vende
+    User ||--o{ Message : envia
+    User ||--o{ ChatRoom : comprador
+    User ||--o{ ChatRoom : vendedor
+    User ||--o{ Notification : recibe
+    User ||--o{ Like : da
+    User ||--o{ SavedProduct : guarda
+    User ||--o{ Follow : sigue
+    User ||--o{ Review : escribe
+    User ||--o{ Review : recibe
+    User ||--o{ LoyaltyPoint : acumula
+    User ||--o{ Appointment : comprador
+    User ||--o{ Appointment : vendedor
+    Product ||--o{ Transaction : tiene
+    Product ||--o{ Like : recibe
+    Product ||--o{ SavedProduct : guardado
+    Product ||--o{ QuantityDiscount : descuentos
+    BusinessProfile ||--o{ WallPost : publica
+    ChatRoom ||--o{ Message : contiene
+    Cotizacion ||--o{ CotizacionResponse : recibe
+    Transaction ||--o{ CommissionLog : genera
+    Review ||--o{ ReviewVote : votos
+    User {
+        string id PK
+        string clerkId UK
+        string email UK
+        string name
+        string role
+        float balance
+    }
+    Product {
+        string id PK
+        string sellerId FK
+        string title
+        float price
+        string category
+    }
+    Transaction {
+        string id PK
+        string buyerId FK
+        string sellerId FK
+        string productId FK
+        float amount
+        float commission
+        string paymentMethod
+    }
+```
+
+### 🔄 Control de Versiones
+
+| Versión | Fecha | Cambios |
+|---------|-------|---------|
+| **v3.0** | Jun 2026 | Clerk Auth, Next.js 16 proxy, Supabase secundario |
+| **v2.0** | May 2026 | Chat Pusher, Cotizaciones, Lealtad, Reseñas |
+| **v1.0** | Abr 2026 | Marketplace base, Turso, Google OAuth manual |
+
+---
+
+## �🚀 Despliegue en Vercel
 
 ### Prerrequisitos
 1. Cuenta en [Vercel](https://vercel.com)
@@ -261,15 +335,26 @@ git push -u origin main
 En el panel de Vercel, ve a **Settings → Environment Variables** y agrega:
 
 ```env
-# Base de datos (OBLIGATORIO para que prisma generate funcione)
-DATABASE_URL=libsql://tu-db-nombre.turso.io?authToken=tu-token
+# Base de datos PRIMARIA - Turso (OBLIGATORIO)
+TURSO_DATABASE_URL=libsql://tu-db-nombre.turso.io
+TURSO_AUTH_TOKEN=tu-token
+DATABASE_URL=file:./db/custom.db
 
-# Autenticación
-JWT_SECRET=tu-secreto-jwt-super-seguro
-NEXTAUTH_SECRET=tu-secreto-nextauth
+# Clerk Authentication (OBLIGATORIO)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxx
+CLERK_SECRET_KEY=sk_test_xxxxxxxxx
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 
-# App URL (para CORS)
-NEXT_PUBLIC_APP_URL=https://tu-proyecto.vercel.app
+# Supabase PostgreSQL (SECUNDARIO)
+SUPABASE_URL=https://xxxxxxxxx.supabase.co
+SUPABASE_DB=postgresql://postgres:password@db.xxxxxxxxx.supabase.co:5432/postgres
+
+# App URL
+NEXT_PUBLIC_APP_URL=https://proveedor-conecta.vercel.app
+ADMIN_EMAIL=rey7214935@gmail.com
 
 # OpenWeatherMap (para el widget de clima)
 OPENWEATHERMAP_API_KEY=tu-api-key

@@ -24,7 +24,6 @@ function createPrismaClient(): PrismaClient {
   ) {
     try {
       const { PrismaLibSQL } = require('@prisma/adapter-libsql')
-      // Pass the ORIGINAL libsql:// URL — the adapter handles protocol conversion internally
       const adapter = new PrismaLibSQL({ url: tursoUrl, authToken: tursoToken })
       console.log('[DB] ✅ Turso Cloud connected')
       return new PrismaClient({ adapter })

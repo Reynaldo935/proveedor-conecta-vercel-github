@@ -47,7 +47,7 @@ export async function GET() {
     const { rows } = await tursoExecute('SELECT count(*) as c FROM "User"')
     const userCount = rows[0]?.[0] ?? 0
     const p = await tursoExecute('SELECT count(*) as c FROM "Product"')
-    const productCount = p.rows[0]?.[0] ?? 0
+    const productCount = Number(p.rows[0]?.[0] ?? 0)
     return NextResponse.json({ success: true, data: { userCount, productCount, needsSeed: productCount === 0 } })
   } catch (err) {
     return NextResponse.json({ success: false, error: (err as Error).message }, { status: 200 })
@@ -58,7 +58,7 @@ export async function GET() {
 export async function POST() {
   try {
     const p = await tursoExecute('SELECT count(*) as c FROM "Product"')
-    const productCount = p.rows[0]?.[0] ?? 0
+    const productCount = Number(p.rows[0]?.[0] ?? 0)
     if (productCount > 0) {
       return NextResponse.json({ success: true, message: `Ya hay ${productCount} productos` })
     }

@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAuthenticatedUser, setAuthCookie } from '@/lib/auth'
+import { getAuthenticatedUser } from '@/lib/auth'
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/auth/me — Returns the current authenticated user from the database.
+ * Uses Clerk for authentication lookup, falls back to legacy cookie.
+ */
+export async function GET() {
   try {
-    const user = await getAuthenticatedUser(request)
+    const user = await getAuthenticatedUser()
 
     if (!user) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
     }
-
-    // Re-set the auth cookie to ensure it persists
-    await setAuthCookie(user.id as string)
 
     return NextResponse.json({
       success: true,
@@ -26,9 +27,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * PUT /api/auth/me — Updates the current user's profile in the database.
+ */
 export async function PUT(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser(request)
+    const user = await getAuthenticatedUser()
 
     if (!user) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 200 })
@@ -53,9 +57,6 @@ export async function PUT(request: NextRequest) {
       data: updateData,
       include: { businessProfile: true },
     })
-
-    // Re-set the auth cookie
-    await setAuthCookie(userId)
 
     const { password: _, ...safeUser } = updatedUser
     return NextResponse.json({

@@ -9,9 +9,10 @@ datasource db {
 
 model User {
   id            String   @id @default(cuid())
+  clerkId       String?  @unique // Clerk user ID for external auth (replaces custom password auth)
   email         String   @unique
   name          String   @default("")
-  password      String?
+  password      String?  // Deprecated — kept for legacy accounts; Clerk handles auth now
   role          String   @default("BUYER") // BUYER, SELLER, ADMIN
   helperRole    String   @default("") // DEVELOPER, MARKETING, FULLSTACK, GRAPHIC_DESIGN, COMMUNICATOR
   avatar        String   @default("")
