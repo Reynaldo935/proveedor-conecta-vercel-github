@@ -541,22 +541,34 @@ const FALLBACK_PRODUCTS: Product[] = [
 
 function HomeFeed() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS)
   const { navigate } = useAppStore()
 
-  // ═══════════════════════════════════════════════════════════════
-  // PRODUCTOS 100% LOCALES — NUNCA fallan, no dependen de API ni DB
-  // ═══════════════════════════════════════════════════════════════
-  const allProducts = FALLBACK_PRODUCTS
+  // Load products from API, fall back to hardcoded
+  useEffect(() => {
+    fetch("/api/products?limit=50")
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const parsed = data.data.map((p: any) => ({
+            ...p,
+            images: Array.isArray(p.images) ? p.images : (() => { try { return JSON.parse(p.images || '[]') } catch { return [] } })(),
+          }))
+          setProducts(parsed)
+        }
+      })
+      .catch(() => {}) // Keep fallback products
+  }, [])
 
   // Filter by search query
-  const products = searchQuery.trim()
-    ? allProducts.filter(p =>
+  const filtered = searchQuery.trim()
+    ? products.filter(p =>
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.tags.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.category.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : allProducts
+    : products
 
   return (
     <div className="space-y-6">
@@ -623,15 +635,15 @@ function HomeFeed() {
       </div>
 
       {/* Product Grid */}
-      {products.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>No hay productos disponibles</p>
-          <p className="text-sm mt-1">Los productos aparecerán aquí cuando estén disponibles</p>
+          <p>No se encontraron productos</p>
+          <p className="text-sm mt-1">Intenta con otra búsqueda</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {products.map((product) => (
+          {filtered.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
