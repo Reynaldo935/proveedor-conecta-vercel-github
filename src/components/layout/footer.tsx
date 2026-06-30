@@ -148,11 +148,11 @@ export function Footer() {
           </h4>
           <div className="flex flex-wrap justify-center gap-6 mb-6">
             {[
-              { name: "Reynaldo", role: "Full-Stack Developer", photo: "/uploads/equipo/Reynaldo.jpeg" },
-              { name: "Apolonio", role: "Frontend Developer", photo: "/uploads/equipo/Apolonio.jpeg" },
-              { name: "Sarahí", role: "Graphic Designer", photo: "/uploads/equipo/Sarahi.jpeg" },
-              { name: "Pedro", role: "Communicator", photo: "/uploads/equipo/Pedro.jpeg" },
-              { name: "Mychael", role: "Marketing", photo: "/uploads/equipo/Mychael.jpeg" },
+              { name: "Reynaldo", role: "Full-Stack Developer", photo: "/equipo/Reynaldo.jpeg" },
+              { name: "Apolonio", role: "Frontend Developer", photo: "/equipo/Apolonio.jpeg" },
+              { name: "Sarahí", role: "Graphic Designer", photo: "/equipo/Sarahi.jpeg" },
+              { name: "Pedro", role: "Communicator", photo: "/equipo/Pedro.jpeg" },
+              { name: "Mychael", role: "Marketing", photo: "/equipo/Mychael.jpeg" },
             ].map((member) => (
               <div key={member.name} className="flex flex-col items-center gap-1 group">
                 <div className="w-14 h-14 rounded-full border-2 border-[#D2B48C] dark:border-[#D4A017] overflow-hidden bg-muted group-hover:scale-105 transition-transform">
