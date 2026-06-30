@@ -168,6 +168,11 @@ const SuppliersView = lazy(() =>
     default: m.SuppliersView,
   }))
 )
+const SupplierCatalogsView = lazy(() =>
+  import("@/components/marketplace/supplier-catalogs-view").then((m) => ({
+    default: m.SupplierCatalogsView,
+  }))
+)
 const WhyUsSection = lazy(() =>
   import("@/components/marketing/why-us-section").then((m) => ({
     default: m.WhyUsSection,
@@ -390,6 +395,8 @@ function resolveView(
       return <SurveysView />
     case "suppliers":
       return <SuppliersView />
+    case "supplier-catalogs":
+      return <SupplierCatalogsView />
     case "why-us":
       return <WhyUsSection />
     default:

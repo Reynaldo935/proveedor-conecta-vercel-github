@@ -14,7 +14,7 @@ import {
   Menu, Sun, Moon, MessageCircle, User, ChevronDown, Home,
   Bell, LogOut, Shield, FileText, CreditCard,
   Settings, Plus, Compass, LayoutDashboard, X, Cloud, Droplets, Thermometer,
-  Download, HardDriveDownload, BarChart3, Calendar, Gift, MoreHorizontal
+  Download, HardDriveDownload, BarChart3, Calendar, Gift, MoreHorizontal, ExternalLink, Globe
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
@@ -118,6 +118,7 @@ function SimpleHeader() {
               { icon: Store, label: "Proveedores", view: "suppliers" },
               { icon: MapPin, label: "Mapa", view: "map" },
               { icon: FileText, label: "Cotizar", view: "cotizaciones" },
+              { icon: ExternalLink, label: "Catálogos", view: "supplier-catalogs" },
               { icon: MessageCircle, label: "Chat", view: "chat" },
             ].map(({ icon: Icon, label, view }) => (
               <Button
