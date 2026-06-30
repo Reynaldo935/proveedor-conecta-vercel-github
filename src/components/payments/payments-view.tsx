@@ -518,13 +518,24 @@ export function PaymentsView() {
                             <Badge
                               key={cur}
                               variant="secondary"
-                              className="text-[10px] px-1.5 py-0 rounded-md"
+                              className="text-[10px] px-1.5"
                             >
                               {cur}
                             </Badge>
                           ))}
                         </div>
                       </div>
+                      {/* ── PAGAR AHORA button ── */}
+                      <Button
+                        size="sm"
+                        className="mt-3 w-full sm:w-auto gap-1.5 bg-gradient-to-r from-[#1A5276] to-[#2E86C1] hover:from-[#0D3B5E] hover:to-[#1A6FA0] text-white font-semibold shadow-md"
+                        onClick={() => {
+                          window.open(`/api/payments/redirect?method=${method.id}&amount=0&description=Pago+con+${method.name}`, '_blank')
+                        }}
+                      >
+                        <ArrowRight className="h-3.5 w-3.5" />
+                        Pagar con {method.name}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
