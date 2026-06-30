@@ -10,8 +10,8 @@ mini-services/
 # Large tool results
 tool-results/
 
-# Upload/download temp folders
-upload/
+# Upload/download temp folders (root level only)
+/upload/
 download/
 
 # Video files (VERY large)
