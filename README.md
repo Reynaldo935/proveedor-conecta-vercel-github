@@ -6,6 +6,9 @@
   <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
   <img src="https://img.shields.io/badge/Vercel-Prod-000000?style=for-the-badge&logo=vercel" />
   <img src="https://img.shields.io/badge/Clerk-Auth-6C47FF?style=for-the-badge&logo=clerk" />
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase" />
+  <img src="https://img.shields.io/badge/Turso-libSQL-4B9CD3?style=for-the-badge&logo=sqlite" />
+  <img src="https://img.shields.io/badge/Admin_UNICO-rey7214935@gmail.com-E74C3C?style=for-the-badge" />
 </p>
 
 <h1 align="center">🇳🇮 ProveedorConecta Nicaragua</h1>
@@ -31,13 +34,15 @@
 
 ## 🧪 Perfiles de Prueba
 
-| Rol | Email | Contraseña | Acceso |
-|---|---|---|---|
-| 👑 **Admin** | `rey7214935@gmail.com` | `El_jefe07` | Panel Admin, Auditoría, Backup, Ver TODOS los usuarios |
-| 🏪 **Vendedor** | `losmunguias007@gmail.com` | `Yamoshi2007..` | Publicar productos, Catálogo, Dashboard, Chat |
-| 🛒 **Comprador** | `munguiafrancisco860@gmail.com` | `perrasuciadavid` | Comprar, navegar, chatear, guardar, dar like |
+> ⚠️ **ADMINISTRADOR ÚNICO:** Solo existe UN administrador en el sistema: `rey7214935@gmail.com`. Este usuario tiene acceso COMPLETO a todo el panel de administración, auditoría, backup, y puede ver TODOS los usuarios registrados.
 
-> **Cualquier email Google** puede registrarse. Recibe rol `BUYER` automático. Botón **"Convertirse en Vendedor"** en el perfil para cambiar a `SELLER`.
+| Rol | Email | Contraseña | Permisos |
+|---|---|---|---|
+| 👑 **ADMIN UNICO** | `rey7214935@gmail.com` | `El_jefe07` | 🔓 TODO: Panel Admin, Auditoría, Backup, Ver TODOS los usuarios, Gestionar anuncios, Exportar datos |
+| 🏪 **Vendedor** | `losmunguias007@gmail.com` | `Yamoshi2007..` | 🏪 Publicar productos, Dashboard Ventas P&L, Catálogo en "Vendedores", Chat con compradores |
+| 🛒 **Comprador** | `munguiafrancisco860@gmail.com` | `perrasuciadavid` | 🛒 Comprar, Navegar 328 productos, Chatear, Guardar favoritos, Dar like, Convertirse en Vendedor |
+
+> **Nota:** Cualquier email de Google puede registrarse y usar la plataforma. Nuevos usuarios reciben rol `BUYER` automáticamente. Desde su perfil pueden hacer clic en **"🏪 Convertirse en Vendedor"** para cambiar a `SELLER`.
 
 ---
 
@@ -378,3 +383,298 @@ Ultimo deploy: 2026-06-30
   🏆 Hackathon Nicaragua 2026 — 10ª Edicion<br>
   <sub>© 2026 ProveedorConecta Nicaragua</sub>
 </p>
+
+---
+
+## 🐘 Supabase PostgreSQL — Base de Datos SECUNDARIA
+
+### Diagrama Relacional (PostgreSQL)
+
+```mermaid
+erDiagram
+    users ||--o{ products : "vende (seller_id)"
+    users ||--o{ transactions : "compra (buyer_id)"
+    users ||--o{ transactions : "vende (seller_id)"
+    users ||--o{ messages : "envia"
+    users ||--o{ chat_rooms : "participa"
+    users ||--o{ notifications : "recibe"
+    users ||--o{ reviews : "escribe"
+    users ||--o{ reviews : "recibe"
+    users ||--o{ loyalty_points : "acumula"
+    users ||--o{ audit_logs : "registra"
+    users ||--o{ advertisements : "crea"
+    products ||--o{ transactions : "tiene"
+    products ||--o{ likes : "recibe"
+    products ||--o{ saved_products : "guardado"
+    products ||--o{ quantity_discounts : "descuentos"
+    chat_rooms ||--o{ messages : "contiene"
+    transactions ||--o{ commission_logs : "genera"
+    users {
+        uuid id PK "gen_random_uuid()"
+        varchar clerk_id UK "ID de Clerk"
+        varchar email UK "Email unico"
+        varchar name "Nombre completo"
+        varchar role "BUYER | SELLER | ADMIN"
+        decimal balance "Billetera en NIO"
+        varchar avatar "URL foto perfil"
+        varchar cover_photo "URL portada"
+        varchar phone "Telefono"
+        varchar department "Departamento"
+        varchar address "Direccion"
+        text bio "Biografia"
+        varchar website "Sitio web"
+        boolean is_verified "Verificado"
+        boolean email_verified "Email verificado"
+        boolean phone_verified "Telefono verificado"
+        timestamp created_at "Fecha creacion"
+        timestamp updated_at "Ultima actualizacion"
+    }
+    products {
+        uuid id PK
+        uuid seller_id FK "Vendedor"
+        varchar title "Titulo"
+        text description "Descripcion"
+        decimal price "Precio NIO"
+        decimal discount_price "Precio descuento"
+        int discount_percent "Porcentaje desc."
+        varchar category "Categoria"
+        text tags "Etiquetas CSV"
+        jsonb images "Array URLs imagenes"
+        varchar video_url "URL video"
+        int quantity "Stock"
+        varchar status "ACTIVE | PAUSED | SOLD"
+        boolean is_featured "Destacado"
+        timestamp published_at "Fecha publicacion"
+        timestamp created_at
+        timestamp updated_at
+    }
+    transactions {
+        uuid id PK
+        uuid buyer_id FK "Comprador"
+        uuid seller_id FK "Vendedor"
+        uuid product_id FK "Producto"
+        decimal amount "Monto total"
+        decimal commission "Comision 3%"
+        decimal seller_payout "Pago vendedor 97%"
+        varchar payment_method "Metodo pago"
+        varchar status "PENDING | COMPLETED | FAILED"
+        varchar cedula "Cedula"
+        varchar card_last4 "Ultimos 4 digitos"
+        timestamp created_at
+    }
+```
+
+### Tablas de Supabase PostgreSQL
+
+| # | Tabla | Descripcion | FK / Relaciones |
+|---|-------|-------------|-----------------|
+| 1 | `users` | Usuarios registrados via Clerk | - |
+| 2 | `business_profiles` | Perfil de negocio vendedor | FK -> users (1:1) |
+| 3 | `products` | Productos del marketplace | FK -> users (seller_id) |
+| 4 | `transactions` | Transacciones de compra/venta | FK -> users (buyer_id, seller_id), products |
+| 5 | `messages` | Mensajes del chat | FK -> chat_rooms, users |
+| 6 | `chat_rooms` | Salas de chat | FK -> users (buyer_id, seller_id), products |
+| 7 | `notifications` | Notificaciones push | FK -> users |
+| 8 | `follows` | Seguidores entre usuarios | FK -> users (follower_id, following_id) |
+| 9 | `likes` | Me gusta en productos | FK -> users, products |
+| 10 | `saved_products` | Productos guardados/bookmarks | FK -> users, products |
+| 11 | `reviews` | Resenas y calificaciones | FK -> users (reviewer, reviewed) |
+| 12 | `review_votes` | Votos en resenas | FK -> reviews |
+| 13 | `loyalty_points` | Puntos de lealtad | FK -> users |
+| 14 | `point_history` | Historial de puntos | FK -> users |
+| 15 | `audit_logs` | Registro de actividad | FK -> users |
+| 16 | `commission_logs` | Comisiones 3% | FK -> transactions |
+| 17 | `advertisements` | Anuncios publicitarios | FK -> users |
+| 18 | `quantity_discounts` | Descuentos por cantidad | FK -> products |
+| 19 | `wall_posts` | Publicaciones en muro | FK -> business_profiles |
+| 20 | `calendar_events` | Eventos del calendario | FK -> users |
+| 21 | `appointments` | Citas comprador-vendedor | FK -> users (buyer_id, seller_id) |
+| 22 | `cotizaciones` | Solicitudes RFQ | FK -> users (buyer_id) |
+| 23 | `cotizacion_responses` | Respuestas a cotizaciones | FK -> cotizaciones, users, products |
+| 24 | `post_likes` | Likes en posts del muro | FK -> wall_posts, users |
+| 25 | `post_comments` | Comentarios en posts | FK -> wall_posts, users |
+| 26 | `commission_payouts` | Pagos de comisiones | FK -> commission_logs |
+
+### Conexion PHP a Supabase
+
+```php
+// public/api/supabase-db.php
+$url = getenv("SUPABASE_URL");
+$db = getenv("SUPABASE_DB"); // postgresql://postgres:password@host:5432/postgres
+$conn = pg_connect($db);
+// CRUD operations via pg_query()
+```
+
+### Script SQL de Creacion (Supabase)
+
+```sql
+-- Ejemplo: Crear tabla users en Supabase PostgreSQL
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    clerk_id VARCHAR(255) UNIQUE,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) DEFAULT "",
+    role VARCHAR(20) DEFAULT "BUYER",
+    balance DECIMAL(10,2) DEFAULT 50000.00,
+    avatar TEXT DEFAULT "",
+    cover_photo TEXT DEFAULT "",
+    phone VARCHAR(20) DEFAULT "",
+    department VARCHAR(100) DEFAULT "",
+    address TEXT DEFAULT "",
+    bio TEXT DEFAULT "",
+    website VARCHAR(500) DEFAULT "",
+    is_verified BOOLEAN DEFAULT FALSE,
+    email_verified BOOLEAN DEFAULT FALSE,
+    phone_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indices para rendimiento
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_products_seller ON products(seller_id);
+CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_transactions_buyer ON transactions(buyer_id);
+CREATE INDEX idx_transactions_seller ON transactions(seller_id);
+CREATE INDEX idx_transactions_status ON transactions(status);
+```
+
+
+---
+
+## 🔐 Clerk — Sistema de Autenticacion y Gestion de Usuarios
+
+### Diagrama de Integracion Clerk
+
+```mermaid
+flowchart TB
+    subgraph "Clerk Cloud"
+        A[Clerk Dashboard<br/>manage.clerk.com]
+        B[Clerk API<br/>api.clerk.com]
+        C[Webhooks<br/>Svix]
+    end
+    
+    subgraph "ProveedorConecta App"
+        D[SignIn / SignUp<br/>Componentes Clerk]
+        E[/api/webhooks/clerk<br/>Webhook Receiver]
+        F[/api/auth/me<br/>User Sync]
+        G[Auth Store<br/>Zustand]
+    end
+    
+    subgraph "Base de Datos"
+        H[Turso DB<br/>Tabla User]
+    end
+    
+    A -->|Configuracion| D
+    D -->|Login/Register| B
+    B -->|Evento user.created| C
+    C -->|POST JSON| E
+    E -->|INSERT/UPDATE| H
+    F -->|SELECT| H
+    F -->|Sync| G
+    G -->|Estado global| D
+```
+
+### Flujo de Sincronizacion Clerk -> DB
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant CL as Clerk Dashboard
+    participant CA as Clerk API
+    participant WH as Svix Webhook
+    participant API as /api/webhooks/clerk
+    participant DB as Turso DB
+
+    U->>CL: Registro con Google/Email
+    CL->>CA: Crear usuario Clerk
+    CA->>WH: Emitir user.created
+    WH->>API: POST {data: {id, email, name}}
+    API->>API: Validar firma Svix
+    API->>DB: Buscar email existente
+    alt Usuario nuevo
+        API->>DB: INSERT User (role: BUYER)
+    else Usuario existente
+        API->>DB: UPDATE User (name, avatar, emailVerified)
+    end
+    API-->>WH: 200 OK
+    CA-->>U: Email de verificacion
+```
+
+### Tablas/Entidades de Clerk
+
+| Entidad Clerk | Descripcion | Mapeo en DB |
+|---|---|---|
+| **User** | Usuario registrado en Clerk | `User` (Turso) via `clerkId` (no almacenado, solo email) |
+| **EmailAddress** | Email principal + secundarios | `User.email` (UNIQUE) |
+| **PhoneNumber** | Numero de telefono | `User.phone` |
+| **Session** | Sesion activa del usuario | No se almacena (Clerk maneja JWT) |
+| **Organization** | Organizaciones (no usado) | N/A |
+| **Webhook** | Eventos Svix | `/api/webhooks/clerk` recibe: `user.created`, `user.updated`, `user.deleted` |
+
+### Eventos de Webhook Clerk utilizados
+
+| Evento | Descripcion | Accion en DB |
+|---|---|---|
+| `user.created` | Nuevo usuario se registra | INSERT User con rol `BUYER`, email, nombre, avatar |
+| `user.updated` | Usuario actualiza su perfil | UPDATE User: nombre, avatar, emailVerified=true |
+| `user.deleted` | Usuario elimina su cuenta | DELETE User de Turso |
+
+### Configuracion de Clerk (Variables de Entorno)
+
+```env
+# Clerk Publishable Key (publica, para frontend)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxx
+
+# Clerk Secret Key (privada, solo backend)
+CLERK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxx
+
+# Clerk Webhook Secret (Svix, para verificar firma de webhooks)
+CLERK_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxx
+
+# URLs de redireccion
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+```
+
+### Middleware de Clerk (proxy.ts)
+
+```typescript
+// proxy.ts - Next.js 16 Proxy para Clerk Auth
+import { clerkMiddleware } from "@clerk/nextjs/server"
+
+export default clerkMiddleware({
+  // Rutas publicas (sin autenticacion)
+  publicRoutes: [
+    "/",
+    "/api/products",
+    "/api/suppliers",
+    "/api/weather",
+    "/api/webhooks/clerk",
+    "/api/catalog/sellers",
+    "/sign-in(.*)",
+    "/sign-up(.*)",
+  ],
+  // Rutas ignoradas (archivos estaticos)
+  ignoredRoutes: [
+    "/_next/static/(.*)",
+    "/uploads/(.*)",
+    "/favicon.ico",
+    "/robots.txt",
+  ],
+})
+```
+
+### Roles de Usuario en Clerk + DB
+
+| Rol | Descripcion | Como se asigna | Acceso |
+|---|---|---|---|
+| **BUYER** | Comprador (default) | Automatico al registrarse via Clerk webhook | Marketplace, Comprar, Chatear |
+| **SELLER** | Vendedor | Via boton "Convertirse en Vendedor" en perfil → PATCH `/api/auth/role` | Dashboard Ventas, Publicar productos, Catalogo |
+| **ADMIN** | Administrador unico | Manualmente en DB: `UPDATE User SET role="ADMIN" WHERE email="rey7214935@gmail.com"` | TODO: Panel Admin, Auditoria, Backup, Usuarios |
+
+> ⚠️ **IMPORTANTE:** Solo existe **UN administrador** en el sistema: `rey7214935@gmail.com`. No hay forma de crear otro admin desde la interfaz. El rol ADMIN se asigna directamente en la base de datos.
