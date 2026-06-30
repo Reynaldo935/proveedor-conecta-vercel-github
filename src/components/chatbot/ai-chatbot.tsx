@@ -115,7 +115,52 @@ function saveChatHistory(messages: ChatMessage[]) {
   }
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Local Knowledge Base (always available, instant responses) ──────────────
+function getLocalResponse(msg: string): string | null {
+  const q = msg.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  
+  if (q.includes('hola') || q.includes('buenos dias') || q.includes('buenas tardes')) {
+    return '¡Hola! 👋 Soy el asistente de ProveedorConecta Nicaragua. Puedo ayudarte a:\n\n🔍 **Encontrar proveedores** - Tenemos 20+ proveedores oficiales y vendedores registrados\n💰 **Métodos de pago** - 11 métodos incluyendo Banpro, BAC, LAFISE, PayPal, Kash\n📦 **Publicar productos** - Regístrate como vendedor y publica tus productos con fotos\n📋 **Cotizaciones** - Solicita cotizaciones a múltiples proveedores a la vez\n🗺️ **Mapa GPS** - Encuentra proveedores por ubicación en tiempo real\n💬 **Chat** - Comunícate directamente con vendedores\n\n¿Sobre qué tema quieres saber más?'
+  }
+  
+  if (q.includes('proveedor') || q.includes('encontrar') || q.includes('buscar')) {
+    return '🔍 **Encontrar proveedores en ProveedorConecta:**\n\n1. Ve al menú ☰ → **Catálogos Oficiales**\n2. Ahí verás 20+ proveedores nicaragüenses verificados (Flor de Caña, Café Toro, Ferromax, etc.)\n3. También hay una pestaña **"Vendedores"** con vendedores registrados\n4. Usa el buscador para filtrar por nombre, producto o ciudad\n5. Cada proveedor muestra sus productos con **precios reales**\n6. Haz clic en **"Ver Catálogo Real"** para ir al sitio oficial\n\n¿Buscas algún proveedor en específico?'
+  }
+  
+  if (q.includes('pago') || q.includes('pagar') || q.includes('banco') || q.includes('metodo')) {
+    return '💰 **Métodos de pago disponibles (11):**\n\n🏦 **Bancos:** Banpro, BAC Credomatic, LAFISE\n📱 **Billeteras:** Banpro Billetera, Kash, Tigo Money\n💳 **Pasarelas:** PixelPay, Pagadito\n🌐 **Internacionales:** PayPal, Google Pay, Western Union\n\n**Comisión de plataforma:** 3% por transacción\n**Monedas:** Córdobas (NIO) y Dólares (USD)\n\nPara pagar: Ve a **Pagos** en el menú y selecciona tu método. Serás redirigido al canal de pago real del banco.'
+  }
+  
+  if (q.includes('publicar') || q.includes('vender') || q.includes('producto') || q.includes('vendedor')) {
+    return '📦 **Cómo publicar un producto:**\n\n1. Regístrate en ProveedorConecta con tu Google/Email\n2. Ve a tu **Perfil** y haz clic en **"🏪 Convertirse en Vendedor"**\n3. Completa tu perfil de negocio (nombre, categoría, teléfono)\n4. Ve a **"Vender Producto"** en el menú\n5. Sube hasta 5 fotos de tu producto\n6. Elige categoría, pon precio y descripción\n7. ¡Listo! Tu producto aparece en:\n   - Marketplace (página principal)\n   - Tu perfil de vendedor\n   - Catálogos → Tab "Vendedores"\n\n¿Necesitas ayuda con algo específico de la publicación?'
+  }
+  
+  if (q.includes('cotizacion') || q.includes('cotizar') || q.includes('rfq')) {
+    return '📋 **Sistema de Cotizaciones (RFQ):**\n\n1. Ve a **Cotizaciones** en el menú\n2. Describe qué producto/servicio necesitas\n3. Elige la categoría\n4. Tu solicitud se envía a TODOS los vendedores de esa categoría\n5. Los vendedores te envían propuestas con precio y plazo\n6. Tú eliges la mejor oferta\n\n**Estados:** OPEN → RESPONDED → ACCEPTED → COMPLETED\n\nEs como pedir presupuestos a múltiples proveedores a la vez. ¡Ahorra tiempo y dinero!'
+  }
+  
+  if (q.includes('mapa') || q.includes('gps') || q.includes('ubicacion')) {
+    return '🗺️ **Mapa Interactivo de Proveedores:**\n\n1. Ve a **Mapa GPS** en el menú\n2. El mapa muestra proveedores en los 17 departamentos de Nicaragua\n3. Usa tu ubicación GPS para encontrar proveedores cercanos\n4. Filtra por categoría (Alimentos, Construcción, Tecnología, etc.)\n5. Haz clic en un marcador para ver detalles del proveedor\n\nTecnología: Leaflet + OpenStreetMap + Nominatim'
+  }
+  
+  if (q.includes('admin') || q.includes('administrador') || q.includes('panel')) {
+    return '👑 **Panel de Administración:**\n\nEl administrador único (rey7214935@gmail.com) tiene acceso a:\n- 📊 Dashboard con estadísticas de ventas y usuarios\n- 👥 Ver TODOS los usuarios registrados\n- 🔍 Auditoría de actividad\n- 💾 Backup completo de la base de datos\n- 📢 Gestionar anuncios publicitarios\n- 📥 Exportar datos (CSV/JSON)\n\nSi necesitas acceso de administrador, contacta al equipo.'
+  }
+  
+  if (q.includes('chat') || q.includes('mensaje') || q.includes('comunicar')) {
+    return '💬 **Chat en Tiempo Real:**\n\n- Comunícate directamente con vendedores\n- Envía mensajes, imágenes, videos y archivos\n- Comparte tu ubicación GPS en tiempo real\n- Indicadores de escritura y estado en línea\n- Tecnología: Pusher + Socket.io\n- Fallback HTTP cuando WebSocket no está disponible\n\nPara chatear: Ve a un producto y haz clic en **"Contactar vendedor"**'
+  }
+  
+  return null // No local match, try AI
+}
+
+function getFallbackResponse(): string {
+  const responses = [
+    'Puedo ayudarte con:\n\n🔍 **Proveedores** - Menú → Catálogos Oficiales (20+ proveedores NI)\n💰 **Pagos** - 11 métodos (Banpro, BAC, LAFISE, PayPal, etc.)\n📦 **Vender** - Perfil → Convertirse en Vendedor\n📋 **Cotizaciones** - Solicita presupuestos a proveedores\n🗺️ **Mapa** - Encuentra proveedores por ubicación\n💬 **Chat** - Comunícate con vendedores en tiempo real\n\n¿Qué tema te interesa?',
+    '¡Estoy aquí para ayudarte! 🚀\n\nProveedorConecta tiene:\n- **328 productos** en **16 categorías**\n- **20+ proveedores** oficiales verificados\n- **11 métodos** de pago nicaragüenses\n- **Chat** en tiempo real\n- **Mapa** interactivo\n\nDime qué necesitas y te guío.',
+  ]
+  return responses[Math.floor(Math.random() * responses.length)]
+}
 export function AIChatbot({
   isOpen,
   onToggle,
@@ -228,6 +273,16 @@ export function AIChatbot({
     }
     setMessages((prev) => [...prev, userMessage])
 
+    // ── Try local knowledge base FIRST (always available, instant) ──
+    const localAnswer = getLocalResponse(msg)
+    if (localAnswer) {
+      setTimeout(() => {
+        addBotMessage(localAnswer, 'ProveedorConecta')
+        setLoading(false)
+      }, 500)
+      return
+    }
+
     try {
       // Try n8n webhook first if URL is configured
       if (N8N_WEBHOOK_URL) {
@@ -248,10 +303,11 @@ export function AIChatbot({
             const n8nData = await n8nRes.json()
             const responseText = n8nData.response || n8nData.message || n8nData.output || n8nData.text || JSON.stringify(n8nData)
             addBotMessage(responseText, 'n8n')
-            return // Success - don't fall through
+            setLoading(false)
+            return
           }
         } catch (n8nError) {
-          console.warn('n8n webhook failed, falling back to AI API:', n8nError)
+          console.warn('n8n webhook failed, trying fallback...')
         }
       }
 
@@ -270,16 +326,10 @@ export function AIChatbot({
       if (data.success) {
         addBotMessage(data.data.message, data.data.model)
       } else {
-        addBotMessage(
-          "Estamos experimentando alta demanda. Intenta de nuevo en unos momentos. 🙏",
-          "Fallback"
-        )
+        addBotMessage(getFallbackResponse(), 'ProveedorConecta')
       }
     } catch {
-      addBotMessage(
-        "No pude conectar con el servidor. Verifica tu conexión e intenta de nuevo. 📡",
-        "Fallback"
-      )
+      addBotMessage(getFallbackResponse(), 'ProveedorConecta')
     } finally {
       setLoading(false)
     }
