@@ -29,7 +29,7 @@ type UnifiedCatalog = SupplierCatalog | RegisteredSeller
 function SupplierCard({ supplier }: { supplier: UnifiedCatalog }) {
   const [expanded, setExpanded] = useState(false)
   const [logoError, setLogoError] = useState(false)
-  const isRegistered = 'isRegisteredSeller' in supplier && supplier.isRegisteredSeller
+  const isRegistered = ('isRegisteredSeller' in supplier && supplier.isRegisteredSeller) || ('sellerType' in supplier && (supplier as any).sellerType === 'registered')
 
   return (
     <motion.div 
@@ -289,10 +289,12 @@ export function SupplierCatalogsView() {
 
   // Merge catalogs based on active tab
   const allCatalogs: UnifiedCatalog[] = (() => {
+    const officialCatalogs = SUPPLIER_CATALOGS.filter(s => !('sellerType' in s && (s as any).sellerType === 'registered'))
+    const staticRegistered = SUPPLIER_CATALOGS.filter(s => 'sellerType' in s && (s as any).sellerType === 'registered')
     switch (tab) {
-      case "oficiales": return SUPPLIER_CATALOGS
-      case "vendedores": return registeredSellers
-      default: return [...SUPPLIER_CATALOGS, ...registeredSellers]
+      case "oficiales": return officialCatalogs
+      case "vendedores": return [...staticRegistered, ...registeredSellers]
+      default: return [...officialCatalogs, ...staticRegistered, ...registeredSellers]
     }
   })()
 
@@ -339,10 +341,10 @@ export function SupplierCatalogsView() {
             <Icon className="h-3.5 w-3.5" />
             {label}
             {key === "oficiales" && (
-              <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-0.5">{SUPPLIER_CATALOGS.length}</Badge>
+              <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-0.5">{SUPPLIER_CATALOGS.filter(s => !('sellerType' in s && (s as any).sellerType === 'registered')).length}</Badge>
             )}
             {key === "vendedores" && (
-              <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-0.5">{registeredSellers.length}</Badge>
+              <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-0.5">{SUPPLIER_CATALOGS.filter(s => 'sellerType' in s && (s as any).sellerType === 'registered').length + registeredSellers.length}</Badge>
             )}
           </Button>
         ))}

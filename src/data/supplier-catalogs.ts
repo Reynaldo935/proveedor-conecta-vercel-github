@@ -33,6 +33,7 @@ export interface SupplierCatalog {
   socialLinks?: { facebook?: string; instagram?: string; twitter?: string }
   featured: boolean
   tags: string[]
+  sellerType?: "official" | "registered"  // distinguishes registered sellers from official suppliers
 }
 
 export const SUPPLIER_CATALOGS: SupplierCatalog[] = [
@@ -642,5 +643,39 @@ export const SUPPLIER_CATALOGS: SupplierCatalog[] = [
     socialLinks: { facebook: "laboratoriosramos", instagram: "@labramos_nic" },
     featured: false,
     tags: ["farmacéutico", "medicamentos", "vitaminas", "salud"]
+  },
+
+  // ═══════════════════════════════════════════════════════
+  // ── VENDEDORES REGISTRADOS (TEST) ──
+  // ═══════════════════════════════════════════════════════
+  {
+    id: "test-seller-los-munguias",
+    name: "Distribuidora Los Munguías",
+    description: "Distribuidora de productos de consumo masivo en Nicaragua. Abarrotes, bebidas, lácteos y productos de limpieza. Servicio a tiendas y consumidores. ¡Pregunta por nuestros precios al por mayor!",
+    logo: "",
+    websiteUrl: "",
+    category: "Alimentos y Bebidas",
+    department: "Managua",
+    city: "Managua",
+    address: "Km 5 Carretera Sur, Managua",
+    phone: "+505 8888-7777",
+    email: "losmunguias007@gmail.com",
+    schedule: "Lun-Sáb 7:00 AM - 7:00 PM | Dom 7:00 AM - 2:00 PM",
+    productCategories: ["Abarrotes", "Bebidas", "Lácteos", "Limpieza", "Consumo Masivo"],
+    detailedProducts: [
+      { name: "Arroz Preferido 1kg", priceRange: "C$30 - C$35", unit: "kg", description: "Arroz de grano largo 80/20. Ideal para consumo diario." },
+      { name: "Frijoles Rojos 1kg", priceRange: "C$42 - C$48", unit: "kg", description: "Frijol rojo nacional seleccionado. Grano limpio." },
+      { name: "Aceite Vegetal 1L", priceRange: "C$55 - C$62", unit: "1L", description: "Aceite vegetal 100% soya. -8% descuento." },
+      { name: "Leche Entera Lala 1L", priceRange: "C$35 - C$42", unit: "1L", description: "Leche pasteurizada entera. Fresca y nutritiva." },
+      { name: "Café Toro Tradicional 400g", priceRange: "C$90 - C$105", unit: "400g", description: "Café tostado y molido. -10% descuento." },
+      { name: "Jabón Líquido 500ml", priceRange: "C$42 - C$50", unit: "500ml", description: "Jabón líquido con glicerina y aloe vera." },
+      { name: "Detergente en Polvo 1kg", priceRange: "C$60 - C$72", unit: "kg", description: "Detergente de alta espuma. -12% descuento." },
+      { name: "Papel Higiénico 12 rollos", priceRange: "C$115 - C$130", unit: "paquete", description: "Papel doble hoja. Suave y resistente." },
+      { name: "Azúcar Morena 1kg", priceRange: "C$25 - C$30", unit: "kg", description: "Azúcar de caña 100% natural." },
+      { name: "Harina de Maíz Nica 1kg", priceRange: "C$28 - C$33", unit: "kg", description: "Harina de maíz nixtamalizada. Para tortillas." },
+    ],
+    featured: false,
+    tags: ["abarrotes", "distribuidora", "consumo masivo", "managua", "vendedor"],
+    sellerType: "registered"
   },
 ]
