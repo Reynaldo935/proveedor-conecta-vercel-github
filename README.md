@@ -38,16 +38,17 @@
 
 ### 🛒 2. Marketplace Completo
 - Catálogo de productos con imágenes, precios en córdobas (NIO) y descripciones
-- **17 categorías**: Ferretería, Agropecuaria, Tecnología, Construcción, Alimentos, Textiles, Automotriz, Energía Solar, Industrial y más
+- **17 categorías**: Construcción y Ferretería, Alimentos y Bebidas, Tecnología y Electrónica, Agricultura y Ganadería, Textil y Calzado, Hogar y Muebles, Energía y Combustible, Deportes y Recreación, Belleza y Cuidado Personal, Transporte y Logística, Salud y Farmacia, Educación y Papelería, Servicios Profesionales, Artesanías y Manualidades, Impresión y Diseño, Otros
 - Búsqueda avanzada con filtros por categoría, departamento, rango de precio
 - Descuentos por cantidad y ofertas especiales
 - Sistema de "me gusta" y productos guardados
 - **Productos de proveedores nicaragüenses verificados** con precios actualizados
 
 ### 🏢 3. Proveedores Nicaragüenses Verificados
-- **20+ proveedores locales**: Casa Pellas, Ingenio San Antonio (Flor de Caña), Café Prestó, Café Toro, Café 1820, Cukra, Disagro, AGRICORP, Lala, Ferretería Americana, PROINCO, DIMACO, CISA AGRO, Fresinika, Doselva, Nicanaturals, y más
+- **60+ proveedores locales**: Flor de Caña (ISA), Casa Pellas, Ferromax, Disagro, AGRICORP, CCN (Coca-Cola, Toña, Victoria), Pollo Tip Top, Doselva, Puratos Nicaragua, Lala Nicaragua, CISA AGRO, PROINCO, Nicanaturals, La Curacao, Brenntag, COMERSA, Café Soluble Exportadora (Café Prestó), Café Toro, Café 1820, Cukra Industrial, Suplidora Internacional, EUROSTAR, Plásticos San Martín, Sol Orgánica, APEN, Agroexport, Exportadora Atlantic, Industrial Comercial San Martín, Shin Han Nicaragua, La Fábrica de Niples, PROAGRO J.R., Servicio Agrícola Gurdian, Grupo Petrop, y más
 - Cada proveedor tiene perfil con logo, sitio web oficial, ubicación y productos
-- **Precios dinámicos**: Mecanismo automático de actualización cada 24 horas (cron job)
+- **328 productos** en catálogo con imágenes únicas y datos actualizados
+- **Precios en Córdobas (NIO)**: Mecanismo de actualización disponible
 - Filtrado por categoría, departamento y búsqueda textual
 
 ### 📦 4. Gestión de Productos para Vendedores
@@ -696,7 +697,190 @@ El cron job `/api/cron/commission-payout` procesa comisiones pendientes cada 24h
 
 ---
 
-## �📄 Licencia
+## 🗄️ Arquitectura de Bases de Datos
+
+ProveedorConecta utiliza **4 bases de datos** en paralelo, cada una con un propósito específico:
+
+### 1. Turso (libSQL) — Base de Datos PRIMARIA
+
+```
+Tipo:      SQLite distribuido (libSQL)
+ORM:       Prisma
+Hosting:   Turso Cloud (edge)
+Ubicación: Global (replicado en múltiples regiones)
+```
+
+**Propósito**: Almacenamiento principal de la aplicación. Contiene todas las tablas del marketplace: usuarios, productos, transacciones, chat, notificaciones, reseñas, etc.
+
+**Conexión**:
+```env
+TURSO_DATABASE_URL=libsql://proveedor-conecta.turso.io
+TURSO_AUTH_TOKEN=tu-token
+```
+
+**Tablas principales**: User, Product, Transaction, Message, ChatRoom, Notification, BusinessProfile, Follow, Like, SavedProduct, Review, LoyaltyPoint, AuditLog, CommissionLog, Advertisement, QuantityDiscount, WallPost, CalendarEvent, Appointment, Cotizacion, CotizacionResponse
+
+**Nota**: En Vercel, Turso ocasionalmente no está disponible. Por eso el catálogo de productos usa un fallback estático (`MEGA_CATALOG`) con 328 productos precargados.
+
+### 2. Supabase (PostgreSQL) — Base de Datos SECUNDARIA
+
+```
+Tipo:      PostgreSQL relacional
+Hosting:   Supabase Cloud
+Ubicación: AWS us-east-1
+```
+
+**Propósito**: Respaldo y consultas analíticas. Conexión vía PHP endpoint (`public/api/supabase-db.php`).
+
+**Diagrama Relacional (PostgreSQL)**:
+
+```mermaid
+erDiagram
+    users ||--o{ products : "vende (seller_id)"
+    users ||--o{ transactions : "compra (buyer_id)"
+    users ||--o{ transactions : "vende (seller_id)"
+    users ||--o{ messages : "envía"
+    users ||--o{ chat_rooms : "participa"
+    users ||--o{ notifications : "recibe"
+    users ||--o{ reviews : "escribe"
+    users ||--o{ reviews : "recibe"
+    
+    products ||--o{ transactions : "tiene"
+    products ||--o{ likes : "recibe"
+    products ||--o{ saved_products : "guardado"
+    products ||--o{ quantity_discounts : "descuentos"
+    
+    chat_rooms ||--o{ messages : "contiene"
+    transactions ||--o{ commission_logs : "genera"
+    
+    users {
+        uuid id PK
+        varchar clerk_id UK
+        varchar email UK
+        varchar name
+        varchar role
+        decimal balance
+        timestamp created_at
+    }
+    
+    products {
+        uuid id PK
+        uuid seller_id FK
+        varchar title
+        text description
+        decimal price
+        varchar category
+        varchar status
+        boolean is_featured
+        timestamp created_at
+    }
+    
+    transactions {
+        uuid id PK
+        uuid buyer_id FK
+        uuid seller_id FK
+        uuid product_id FK
+        decimal amount
+        decimal commission
+        varchar payment_method
+        varchar status
+        timestamp created_at
+    }
+```
+
+**Conexión**:
+```env
+SUPABASE_URL=https://xxxxxxxxx.supabase.co
+SUPABASE_DB=postgresql://postgres:password@db.xxxxxxxxx.supabase.co:5432/postgres
+```
+
+### 3. Clerk — Base de Datos de Autenticación
+
+```
+Tipo:      SaaS (managed auth database)
+Hosting:   Clerk Cloud
+```
+
+**Propósito**: Gestión completa de usuarios (registro, login, verificación de email, OAuth). Clerk mantiene su propia base de datos con:
+- Usuarios (email, contraseña hasheada, Google OAuth tokens)
+- Sesiones (JWT tokens, refresh tokens)
+- Verificación de email (códigos OTP)
+- Webhooks para sincronizar con Turso
+
+**Flujo de sincronización**:
+```
+Usuario se registra en Clerk
+    ↓
+Clerk webhook → POST /api/webhooks/clerk
+    ↓
+Sincroniza usuario en Turso (crea/actualiza)
+    ↓
+Usuario puede usar la plataforma inmediatamente
+```
+
+### 4. Upstash Redis — Cache
+
+```
+Tipo:      Redis serverless
+Hosting:   Upstash Cloud
+```
+
+**Propósito**: Cache de sesiones, rate limiting, y datos frecuentes (productos destacados, clima).
+
+### 📊 Comparación de Bases de Datos
+
+| Característica | Turso (libSQL) | Supabase (PostgreSQL) | Clerk | Upstash Redis |
+|---|---|---|---|---|
+| **Tipo** | SQLite distribuido | PostgreSQL relacional | SaaS Auth | Redis |
+| **Uso principal** | Datos de la app | Backup/analíticas | Autenticación | Cache |
+| **Consultas SQL** | ✅ Completo | ✅ Completo | ❌ API propia | ❌ NoSQL |
+| **Relaciones** | ✅ FK, índices | ✅ FK, índices, triggers | N/A | N/A |
+| **Latencia** | Baja (edge) | Media (us-east-1) | Baja | Muy baja |
+| **Disponibilidad** | ⚠️ Variable en Vercel | ✅ Alta | ✅ Alta | ✅ Alta |
+
+---
+
+## �📋 Control de Versiones y Changelog
+
+### Versión Actual: v4.1.0 (Junio 2026)
+
+| Versión | Fecha | Cambios | Commit |
+|---|---|---|---|
+| **v4.1.0** | 30 Jun 2026 | 328 productos, 60+ proveedores NI, imágenes únicas picsum, upload base64, fotos equipo restauradas | `37570c8` |
+| **v4.0.0** | 29 Jun 2026 | 68 proveedores nicaragüenses reales, backup user/admin, CDN Vercel, chat multimedia, perfil mejorado, seller CRUD | `2bde447` |
+| **v3.0.0** | 28 Jun 2026 | Clerk Auth completo, Next.js 16 proxy, Supabase secundario, fallback estático para DB | `624250f` |
+| **v2.0.0** | May 2026 | Chat Pusher/Socket.io, Cotizaciones RFQ, Lealtad, Reseñas, Panel Admin | — |
+| **v1.0.0** | Abr 2026 | Marketplace base, Turso, Google OAuth manual, productos iniciales | — |
+
+### 📊 Historial de Commits Recientes
+
+```
+37570c8 (HEAD -> main) fix: fotos del equipo movidas a public/equipo/
+495ce7e fix: restaurar fotos del equipo - .vercelignore
+756e691 fix: upload de fotos sin Vercel Blob - usa base64
+9f29f75 fix: 328 imagenes UNICAS via picsum
+2bde447 feat: 68 productos reales de 30+ proveedores nicaraguenses
+6743314 fix: fallback products con Lorem Flickr
+d596d1c fix: Lorem Flickr keywords individuales sin espacios
+fa6b0b0 fix: Lorem Flickr solo palabras inglesas seguras
+33df415 fix: placehold.co product-name images
+866d1eb feat: 260+ productos en 16 categorias
+624250f feat: HomeFeed 50 productos + fallback
+```
+
+### 🔄 Flujo de Git
+
+```
+main (producción)
+  │
+  ├── Cada commit → Vercel auto-deploy
+  │
+  └── npx vercel --prod --yes (deploy manual urgente)
+```
+
+---
+
+## 📄 Licencia
 
 Este proyecto es privado y confidencial. Todos los derechos reservados.
 
