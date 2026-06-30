@@ -21,11 +21,7 @@ interface ExchangeRate {
 
 const EXCHANGE_RATES: ExchangeRate[] = [
   { currency: "Dólar EE.UU.", code: "USD", buyRate: 36.85, sellRate: 37.15, change: 0.12, flag: "🇺🇸" },
-  { currency: "Euro", code: "EUR", buyRate: 39.72, sellRate: 40.10, change: -0.08, flag: "🇪🇺" },
   { currency: "Córdoba", code: "NIO", buyRate: 1.00, sellRate: 1.00, change: 0, flag: "🇳🇮" },
-  { currency: "Real Brasileño", code: "BRL", buyRate: 6.25, sellRate: 6.50, change: 0.05, flag: "🇧🇷" },
-  { currency: "Peso Mexicano", code: "MXN", buyRate: 1.85, sellRate: 1.95, change: -0.03, flag: "🇲🇽" },
-  { currency: "Colón Costarricense", code: "CRC", buyRate: 0.072, sellRate: 0.078, change: 0.001, flag: "🇨🇷" },
 ]
 
 const PAYMENT_METHODS = [
