@@ -14,7 +14,7 @@ import {
   Menu, Sun, Moon, MessageCircle, User, ChevronDown, Home,
   Bell, LogOut, Shield, FileText, CreditCard,
   Settings, Plus, Compass, LayoutDashboard, X, Cloud, Droplets, Thermometer,
-  Download, HardDriveDownload, BarChart3, Calendar, Gift, MoreHorizontal, ExternalLink, Globe
+  Download, HardDriveDownload, BarChart3, Calendar, Gift, MoreHorizontal, ExternalLink, Globe, ChevronRight
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
@@ -545,6 +545,7 @@ function HomeFeed() {
   const [searchQuery, setSearchQuery] = useState("")
   const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS)
   const { navigate } = useAppStore()
+  const mounted = useMounted()
 
   // Load products from API, fall back to hardcoded
   useEffect(() => {
@@ -573,57 +574,75 @@ function HomeFeed() {
     : products
 
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <div className="text-center space-y-3 py-6">
-        <h1 className="text-3xl sm:text-4xl font-bold text-primary">
-          ProveedorConecta Nicaragua
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Conectando emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en toda Nicaragua.
-        </p>
-      </div>
-
-      {/* Search */}
-      <div className="flex gap-2 max-w-xl mx-auto">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar productos, proveedores..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-card border-[#D0D7E0] dark:bg-[#0D1A2D] dark:border-[#E8A817] text-[#111111] dark:text-[#F0F2F5]"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                useAppStore.getState().setSearchQuery(searchQuery)
-                navigate("search")
-              }
-            }}
-          />
+    <div className="space-y-8">
+      {/* ── Hero Section with Gradient ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A5276] via-[#1B3A5C] to-[#0B1A2C] dark:from-[#0B1A2C] dark:via-[#1A1A2E] dark:to-[#16213E] text-white p-8 sm:p-12 shadow-2xl">
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#E8A817]/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#2E86C1]/20 rounded-full translate-y-1/3 -translate-x-1/4 blur-3xl" />
+        <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-[#F4D03F]/10 rounded-full blur-2xl" />
+        
+        <div className="relative z-10 text-center space-y-5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur text-sm border border-white/20 mb-4">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+            </span>
+            Marketplace B2B/B2C nicaragüense 🇳🇮
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-[family-name:var(--font-poppins)]">
+            ProveedorConecta <span className="text-[#E8A817]">Nicaragua</span>
+          </h1>
+          <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">
+            Conectando emprendedores y MIPYMES con proveedores de insumos, materia prima, servicios y equipos productivos en toda Nicaragua.
+          </p>
+          
+          {/* Hero Search */}
+          <div className="flex gap-2 max-w-xl mx-auto pt-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/60" />
+              <Input
+                placeholder="Buscar productos, proveedores..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 h-12 bg-white/10 backdrop-blur border-white/20 text-white placeholder:text-white/50 rounded-xl text-base focus-visible:ring-[#E8A817] focus-visible:border-[#E8A817]/50"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    useAppStore.getState().setSearchQuery(searchQuery)
+                    navigate("search")
+                  }
+                }}
+              />
+            </div>
+            <Button 
+              onClick={() => { useAppStore.getState().setSearchQuery(searchQuery); navigate("search") }}
+              size="lg"
+              className="bg-[#E8A817] hover:bg-[#D4950F] text-[#060E1A] font-bold px-6 rounded-xl shadow-lg shadow-[#E8A817]/25"
+            >
+              <Search className="h-5 w-5 mr-1" />
+              Buscar
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => { useAppStore.getState().setSearchQuery(searchQuery); navigate("search") }}
-          className="bg-[#1A1A1A] hover:bg-[#333] text-white dark:bg-[#E8A817] dark:hover:bg-[#D4950F] dark:text-[#060E1A] font-semibold">
-          Buscar
-        </Button>
       </div>
 
-      {/* Quick nav buttons */}
-      <div className="flex flex-wrap gap-2 justify-center">
+      {/* ── Quick Action Buttons ── */}
+      <div className="flex flex-wrap gap-2.5 justify-center">
         {[
-          { label: "Marketplace", view: "home", icon: Store },
-          { label: "Mapa GPS", view: "map", icon: MapPin },
-          { label: "Cotizaciones", view: "cotizaciones", icon: FileText },
-          { label: "Encuestas", view: "surveys", icon: Heart },
-          { label: "Destacados", view: "featured", icon: Star },
-          { label: "Auditoría", view: "audit", icon: Shield },
-          { label: "Descargas", view: "downloads", icon: CreditCard },
-          { label: "Backup", view: "backup", icon: Package },
-        ].map(({ label, view, icon: Icon }) => (
+          { label: "Marketplace", view: "home", icon: Store, color: "from-blue-600 to-blue-700" },
+          { label: "Mapa GPS", view: "map", icon: MapPin, color: "from-emerald-600 to-emerald-700" },
+          { label: "Cotizaciones", view: "cotizaciones", icon: FileText, color: "from-purple-600 to-purple-700" },
+          { label: "Encuestas", view: "surveys", icon: Heart, color: "from-pink-600 to-pink-700" },
+          { label: "Destacados", view: "featured", icon: Star, color: "from-amber-600 to-amber-700" },
+          { label: "Auditoría", view: "audit", icon: Shield, color: "from-red-600 to-red-700" },
+          { label: "Descargas", view: "downloads", icon: CreditCard, color: "from-teal-600 to-teal-700" },
+          { label: "Backup", view: "backup", icon: Package, color: "from-indigo-600 to-indigo-700" },
+        ].map(({ label, view, icon: Icon, color }) => (
           <Button
             key={view}
             size="sm"
             onClick={() => navigate(view as Parameters<typeof navigate>[0])}
-            className="gap-2 bg-card hover:bg-[#DDE1E8] dark:bg-[#E8A817] dark:hover:bg-[#D4950F] dark:text-[#060E1A] text-[#111111] border border-[#D0D7E0] dark:border-[#E8A817] shadow-sm"
+            className={`gap-2 bg-gradient-to-r ${color} text-white border-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium`}
           >
             <Icon className="h-4 w-4" />
             {label}
@@ -636,15 +655,26 @@ function HomeFeed() {
         <WeatherWidget />
       </div>
 
+      {/* ── Section Title ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold font-[family-name:var(--font-poppins)]">🛍️ Productos Destacados</h2>
+          <p className="text-sm text-muted-foreground mt-1">{filtered.length} productos disponibles</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => navigate("search")} className="gap-1">
+          Ver todos <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
       {/* Product Grid */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>No se encontraron productos</p>
+        <div className="text-center py-16 text-muted-foreground bg-muted/20 rounded-2xl">
+          <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-medium">No se encontraron productos</p>
           <p className="text-sm mt-1">Intenta con otra búsqueda</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

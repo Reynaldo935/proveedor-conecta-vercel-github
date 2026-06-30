@@ -136,6 +136,24 @@
 
 ---
 
+## 🧪 Perfiles de Prueba
+
+> **Usa estas credenciales para probar la plataforma con los 3 roles.**
+
+| Rol | Email | Contraseña | Acceso |
+|---|---|---|---|
+| 🔑 **Administrador** | `rey7214935@gmail.com` | `El_jefe07` | Panel Admin, Auditoría, Backup, Dashboard, Usuarios, TODO |
+| 🏪 **Vendedor** | `losmunguias007@gmail.com` | `Yamoshi2007..` | Publicar productos, Catálogo, Dashboard Ventas, Chat |
+| 🛒 **Comprador** | `munguiafrancisco860@gmail.com` | `perrasuciadavid` | Comprar, navegar, chatear, guardar productos |
+
+### 🔐 Autenticación
+- **Clerk** autentica con Email + Google OAuth
+- **Cualquier correo Gmail** puede iniciar sesión sin problemas
+- Registro instantáneo con verificación de email
+- Roles asignados vía Base de Datos (Turso/libSQL)
+
+---
+
 ## 🏗️ Arquitectura
 
 ```
