@@ -273,18 +273,34 @@ export function AIChatbot({
     }
     setMessages((prev) => [...prev, userMessage])
 
-    // ── Try local knowledge base FIRST (always available, instant) ──
+    // ── Try Gemini AI FIRST (free tier, always available) ──
+    try {
+      const geminiRes = await fetch('/api/ai/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          conversationHistory: buildConversationHistory(),
+        }),
+      })
+      const geminiData = await geminiRes.json()
+      if (geminiData.success) {
+        addBotMessage(geminiData.data.message, geminiData.data.model)
+        setLoading(false)
+        return
+      }
+    } catch { /* fall through */ }
+
+    // ── Try local knowledge base (always available, instant) ──
     const localAnswer = getLocalResponse(msg)
     if (localAnswer) {
-      setTimeout(() => {
-        addBotMessage(localAnswer, 'ProveedorConecta')
-        setLoading(false)
-      }, 500)
+      addBotMessage(localAnswer, 'ProveedorConecta')
+      setLoading(false)
       return
     }
 
     try {
-      // Try n8n webhook first if URL is configured
+      // Try n8n webhook if URL is configured
       if (N8N_WEBHOOK_URL) {
         try {
           const n8nRes = await fetch(N8N_WEBHOOK_URL, {
