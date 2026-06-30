@@ -710,6 +710,39 @@ export function ProfileSettings() {
                     </Badge>
                   )}
                 </div>
+                {/* ── Become Seller button for BUYER users ── */}
+                {user?.role === "BUYER" && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const res = await authFetch("/api/auth/role", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ role: "SELLER" }),
+                          })
+                          const data = await res.json()
+                          if (data.success) {
+                            toast.success(data.message || "¡Ahora eres Vendedor!")
+                            // Refresh user data
+                            setTimeout(() => window.location.reload(), 1000)
+                          } else {
+                            toast.error(data.error || "Error al actualizar rol")
+                          }
+                        } catch {
+                          toast.error("Error de conexión")
+                        }
+                      }}
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold"
+                    >
+                      🏪 Convertirse en Vendedor
+                    </Button>
+                    <p className="text-[11px] text-muted-foreground text-center mt-1">
+                      Publica productos y crece tu negocio en ProveedorConecta
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
