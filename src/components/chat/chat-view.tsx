@@ -383,49 +383,39 @@ export function ChatView() {
     }
   }
 
-  // Upload media file (image, video, audio)
+  // Upload media file (image, video, audio) — uses base64, no external storage
   const handleMediaUpload = async (files: FileList, type: "image" | "video" | "audio") => {
     if (!chatRoom || !user) return
     setUploading(true)
     setShowAttachMenu(false)
 
-    const fd = new FormData()
-    Array.from(files).forEach((f) => fd.append("files", f))
-    fd.append("subfolder", "chat")
-
     try {
-      const res = await authFetch("/api/upload", { method: "POST", body: fd })
-      const d = await res.json()
-      if (d.success && d.data.length > 0) {
-        for (const url of d.data) {
-          if (isConnected && socketRef.current) {
-            socketRef.current.emit("send-message", {
-              roomId: chatRoom.id,
-              senderId: user.id,
-              content: type === "image" ? "📷 Imagen" : type === "video" ? "🎥 Video" : "🎵 Audio",
-              imageUrl: url,
-              messageType: type,
-              mediaUrl: url,
-            })
-          } else {
-            const msgRes = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                content: type === "image" ? "📷 Imagen" : type === "video" ? "🎥 Video" : "🎵 Audio",
-                imageUrl: url,
-                messageType: type,
-                mediaUrl: url,
-              }),
-            })
-            const md = await msgRes.json()
-            if (md.success) setMessages((prev) => [...prev, md.data])
-          }
-        }
-        toast.success(`${type === "image" ? "Imagen" : type === "video" ? "Video" : "Audio"} enviado`)
+      const file = files[0]
+      if (file.size > 5 * 1024 * 1024) { toast.error("Archivo no debe exceder 5MB"); setUploading(false); return }
+      const url = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error("Error"))
+        reader.readAsDataURL(file)
+      })
+      if (isConnected && socketRef.current) {
+        socketRef.current.emit("send-message", {
+          roomId: chatRoom.id, senderId: user.id,
+          content: type === "image" ? "📷 Imagen" : type === "video" ? "🎥 Video" : "🎵 Audio",
+          imageUrl: url, messageType: type, mediaUrl: url,
+        })
       } else {
-        toast.error(d.error || "Error al subir archivo")
+        const msgRes = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: type === "image" ? "📷 Imagen" : type === "video" ? "🎥 Video" : "🎵 Audio",
+            imageUrl: url, messageType: type, mediaUrl: url,
+          }),
+        })
+        const md = await msgRes.json()
+        if (md.success) setMessages((prev) => [...prev, md.data])
       }
+      toast.success(`${type === "image" ? "Imagen" : type === "video" ? "Video" : "Audio"} enviado`)
     } catch {
       toast.error("Error al subir archivo")
     } finally {
@@ -433,58 +423,40 @@ export function ChatView() {
     }
   }
 
-  // Upload general file (document, PDF, etc.)
+  // Upload general file (document, PDF, etc.) — uses base64, no external storage
   const handleFileUpload = async (files: FileList) => {
     if (!chatRoom || !user) return
     setUploading(true)
     setShowAttachMenu(false)
 
-    const fd = new FormData()
-    Array.from(files).forEach((f) => fd.append("files", f))
-    fd.append("subfolder", "chat")
-
     try {
-      const res = await authFetch("/api/upload", { method: "POST", body: fd })
-      const d = await res.json()
-      if (d.success && d.data.length > 0) {
-        for (let i = 0; i < d.data.length; i++) {
-          const url = d.data[i]
-          const file = files[i]
-          const fileName = file?.name || "Archivo"
-          const fileSize = file?.size || 0
-
-          if (isConnected && socketRef.current) {
-            socketRef.current.emit("send-message", {
-              roomId: chatRoom.id,
-              senderId: user.id,
-              content: `📎 ${fileName}`,
-              imageUrl: url,
-              messageType: "file",
-              mediaUrl: url,
-              fileName,
-              fileSize,
-            })
-          } else {
-            const msgRes = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                content: `📎 ${fileName}`,
-                imageUrl: url,
-                messageType: "file",
-                mediaUrl: url,
-                fileName,
-                fileSize,
-              }),
-            })
-            const md = await msgRes.json()
-            if (md.success) setMessages((prev) => [...prev, md.data])
-          }
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        if (file.size > 5 * 1024 * 1024) { toast.error("Archivo no debe exceder 5MB"); continue }
+        const url = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error("Error"))
+          reader.readAsDataURL(file)
+        })
+        const fileName = file?.name || "Archivo"
+        const fileSize = file?.size || 0
+        if (isConnected && socketRef.current) {
+          socketRef.current.emit("send-message", {
+            roomId: chatRoom.id, senderId: user.id,
+            content: `📎 ${fileName}`, imageUrl: url,
+            messageType: "file", mediaUrl: url, fileName, fileSize,
+          })
+        } else {
+          const msgRes = await authFetch(`/api/chat/rooms/${chatRoom.id}/messages`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: `📎 ${fileName}`, imageUrl: url, messageType: "file", mediaUrl: url, fileName, fileSize }),
+          })
+          const md = await msgRes.json()
+          if (md.success) setMessages((prev) => [...prev, md.data])
         }
-        toast.success("Archivo enviado")
-      } else {
-        toast.error(d.error || "Error al subir archivo")
       }
+      toast.success("Archivo enviado")
     } catch {
       toast.error("Error al subir archivo")
     } finally {

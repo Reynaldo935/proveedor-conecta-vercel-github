@@ -127,30 +127,26 @@ export function CreateAdForm() {
 
   const handleUpload = async (files: FileList) => {
     if (files.length === 0) return
+    const file = files[0]
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen no debe exceder 5MB")
+      return
+    }
 
     setUploading(true)
     setUploadProgress(0)
-    const fd = new FormData()
-    Array.from(files).forEach((f) => fd.append("files", f))
-    fd.append("subfolder", "ads")
-
     try {
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => Math.min(prev + 15, 90))
-      }, 200)
-
-      const res = await authFetch("/api/upload", { method: "POST", body: fd })
-      clearInterval(progressInterval)
+      // Read as base64 data URL — avoids Vercel Blob dependency
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error("Error al leer archivo"))
+        reader.readAsDataURL(file)
+      })
       setUploadProgress(100)
-
-      const d = await res.json()
-      if (d.success && d.data.length > 0) {
-        setForm((f) => ({ ...f, imageUrl: d.data[0] }))
-        toast.success("Imagen subida exitosamente")
-        if (fileInputRef.current) fileInputRef.current.value = ""
-      } else {
-        toast.error(d.error || "Error al subir imagen")
-      }
+      setForm((f) => ({ ...f, imageUrl: dataUrl }))
+      toast.success("Imagen subida exitosamente")
+      if (fileInputRef.current) fileInputRef.current.value = ""
     } catch {
       toast.error("Error al subir imagen")
     } finally {

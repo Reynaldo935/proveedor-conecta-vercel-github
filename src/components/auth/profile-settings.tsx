@@ -205,22 +205,24 @@ export function ProfileSettings() {
     }
   }, [activeTab, user?.businessProfile?.id, user?.id, loadWallPosts, loadProducts])
 
-  // ─── Upload Helper ───────────────────────────────────────────────────────────
+  // ─── Upload Helper (uses base64, no external storage needed) ─────────────────
 
-  const uploadFile = async (file: File, subfolder: string): Promise<string | null> => {
-    const fd = new FormData()
-    fd.append("files", file)
-    fd.append("subfolder", subfolder)
-    try {
-      const res = await authFetch("/api/upload", { method: "POST", body: fd })
-      const d = await res.json()
-      if (d.success && d.data?.[0]) {
-        return d.data[0]
-      }
-      toast.error(d.error || "Error al subir archivo")
+  const uploadFile = async (file: File, _subfolder: string): Promise<string | null> => {
+    // Convert file to base64 data URL — avoids Vercel Blob dependency
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen no debe exceder 5MB")
       return null
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error("Error al leer el archivo"))
+        reader.readAsDataURL(file)
+      })
+      return dataUrl
     } catch {
-      toast.error("Error al subir archivo")
+      toast.error("Error al procesar la imagen")
       return null
     }
   }

@@ -136,27 +136,34 @@ export function SellProductForm({ editMode = false }: { editMode?: boolean }) {
     }
     setUploading(true)
     setUploadProgress(0)
-    const fd = new FormData()
-    Array.from(files).forEach((f) => fd.append("files", f))
-    fd.append("subfolder", "products")
     try {
-      // Simulate progress for UX
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => Math.min(prev + 15, 90))
-      }, 200)
+      const newImages: string[] = []
+      const fileArray = Array.from(files)
+      
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i]
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} excede 5MB`)
+          continue
+        }
+        // Read file as base64 data URL — avoids Vercel Blob dependency
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error("Error al leer archivo"))
+          reader.readAsDataURL(file)
+        })
+        newImages.push(dataUrl)
+        setUploadProgress(Math.round(((i + 1) / fileArray.length) * 100))
+      }
 
-      const res = await authFetch("/api/upload", { method: "POST", body: fd })
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-
-      const d = await res.json()
-      if (d.success) {
-        setForm((f) => ({ ...f, images: [...f.images, ...d.data] }))
-        toast.success("Imágenes subidas")
+      if (newImages.length > 0) {
+        setForm((f) => ({ ...f, images: [...f.images, ...newImages] }))
+        toast.success(`${newImages.length} imagen(es) subida(s)`)
         if (fileInputRef.current) fileInputRef.current.value = ""
-      } else toast.error(d.error || "Error al subir imágenes")
+      }
     } catch {
-      toast.error("Error al subir")
+      toast.error("Error al procesar imágenes")
     } finally {
       setTimeout(() => {
         setUploading(false)
