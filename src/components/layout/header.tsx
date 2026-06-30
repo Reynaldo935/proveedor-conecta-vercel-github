@@ -44,6 +44,7 @@ import {
   Megaphone,
   ClipboardCheck,
   Zap,
+  ExternalLink,
 } from "lucide-react"
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react"
 import { TeamSectionMenu } from "@/components/creators/team-section"
@@ -241,6 +242,9 @@ export function Header() {
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("search")}>
                 <Search className="h-4 w-4 mr-3 text-[#1B3A5C] dark:text-[#E8A817]" /> Productos
+              </Button>
+              <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("supplier-catalogs")}>
+                <ExternalLink className="h-4 w-4 mr-3 text-[#1B3A5C] dark:text-[#E8A817]" /> Catálogos Oficiales
               </Button>
               <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("map")}>
                 <MapPin className="h-4 w-4 mr-3 text-[#1B3A5C] dark:text-[#E8A817]" /> Mapa Proveedores

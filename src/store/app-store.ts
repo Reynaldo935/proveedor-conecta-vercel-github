@@ -39,6 +39,7 @@ export type AppView =
   | 'create-ad'
   | 'surveys'
   | 'suppliers'
+  | 'supplier-catalogs'
   | 'why-us'
 
 interface AppState {
