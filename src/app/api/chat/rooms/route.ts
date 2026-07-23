@@ -57,23 +57,32 @@ export async function POST(request: NextRequest) {
     await setAuthCookie(userId)
 
     const body = await request.json()
-    const { sellerId, productId, message } = body
+    const { participantId, productId, message } = body
+    // Also support legacy `sellerId` parameter
+    const legacySellerId: string | undefined = body.sellerId
 
-    if (!sellerId) {
-      return NextResponse.json({ success: false, error: 'sellerId es requerido' }, { status: 200 })
+    // Support both old `sellerId` and new `participantId` params
+    const otherUserId = participantId || legacySellerId
+
+    if (!otherUserId) {
+      return NextResponse.json({ success: false, error: 'ID de usuario requerido' }, { status: 200 })
     }
 
-    if (sellerId === userId) {
+    if (otherUserId === userId) {
       return NextResponse.json({ success: false, error: 'No puedes iniciar un chat contigo mismo' }, { status: 200 })
     }
 
-    // Verify seller exists
-    const seller = await db.user.findUnique({ where: { id: sellerId } })
-    if (!seller) {
-      return NextResponse.json({ success: false, error: 'Vendedor no encontrado' }, { status: 200 })
+    // Verify other user exists
+    const otherUser = await db.user.findUnique({ where: { id: otherUserId } })
+    if (!otherUser) {
+      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 200 })
     }
 
-    // If productId provided, verify it exists and belongs to seller
+    // Determine buyer/seller roles for the room
+    const buyerId = userId // initiator is always buyer
+    const roomSellerId = otherUserId // other user is seller role
+
+    // If productId provided, verify it exists
     if (productId) {
       const product = await db.product.findUnique({ where: { id: productId } })
       if (!product || product.status === 'DELETED') {
@@ -81,12 +90,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if room already exists
+    // Check if room already exists (bidirectional check)
     let room = await db.chatRoom.findFirst({
       where: {
-        buyerId: userId,
-        sellerId,
-        ...(productId ? { productId } : { productId: null }),
+        OR: [
+          { buyerId: userId, sellerId: otherUserId },
+          { buyerId: otherUserId, sellerId: userId },
+        ],
+        ...(productId ? { productId } : {}),
       },
       include: {
         buyer: { select: { id: true, name: true, avatar: true } },
@@ -97,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     if (!room) {
       room = await db.chatRoom.create({
-        data: { buyerId: userId, sellerId, productId: productId || null },
+        data: { buyerId, sellerId: roomSellerId, productId: productId || null },
         include: {
           buyer: { select: { id: true, name: true, avatar: true } },
           seller: { select: { id: true, name: true, avatar: true, businessProfile: { select: { businessName: true, logo: true } } } },
@@ -118,10 +129,10 @@ export async function POST(request: NextRequest) {
       // Notify the other user
       await db.notification.create({
         data: {
-          userId: sellerId,
+          userId: otherUserId,
           type: 'MESSAGE',
           title: 'Nuevo mensaje',
-          message: `Tienes un nuevo mensaje de ${seller.name || 'un usuario'}`,
+          message: `Tienes un nuevo mensaje de ${otherUser.name || 'un usuario'}`,
           link: `/chat/${room.id}`,
         },
       })

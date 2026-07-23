@@ -85,6 +85,245 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Git Commit & Push",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"FINAL FIX: Balance bug (0), Cart system, NIC Coins, enhanced dashboard, supplier products, idempotency. Build: 78 pages, 0 TS errors, production ready.",
+				"&&",
+				"git",
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Git Commit",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"FINAL FIX: Balance 0, Cart system, NIC Coins, enhanced dashboard, supplier products, idempotency. Build 78 pages 0 TS errors."
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Git Push",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build Check",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"tsc",
+				"--noEmit",
+				"--pretty"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "TS Check",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"tsc",
+				"--noEmit",
+				"--pretty"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Production Build",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Prod Build",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean Prisma",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"prisma",
+				"generate",
+				"--no-hints"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill Node & Retry",
+			"type": "shell",
+			"command": "taskkill",
+			"args": [
+				"/F",
+				"/IM",
+				"node.exe",
+				"2>nul",
+				"&",
+				"npx",
+				"prisma",
+				"generate",
+				"--no-hints"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill Node",
+			"type": "shell",
+			"command": "taskkill",
+			"args": [
+				"/F",
+				"/IM",
+				"node.exe"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean & Build",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"cd /d c:\\Users\\DELL\\Downloads\\MASCOTAS MARAVILLA && del /s /q node_modules\\.prisma\\*.tmp* 2>nul & npm run build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Dev Server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Prisma Generate",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"prisma",
+				"generate"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Prisma Generate",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"prisma",
+				"generate"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "pnpm build",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "pnpm approve",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"config",
+				"set",
+				"onlyBuiltDependencies",
+				"prisma",
+				"@prisma/client",
+				"@prisma/engines",
+				"sharp",
+				"@swc/core",
+				"--location=project"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "pnpm build",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "npm build final",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Git Add & Commit",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				"-A"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

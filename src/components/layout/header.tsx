@@ -45,6 +45,7 @@ import {
   ClipboardCheck,
   Zap,
   ExternalLink,
+  Users,
 } from "lucide-react"
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react"
 import { TeamSectionMenu } from "@/components/creators/team-section"
@@ -309,6 +310,9 @@ export function Header() {
                         {notifCount > 9 ? "9+" : notifCount}
                       </Badge>
                     )}
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("social")}>
+                    <Users className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Directorio Social
                   </Button>
                   <Button variant="ghost" className="w-full justify-start h-10" onClick={() => handleNav("notifications")}>
                     <Bell className="h-4 w-4 mr-3 text-[#1B3A5C]" /> Notificaciones

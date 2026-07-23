@@ -78,6 +78,9 @@ model User {
   advertisements  Advertisement[]
   postLikes       PostLike[]
   postComments    PostComment[]
+  socialPosts     SocialPost[]
+  socialPostLikes SocialPostLike[]
+  socialPostComments SocialPostComment[]
   loyaltyPoints   LoyaltyPoint[]
   pointHistory    PointHistory[]
   givenRatings    Review[] @relation("GivenRatings")
@@ -86,6 +89,9 @@ model User {
   calendarEvents  CalendarEvent[]
   appointments    Appointment[] @relation("BuyerAppointments")
   sellerAppointments Appointment[] @relation("SellerAppointments")
+  socialWallPosts SocialWall[]
+  socialWallComments SocialWallComment[]
+  socialWallLikes SocialWallLike[]
 }
 
 model BusinessProfile {
@@ -330,6 +336,52 @@ model WallPost {
   comments        PostComment[]
 }
 
+// ─── Social Media Posts (Facebook-style timeline for ALL users) ─────────────
+
+model SocialPost {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String   @default("")
+  images    String   @default("[]") // JSON array of image URLs
+  videoUrl  String   @default("")
+  postType  String   @default("text") // text, photo, video, audio
+  isEdited  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes    SocialPostLike[]
+  comments SocialPostComment[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model SocialPostLike {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model SocialPostComment {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
 model PostLike {
   id        String   @id @default(cuid())
   userId    String
@@ -506,4 +558,50 @@ model Appointment {
 
   buyer  User @relation("BuyerAppointments", fields: [buyerId], references: [id], onDelete: Cascade)
   seller User @relation("SellerAppointments", fields: [sellerId], references: [id], onDelete: Cascade)
+}
+
+// ─── Social Wall (Facebook‑style) ──────────────────────────────────────────
+
+model SocialWall {
+  id        String   @id @default(cuid())
+  authorId  String
+  content   String   @default("")
+  mediaUrls String   @default("") // JSON array of media URLs
+  postType  String   @default("text") // text, photo, video, audio
+  likeCount Int      @default(0)
+  isEdited  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments SocialWallComment[]
+  likes    SocialWallLike[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model SocialWallComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  post   SocialWall @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model SocialWallLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post SocialWall @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
 }

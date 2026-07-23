@@ -178,6 +178,16 @@ const WhyUsSection = lazy(() =>
     default: m.WhyUsSection,
   }))
 )
+const SocialDirectory = lazy(() =>
+  import("@/components/marketplace/social-directory").then((m) => ({
+    default: m.SocialDirectory,
+  }))
+)
+const SocialWall = lazy(() =>
+  import("@/components/marketplace/social-wall").then((m) => ({
+    default: m.SocialWall,
+  }))
+)
 const SellerDashboardEnhanced = lazy(() =>
   import("@/components/marketplace/seller-dashboard-enhanced").then((m) => ({
     default: m.SellerDashboardEnhanced,
@@ -404,6 +414,18 @@ function resolveView(
       return <SupplierCatalogsView />
     case "why-us":
       return <WhyUsSection />
+    case "social":
+      return (
+        <AuthGate isAuthenticated={isAuthenticated}>
+          <SocialDirectory />
+        </AuthGate>
+      )
+    case "media-wall":
+      return (
+        <AuthGate isAuthenticated={isAuthenticated}>
+          <SocialWall />
+        </AuthGate>
+      )
     default:
       return <HomeFeed />
   }

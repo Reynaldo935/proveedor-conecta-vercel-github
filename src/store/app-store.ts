@@ -41,6 +41,9 @@ export type AppView =
   | 'suppliers'
   | 'supplier-catalogs'
   | 'why-us'
+  | 'social'
+  | 'media-wall'
+  | 'social-wall'
 
 interface AppState {
   currentView: AppView
