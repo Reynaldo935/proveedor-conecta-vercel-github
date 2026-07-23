@@ -178,6 +178,11 @@ const WhyUsSection = lazy(() =>
     default: m.WhyUsSection,
   }))
 )
+const SellerDashboardEnhanced = lazy(() =>
+  import("@/components/marketplace/seller-dashboard-enhanced").then((m) => ({
+    default: m.SellerDashboardEnhanced,
+  }))
+)
 const TermsPage = lazy(() =>
   import("@/components/legal/legal-pages").then((m) => ({
     default: m.TermsPage,
@@ -276,7 +281,7 @@ function resolveView(
     case "vendor-dashboard":
       return (
         <AuthGate isAuthenticated={isAuthenticated}>
-          <VendorDashboard />
+          <SellerDashboardEnhanced />
         </AuthGate>
       )
     case "buyer-dashboard":

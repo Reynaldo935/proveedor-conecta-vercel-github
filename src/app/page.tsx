@@ -21,6 +21,7 @@ import { useTheme } from "next-themes"
 import { WeatherWidget } from "@/components/weather/weather-widget"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
+import { CartDrawer, CartIconButton } from "@/components/marketplace/cart-drawer"
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel
@@ -863,6 +864,9 @@ export default function ProveedorConecta() {
         <LazyViewLoader viewName={currentView} isAuthenticated={isAuthenticated} />
       </main>
       <Footer />
+
+      {/* Cart Drawer — slide-out shopping cart */}
+      <CartDrawer />
 
       {/* Chatbot — loaded dynamically on toggle */}
       {showChatbot && (

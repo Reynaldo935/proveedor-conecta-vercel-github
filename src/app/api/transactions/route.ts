@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       }
 
       const buyerBalance = (txBuyer as Record<string, unknown>).balance as number | undefined
-      const userBalance = typeof buyerBalance === 'number' ? buyerBalance : 50000
+      const userBalance = typeof buyerBalance === 'number' ? buyerBalance : 0
 
       if (userBalance < finalAmount) {
         // Log insufficient funds attempt inside transaction

@@ -1,9 +1,9 @@
-/**
- * Cart Store — Zustand
+﻿/**
+ * Enhanced Cart Store - Zustand + API Sync
  * ProveedorConecta Nicaragua
- * 
- * Persistent cart with localStorage backup.
- * Supports add, remove, update quantity, and clear.
+ *
+ * Persists cart to localStorage. Syncs with server when user is logged in.
+ * Supports multi-currency display: NIO, USD, NIC_COINS.
  */
 
 import { create } from 'zustand'
@@ -16,43 +16,60 @@ export interface CartItem {
   quantity: number
   image: string
   sellerName: string
+  sellerId?: string
   maxQuantity: number
 }
 
 interface CartState {
   items: CartItem[]
   isOpen: boolean
-  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
+  isLoading: boolean
+  selectedCurrency: 'NIO' | 'USD' | 'NIC_COINS'
+  exchangeRate: number
+
+  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number; sellerId?: string }) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
   clearCart: () => void
   toggleCart: () => void
   openCart: () => void
   closeCart: () => void
-  getTotal: () => number
+  setCurrency: (currency: 'NIO' | 'USD' | 'NIC_COINS') => void
+  getTotal: (currency?: 'NIO' | 'USD' | 'NIC_COINS') => number
   getItemCount: () => number
+  syncWithServer: () => Promise<void>
 }
 
-// Load cart from localStorage
 function loadCart(): CartItem[] {
   if (typeof window === 'undefined') return []
   try {
-    const raw = localStorage.getItem('pc_cart')
+    const raw = localStorage.getItem('pc_cart_v2')
     return raw ? JSON.parse(raw) : []
   } catch { return [] }
 }
 
-// Save cart to localStorage
 function saveCart(items: CartItem[]) {
   if (typeof window === 'undefined') return
   try {
-    localStorage.setItem('pc_cart', JSON.stringify(items))
-  } catch { /* localStorage not available */ }
+    localStorage.setItem('pc_cart_v2', JSON.stringify(items))
+  } catch { /* ignore */ }
+}
+
+function loadCurrency(): 'NIO' | 'USD' | 'NIC_COINS' {
+  if (typeof window === 'undefined') return 'NIO'
+  try {
+    const c = localStorage.getItem('pc_currency')
+    if (c === 'USD' || c === 'NIC_COINS' || c === 'NIO') return c
+  } catch { /* ignore */ }
+  return 'NIO'
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: loadCart(),
   isOpen: false,
+  isLoading: false,
+  selectedCurrency: loadCurrency(),
+  exchangeRate: 36.95,
 
   addItem: (item) => {
     set((state) => {
@@ -66,11 +83,15 @@ export const useCartStore = create<CartState>((set, get) => ({
           i.productId === item.productId ? { ...i, quantity: newQty } : i
         )
       } else {
-        newItems = [...state.items, { ...item, quantity: qty }]
+        newItems = [...state.items, {
+          ...item,
+          quantity: qty,
+          sellerId: item.sellerId || undefined
+        }]
       }
 
       saveCart(newItems)
-      return { items: newItems, isOpen: true } // Open cart drawer on add
+      return { items: newItems, isOpen: true }
     })
   },
 
@@ -100,22 +121,58 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   clearCart: () => {
+    set({ items: [] })
     saveCart([])
-    set({ items: [], isOpen: false })
   },
 
-  toggleCart: () => set((s) => ({ isOpen: !s.isOpen })),
+  toggleCart: () => set(s => ({ isOpen: !s.isOpen })),
   openCart: () => set({ isOpen: true }),
   closeCart: () => set({ isOpen: false }),
 
-  getTotal: () => {
-    return get().items.reduce((sum, item) => {
+  setCurrency: (currency) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pc_currency', currency)
+    }
+    set({ selectedCurrency: currency })
+  },
+
+  getTotal: (currency) => {
+    const { items, selectedCurrency, exchangeRate } = get()
+    const targetCurrency = currency || selectedCurrency
+    const rawTotal = items.reduce((sum, item) => {
       const price = item.discountPrice ?? item.price
       return sum + price * item.quantity
     }, 0)
+
+    if (targetCurrency === 'USD') {
+      return Math.round((rawTotal / exchangeRate) * 100) / 100
+    }
+    return rawTotal
   },
 
   getItemCount: () => {
     return get().items.reduce((sum, item) => sum + item.quantity, 0)
+  },
+
+  syncWithServer: async () => {
+    const { items } = get()
+    set({ isLoading: true })
+    try {
+      const res = await fetch('/api/cart/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ items }),
+      })
+      const data = await res.json()
+      if (data.success && data.data?.items) {
+        set({ items: data.data.items })
+        saveCart(data.data.items)
+      }
+    } catch (err) {
+      console.error('Cart sync error:', err)
+    } finally {
+      set({ isLoading: false })
+    }
   },
 }))
