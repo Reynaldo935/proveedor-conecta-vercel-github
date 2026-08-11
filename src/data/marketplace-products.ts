@@ -12,7 +12,7 @@ export const MARKETPLACE_PRODUCTS = [
     category: "Construcción y Ferretería",
     tags: "cemento,construcción",
     description: "Cemento de alta resistencia para construcción. Ideal para losas, columnas y cimientos.",
-    images: JSON.stringify(["https://www.cemexnicaragua.com/documents/5168637/5397130/soluciones-canal-de-distribucion.jpg/e0fcee99-6db2-cb08-1bda-b9465005babe?version=1.0&t=1757870832018"]),
+    images: JSON.stringify(["https://picsum.photos/seed/cemento/400/400"]),
     quantity: 100,
     seller: { name: "Ferretería Americana", department: "Managua", phone: "+505 2222-1111" },
     featured: true,
