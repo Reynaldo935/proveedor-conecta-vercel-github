@@ -76,3 +76,53 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: [], total: 0 }, { status: 200 })
   }
 }
+
+/**
+ * PUT /api/admin/users — Cambiar rol de usuario (Admin only)
+ * Body: { targetUserId, newRole }
+ * newRole debe ser: BUYER, SELLER, o ADMIN
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const admin = await getAuthenticatedUser()
+    if (!admin || admin.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Acceso denegado' }, { status: 200 })
+    }
+
+    const { targetUserId, newRole } = await request.json()
+
+    if (!targetUserId) {
+      return NextResponse.json({ success: false, error: 'targetUserId es requerido' }, { status: 200 })
+    }
+
+    if (!newRole || !['BUYER', 'SELLER', 'ADMIN'].includes(newRole)) {
+      return NextResponse.json({ success: false, error: 'Rol inválido. Debe ser: BUYER, SELLER o ADMIN' }, { status: 200 })
+    }
+
+    // No permitir que el admin se quite su propio rol
+    if (targetUserId === admin.id) {
+      return NextResponse.json({ success: false, error: 'No puedes cambiar tu propio rol' }, { status: 200 })
+    }
+
+    const updated = await db.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole },
+      select: { id: true, email: true, name: true, role: true },
+    })
+
+    await db.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'CHANGE_ROLE',
+        entity: 'User',
+        entityId: targetUserId,
+        details: `Rol cambiado a ${newRole} para ${updated.email}`,
+      },
+    })
+
+    return NextResponse.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Admin role change error:', error)
+    return NextResponse.json({ success: false, error: 'Error al cambiar rol' }, { status: 200 })
+  }
+}
