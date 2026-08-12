@@ -60,6 +60,7 @@ interface Product {
   images: string[]
   category: string
   status: string
+  quantity: number
   publishedAt: string
 }
 
@@ -608,6 +609,79 @@ export function ProfileSettings() {
         <Button variant="ghost" onClick={() => navigate("home")} className="mb-2 -ml-2">
           <ChevronLeft className="h-4 w-4 mr-1" /> Volver
         </Button>
+      </motion.div>
+
+      {/* ─── Acciones Rápidas CRUD ───────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.03 }}
+        className="px-4 pb-2"
+      >
+        <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 shadow-sm">
+          <CardContent className="p-3">
+            <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+              <span className="text-xs font-semibold text-muted-foreground mr-1 hidden sm:inline">ACCIONES:</span>
+              {/* ABRIR / Ver perfil público */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs h-8 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
+                onClick={() => window.open(`/perfil/${user?.id}`, "_blank")}
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-blue-600" />
+                ABRIR
+              </Button>
+              {/* EDITAR perfil */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs h-8 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950"
+                onClick={() => setActiveTab("personal")}
+              >
+                <Pencil className="h-3.5 w-3.5 text-amber-600" />
+                EDITAR
+              </Button>
+              {/* GUARDAR */}
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-1.5 text-xs h-8 bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                <Save className="h-3.5 w-3.5" />
+                GUARDAR
+              </Button>
+              {/* AÑADIR producto */}
+              {isSeller && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="gap-1.5 text-xs h-8"
+                  onClick={() => navigate("sell-product")}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  AÑADIR
+                </Button>
+              )}
+              {/* BORRAR cuenta (confirm) */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs h-8 border-red-300 hover:bg-red-50 dark:hover:bg-red-950 text-red-600"
+                onClick={() => {
+                  if (confirm("¿Estás seguro que deseas eliminar tu cuenta? Esta acción no se puede deshacer.")) {
+                    toast.error("Para eliminar tu cuenta contacta a soporte@proveedorconecta.com")
+                  }
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                BORRAR
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* ═════════════════════════════════════════════════════════════════════════
@@ -1487,6 +1561,7 @@ export function ProfileSettings() {
                             <CardContent className="p-3">
                               <h4 className="font-semibold text-sm line-clamp-1">{product.title}</h4>
                               <p className="text-xs text-muted-foreground mt-0.5">{product.category}</p>
+                              <p className="text-[10px] text-muted-foreground">Cantidad: {product.quantity || 0} unidades</p>
                               <div className="flex items-center justify-between mt-2">
                                 <div>
                                   {product.discountPrice ? (
@@ -1504,26 +1579,40 @@ export function ProfileSettings() {
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => {
-                                      navigate("edit-product", { editProductId: product.id })
-                                    }}
-                                  >
-                                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => handleDeleteProduct(product.id)}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                  </Button>
-                                </div>
+                              </div>
+                              {/* ── CRUD Action Buttons ── */}
+                              <div className="flex items-center gap-1 mt-3 pt-2 border-t border-border/50">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 gap-1 text-xs h-7 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                  onClick={() => navigate("product-detail", { productId: product.id })}
+                                >
+                                  <ExternalLink className="h-3 w-3 text-blue-600" />
+                                  ABRIR
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 gap-1 text-xs h-7 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950"
+                                  onClick={() => navigate("edit-product", { editProductId: product.id })}
+                                >
+                                  <Pencil className="h-3 w-3 text-amber-600" />
+                                  EDITAR
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 text-xs h-7 border-red-300 hover:bg-red-50 dark:hover:bg-red-950"
+                                  onClick={() => {
+                                    if (confirm(`¿Eliminar "${product.title}" permanentemente?`)) {
+                                      handleDeleteProduct(product.id)
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                  BORRAR
+                                </Button>
                               </div>
                             </CardContent>
                           </Card>

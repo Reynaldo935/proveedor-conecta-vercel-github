@@ -606,6 +606,108 @@ export function PaymentsView() {
         </Card>
       </motion.div>
 
+      {/* ─── Bancos de Nicaragua ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+      >
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Building2 className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold font-[family-name:var(--font-poppins)]">
+                Bancos y Billeteras de Nicaragua
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* BAC */}
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Card className="hover:shadow-lg transition-all cursor-pointer border-2 border-orange-200 dark:border-orange-800 h-full"
+                  onClick={() => window.open("https://www.baccredomatic.com/es-ni", "_blank")}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-orange-100 dark:bg-orange-900/30">
+                        <Building2 className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base">BAC Credomatic</h3>
+                        <p className="text-xs text-muted-foreground">Banca personal y empresarial</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* BANPRO */}
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Card className="hover:shadow-lg transition-all cursor-pointer border-2 border-emerald-200 dark:border-emerald-800 h-full"
+                  onClick={() => window.open("https://www.banprogrupopromerica.com.ni/", "_blank")}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
+                        <Building2 className="h-6 w-6 text-emerald-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base">BANPRO</h3>
+                        <p className="text-xs text-muted-foreground">Grupo Promerica Nicaragua</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* LAFISE */}
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Card className="hover:shadow-lg transition-all cursor-pointer border-2 border-blue-200 dark:border-blue-800 h-full"
+                  onClick={() => window.open("https://www.lafise.com/", "_blank")}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
+                        <Building2 className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base">LAFISE</h3>
+                        <p className="text-xs text-muted-foreground">Banco centroamericano</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Billetera Móvil */}
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Card className="hover:shadow-lg transition-all cursor-pointer border-2 border-purple-200 dark:border-purple-800 h-full"
+                  onClick={() => window.open("https://www.kash.ni/", "_blank")}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30">
+                        <Smartphone className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-base">Billetera Móvil NI</h3>
+                        <p className="text-xs text-muted-foreground">Kash / Pagos móviles Nicaragua</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              * Estos enlaces te redirigen a los sitios oficiales de cada banco/billetera para realizar tus pagos de forma segura.
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Security Notice */}
       <motion.div
         initial={{ opacity: 0 }}

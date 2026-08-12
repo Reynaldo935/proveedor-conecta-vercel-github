@@ -44,7 +44,7 @@ async function main() {
       isVerified: true,
       emailVerified: true,
       helperRole: 'FULLSTACK',
-      balance: 100000,
+      balance: 0,
     },
   })
 

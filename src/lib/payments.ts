@@ -211,7 +211,7 @@ interface PayPalCaptureResult {
 let _paypalAccessToken: { token: string; expiresAt: number } | null = null
 
 async function getPayPalAccessToken(): Promise<string | null> {
-  const clientId = process.env.PAYPAL_CLIENT_ID
+  const clientId = process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET
 
   if (!clientId || !clientSecret) return null
@@ -221,7 +221,7 @@ async function getPayPalAccessToken(): Promise<string | null> {
     return _paypalAccessToken.token
   }
 
-  const sandbox = process.env.PAYPAL_SANDBOX === 'true'
+  const sandbox = process.env.PAYPAL_SANDBOX !== 'false' // Default to sandbox for safety
   const baseUrl = sandbox
     ? 'https://api-m.sandbox.paypal.com'
     : 'https://api-m.paypal.com'
@@ -251,12 +251,12 @@ async function getPayPalAccessToken(): Promise<string | null> {
 }
 
 export async function createPayPalOrder(params: PayPalOrderParams): Promise<PayPalOrderResult> {
-  const clientId = process.env.PAYPAL_CLIENT_ID
+  const clientId = process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET
 
   // Simulated response when credentials are not configured
   if (!clientId || !clientSecret) {
-    console.log('[PayPal] Using simulated response (missing PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET)')
+    console.log('[PayPal] Using simulated response (missing PAYPAL_CLIENT_ID/NEXT_PUBLIC_PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET)')
     const simOrderId = `PP-SIM-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
     return {
       success: true,
@@ -271,7 +271,7 @@ export async function createPayPalOrder(params: PayPalOrderParams): Promise<PayP
       return { success: false, error: 'Failed to obtain PayPal access token' }
     }
 
-    const sandbox = process.env.PAYPAL_SANDBOX === 'true'
+    const sandbox = process.env.PAYPAL_SANDBOX !== 'false' // Default to sandbox
     const baseUrl = sandbox
       ? 'https://api-m.sandbox.paypal.com'
       : 'https://api-m.paypal.com'
@@ -326,7 +326,7 @@ export async function createPayPalOrder(params: PayPalOrderParams): Promise<PayP
 }
 
 export async function capturePayPalOrder(paypalOrderId: string): Promise<PayPalCaptureResult> {
-  const clientId = process.env.PAYPAL_CLIENT_ID
+  const clientId = process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET
 
   // Simulated response when credentials are not configured
@@ -344,7 +344,7 @@ export async function capturePayPalOrder(paypalOrderId: string): Promise<PayPalC
       return { success: false, error: 'Failed to obtain PayPal access token' }
     }
 
-    const sandbox = process.env.PAYPAL_SANDBOX === 'true'
+    const sandbox = process.env.PAYPAL_SANDBOX !== 'false' // Default to sandbox
     const baseUrl = sandbox
       ? 'https://api-m.sandbox.paypal.com'
       : 'https://api-m.paypal.com'

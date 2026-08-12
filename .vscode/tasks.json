@@ -324,6 +324,124 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Git Commit",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"All features: Social Wall (Facebook-style), User Search API, Social Directory, Chat any-user-to-any-user, SocialWall model, wall APIs (posts/comment/like), balance=0, cart system, NIC Coins, dashboard. Build: 82 pages, 0 TS errors."
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Git Push",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Force Deploy",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"--allow-empty",
+				"-m",
+				"Force Vercel deploy - all features ready. Build: 82 pages, 0 TS errors."
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Git Push Force",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Remove pnpm files",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"rm",
+				"pnpm-lock.yaml",
+				"pnpm-workspace.yaml",
+				"--cached"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Git Commit Clean",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"Remove pnpm lock files to fix Vercel deploy. Use npm for build."
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean npm install",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build Verify",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Git Push",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Vercel CLI Check",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"vercel",
+				"--version"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
