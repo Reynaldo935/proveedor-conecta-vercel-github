@@ -12,7 +12,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import marketplaceData from '@/data/marketplace-products.json'
+import marketplaceData from '../../../../data/marketplace-products.json'
 
 export interface MarketplaceProduct {
   id: string
