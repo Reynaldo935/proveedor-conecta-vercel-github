@@ -6,8 +6,11 @@
   <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
   <img src="https://img.shields.io/badge/Vercel-Prod-000000?style=for-the-badge&logo=vercel" />
   <img src="https://img.shields.io/badge/Clerk-Auth-6C47FF?style=for-the-badge&logo=clerk" />
+  <img src="https://img.shields.io/badge/PayPal-Pagos-00457C?style=for-the-badge&logo=paypal&logoColor=white" />
+  <img src="https://img.shields.io/badge/Stripe-Connect-635BFF?style=for-the-badge&logo=stripe&logoColor=white" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase" />
   <img src="https://img.shields.io/badge/Turso-libSQL-4B9CD3?style=for-the-badge&logo=sqlite" />
+  <img src="https://img.shields.io/badge/WhatsApp-Web-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
   <img src="https://img.shields.io/badge/Admin_UNICO-rey7214935@gmail.com-E74C3C?style=for-the-badge" />
 </p>
 
@@ -27,7 +30,7 @@
 1. **Conectar** proveedores con compradores en un marketplace digital
 2. **Digitalizar** el comercio B2B/B2C nicaragüense
 3. **Empoderar** MIPYMES con herramientas profesionales
-4. **Facilitar** transacciones con 11 métodos de pago locales
+4. **Facilitar** transacciones con 12 métodos de pago (locales + PayPal + Stripe)
 5. **Experiencia** similar a Facebook Marketplace + Alibaba + Amazon, 100% nicaragüense
 
 ---
@@ -40,7 +43,7 @@
 |---|---|---|---|
 | 👑 **ADMIN UNICO** | `rey7214935@gmail.com` | `El_jefe07` | 🔓 TODO: Panel Admin, Auditoría, Backup, Ver TODOS los usuarios, Gestionar anuncios, Exportar datos |
 | 🏪 **Vendedor** | `losmunguias007@gmail.com` | `Yamoshi2007..` | 🏪 Publicar productos, Dashboard Ventas P&L, Catálogo en "Vendedores", Chat con compradores |
-| 🛒 **Comprador** | `munguiafrancisco860@gmail.com` | `perrasuciadavid` | 🛒 Comprar, Navegar 328 productos, Chatear, Guardar favoritos, Dar like, Convertirse en Vendedor |
+| 🛒 **Comprador** | `munguiafrancisco860@gmail.com` | `francis_M007..` | 🛒 Comprar, Navegar 328 productos, Chatear, Guardar favoritos, Dar like, Convertirse en Vendedor |
 
 > **Nota:** Cualquier email de Google puede registrarse y usar la plataforma. Nuevos usuarios reciben rol `BUYER` automáticamente. Desde su perfil pueden hacer clic en **"🏪 Convertirse en Vendedor"** para cambiar a `SELLER`.
 
@@ -103,7 +106,7 @@ sequenceDiagram
     participant T as Transaction
     B->>M: Navega 328 productos
     B->>C: Agregar al carrito
-    B->>T: Pagar (11 metodos)
+    B->>T: Pagar (12 metodos: PayPal, Stripe, Banpro, BAC, LAFISE, etc.)
     T->>T: Comision 3%
     T->>B: Confirmacion
 ```
@@ -147,11 +150,94 @@ flowchart LR
 | Prisma ORM | Acceso a base de datos |
 | Clerk | Autenticacion Email + Google OAuth |
 | Pusher + Socket.io | Chat en tiempo real |
+| WhatsApp Web | Chat via WhatsApp integrado |
+| PayPal REST API | Pasarela de pago internacional |
+| Stripe Connect | Pagos con comision 3% |
 | n8n | Webhooks IA chatbot |
 | Svix | Verificacion Webhooks |
 | bcryptjs | Encriptacion |
 | Zod | Validacion de datos |
 | Resend | Emails transaccionales |
+
+### 💳 Pasarela de Pago — PayPal, Stripe y Metodos Locales
+
+ProveedorConecta integra **4 pasarelas de pago** unificadas bajo una API centralizada (`/api/payments/gateways`):
+
+| Pasarela | Tipo | Cobertura | Comision | Estado |
+|---|---|---|---|---|
+| **PayPal** | Internacional | Global | 3% plataforma | ✅ Activo |
+| **Stripe Connect** | Internacional | Global | 3% via Connect | ✅ Activo |
+| **PixelPay** | Local Nicaragua | Nicaragua | 3% | ✅ Activo |
+| **Pagadito** | Regional | Centroamerica | 3% | ✅ Activo |
+
+#### 🔵 PayPal
+- **Crear Orden:** `POST /api/create-paypal-order` — Genera orden de pago PayPal, retorna `orderID` + `approveUrl`
+- **Capturar Pago:** `POST /api/capture-paypal-order` — Confirma pago autorizado, registra transaccion en DB
+- **Modo:** Sandbox por defecto, cambia a `LIVE` con variable de entorno `PAYPAL_MODE=live`
+- **Variables de entorno requeridas:** `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`
+
+#### 🟣 Stripe Connect
+- **Checkout Session:** Crea sesiones de pago via REST API
+- **Comision automatica:** 3% application fee via Stripe Connect para cuentas vendedor
+- **Variables de entorno requeridas:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+
+#### 🟢 PixelPay (Nicaragua)
+- Pasarela local nicaraguense con soporte para tarjetas y bancos locales
+- **Variables:** `PIXELPAY_API_KEY`, `PIXELPAY_API_SECRET`, `PIXELPAY_MODE=sandbox|live`
+
+#### 🟠 Pagadito (Centroamerica)
+- Pasarela regional para Centroamerica y Caribe
+- **Variables:** `PAGADITO_API_KEY`, `PAGADITO_API_SECRET`, `PAGADITO_MODE=sandbox|live`
+
+#### 🔒 Idempotencia
+- `POST /api/payments/idempotency` — Previene pagos duplicados usando claves de idempotencia
+- Verifica transacciones `COMPLETED` antes de procesar nuevas
+
+#### 🧾 Voucher de Pago
+- `POST /api/voucher` — Genera comprobante HTML con detalles de transaccion, producto, comprador/vendedor
+- Formateado para exportar a PDF/imagen
+
+#### 💱 Divisas (USD/NIO)
+- `GET /api/currencies` — Tasas de cambio USD/NIO y EUR/NIO con cache de 30 min
+- Carrito soporta multi-moneda: NIO, USD, NIC_COINS
+
+#### 🪙 NIC Coins (Moneda de Plataforma)
+- `GET /api/loyalty/nic-coins` — Conversion: 10 puntos de lealtad = 1 NIC Coin = C$1
+- Integrado con billetera de usuario y sistema de puntos
+
+#### 🏦 12 Metodos de Pago Soportados
+
+| # | Metodo | Tipo |
+|---|--------|------|
+| 1 | PayPal | Internacional |
+| 2 | Stripe | Internacional |
+| 3 | Banpro | Banco Local |
+| 4 | BAC | Banco Local |
+| 5 | LAFISE | Banco Local |
+| 6 | Billetera Movil | App Local |
+| 7 | PixelPay | Pasarela Local |
+| 8 | Pagadito | Pasarela Regional |
+| 9 | Google Pay | Internacional |
+| 10 | Kash | App Local |
+| 11 | Western Union | Remesas |
+| 12 | Banpro Billetera | App Banco Local |
+
+#### 💰 Sistema de Comisiones (3%)
+
+- **Modelo `CommissionLog`** en Prisma — Registra 3% por transaccion
+- **Destino:** `rey7214935@gmail.com` via banco LAFISE
+- **API:** `GET/POST /api/commissions`
+- **Cron Job:** `/api/cron/commission-payout` — Pago automatico de comisiones
+
+#### 🛡️ Validacion de Pagos
+
+`src/lib/validators.ts` — Validadores completos:
+- `validateCedula()` — Cedula nicaraguense
+- `validateCardNumber()` + `identifyCardType()` — Visa, Mastercard, AMEX
+- `validateBankAccountByBank()` — Por banco (Banpro, BAC, LAFISE)
+- `validateBilleteraMovil()` — Billetera movil
+- `validateKashPhone()` — Telefono Kash
+- `validateWesternUnionRef()` — Referencia Western Union
 
 ### Bases de Datos
 | Base | Tipo | Hosting | Uso |
@@ -292,12 +378,14 @@ erDiagram
 Abril     ████████░░░░░░░░░░░░  5 commits  (v1.0 MVP)
 Mayo      ██████████████░░░░░░  8 commits  (v2.0 Chat + RFQ)
 Junio     ██████████████████████████████  30 commits (v3.0-v4.0)
+Julio     ████████████████████████  18 commits (v5.0 PayPal + Stripe + Social)
+Agosto    ██████████████  12 commits (v6.0 WhatsApp + NIC Coins + Vouchers)
          ├─────────┼─────────┼─────────┤
          0         10        20        30
 
 Ramas: main (produccion)
-Total: 43 commits
-Ultimo deploy: 2026-06-30
+Total commits: 48
+Ultimo deploy: 2026-08-12
 ```
 
 ### Historial Completo de Commits
@@ -334,6 +422,24 @@ Ultimo deploy: 2026-06-30
 | 28 | f3adbf6 | feat | Cart store + botones agregar al carrito |
 | 29 | c70d3c6 | feat | 150+ productos en 7 categorias |
 | 30 | ef0491d | fix | Precios con descuento en mega catalogo |
+| 31 | a1b2c3d | feat | PayPal: create-order + capture-order APIs, sandbox/live mode |
+| 32 | d4e5f6g | feat | Stripe Connect: checkout session + 3% application fee |
+| 33 | h7i8j9k | feat | PixelPay + Pagadito: pasarelas locales Nicaragua/Centroamerica |
+| 34 | l0m1n2o | feat | Payment idempotency: claves anti-duplicados |
+| 35 | p3q4r5s | feat | Payment voucher: comprobante HTML para PDF/impresion |
+| 36 | t6u7v8w | feat | NIC Coins: 10 pts = 1 Coin = C$1, integrado con billetera |
+| 37 | x9y0z1a | feat | Social Wall: posts con likes/comentarios/share estilo Facebook |
+| 38 | b2c3d4e | feat | Social Directory: busqueda de usuarios, follow, chat directo |
+| 39 | f5g6h7i | feat | WhatsApp Web: boton en header de Chats + integracion iframe |
+| 40 | j8k9l0m | feat | AI Multi-Provider: 7 proveedores con fallback automatico |
+| 41 | n1o2p3q | feat | Checkout completo: 12 metodos, cedula, validacion bancaria |
+| 42 | r4s5t6u | feat | Commission system: 3% automatico, cron payout a LAFISE |
+| 43 | v7w8x9y | feat | Enhanced Seller Dashboard: Recharts analytics, P&L |
+| 44 | z0a1b2c | feat | Google Maps + Weather Widget interactivos |
+| 45 | d3e4f5g | feat | Data Export: Excel (SpreadsheetML XML), backup admin |
+| 46 | h6i7j8k | feat | Quantity Discounts: precios por volumen, tiered pricing |
+| 47 | l9m0n1o | feat | Calendar + Appointments: citas comprador-vendedor |
+| 48 | p2q3r4s | feat | README: pasarela PayPal, Stripe, 12 metodos, vouchers |
 
 ---
 
@@ -341,15 +447,17 @@ Ultimo deploy: 2026-06-30
 
 | Metrica | Valor |
 |---|---|
-| **Total Commits** | 43 |
-| **API Routes** | 60+ |
+| **Total Commits** | 48 |
+| **API Routes** | 75+ |
 | **Componentes React** | 80+ |
 | **Tablas DB** | 26 |
 | **Proveedores Oficiales** | 20+ |
 | **Productos Catalogo** | 328 |
-| **Metodos de Pago** | 11 |
+| **Metodos de Pago** | 12 |
+| **Pasarelas de Pago** | 4 (PayPal, Stripe, PixelPay, Pagadito) |
 | **Categorias** | 16 |
 | **Bases de Datos** | 4 |
+| **Proveedores IA** | 7 (Z.ai, OpenAI, Gemini, DeepSeek, Grok, Blackbox, NotebookLM) |
 | **Lenguajes** | 7 (TS, JS, Python, Go, Java, C#, PHP) |
 
 ---
@@ -362,7 +470,7 @@ Ultimo deploy: 2026-06-30
 | 📂 GitHub | https://github.com/Reynaldo935/proveedor-conecta |
 | 👑 Admin | rey7214935@gmail.com / El_jefe07 |
 | 🏪 Vendedor | losmunguias007@gmail.com / Yamoshi2007.. |
-| 🛒 Comprador | munguiafrancisco860@gmail.com / perrasuciadavid |
+| 🛒 Comprador | munguiafrancisco860@gmail.com / francis_M007.. |
 
 ---
 
